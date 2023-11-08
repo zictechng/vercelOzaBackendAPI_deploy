@@ -32,10 +32,10 @@ function verifyToken(req, res, next) {
     next();
   }
 
-// route to register user and upload profile image
+// route to login user
 router.post("/login", async (req, res, next) => {
     const file = req.file;
-    const filter = req.body ;
+    const filter = req.body;
 
             //console.log("Login Data ", req.body);
 
@@ -47,7 +47,7 @@ router.post("/login", async (req, res, next) => {
             
             try {
             // Check if user exist
-            const userExist = await User.findOne({username: filter.username})
+            const userExist = await User.findOne({email: filter.username})
             
             if(!userExist){
                 //console.log('Wrong username entered!');
@@ -74,14 +74,20 @@ router.post("/login", async (req, res, next) => {
                     //console.log('The password does NOT match!');
                 }
                 else {
-                    let payload = { subject: userExist._id }; // subject is the key, User._id the value
-                    let token = jwt.sign(payload, process.env.SECRET_LOGIN_KEY); // 'secretkey' can be anything of your choice and you can put it in .env file
+                    
+                    const token = jwt.sign({userId:userExist._id}, process.env.SECRET_LOGIN_KEY,
+                        {expiresIn:'1d'});
+
+                     //let payload = { subject: userExist._id }; 
+                    // subject is the key, User._id the value
+                    //let token = jwt.sign(payload, process.env.SECRET_LOGIN_KEY); 
+                    // 'secretkey' can be anything of your choice and you can put it in .env file
                     const { password, ...others } = userExist._doc; // this will remove password from the details send to server.
                       // create log here
                 const addLogs = SystemActivity.create({
-                    log_username: userExist.username,
-                    log_name: userExist.surname+' '+userExist.first_name,
-                    log_acct_number: userExist.acct_number,
+                    log_username: userExist.email,
+                    log_name: userExist.surname+' '+userExist.display_name,
+                    log_acct_number: userExist.tag_id,
                     log_receiver_name: '',
                     log_receiver_number: '',
                     log_receiver_bank: '',
@@ -95,8 +101,8 @@ router.post("/login", async (req, res, next) => {
 
                 // user logs status here.
                 const userLogs = UserLogs.create({
-                    login_username: userExist.username,
-                    login_name: userExist.surname + ' ' + userExist.first_name,
+                    login_username: userExist.email,
+                    login_name: userExist.surname + ' ' + userExist.display_name,
                     login_user_ip: '',
                     login_country: '',
                     login_browser: '',
@@ -108,7 +114,6 @@ router.post("/login", async (req, res, next) => {
                     login_status: 1
                 });
 
-               
                   // send email notification
                   async function main() {
                     // send mail with defined transport object
@@ -283,8 +288,8 @@ router.post("/login", async (req, res, next) => {
                   }
                     main().catch('Message Error', console.error);
                     
-                res.send({ msg: '200', token: token, userData: others})
-            //res.json({status: 201, message: ' Login Successful'})
+                 res.send({ msg: '200', token: token, userData: others})
+                //res.json({msg: 200, token: token, userData: others})
             //console.log('Environment data!', process.env.SECRET_KEY);
         }
     });

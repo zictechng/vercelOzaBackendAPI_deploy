@@ -26,6 +26,9 @@ const Notification = require('../models/NotificationAlert');
 const AppSetting = require('../models/AppSettingDetails');
 
 const transporter = require('../controllers/mailSender');
+const userBankDetails = require('../models/userBankDetails');
+const DocumentUpload = require('../models/documentUpload');
+
 
 
 const uploadLocation = "public/images"; // this is the image store location in the project
@@ -88,20 +91,47 @@ router.get("/profile/:id", async (req, res) => {
       console.log(err.message);
     }
   });
-// get login use details via Mobile 
-router.get("/profileMobile/:id", async (req, res) => {
-    let userId = req.params.id;
-    try {
-      const userDetails = await User.findOne({ _id: userId });
-     const { password, ...others } = userDetails._doc; // this will remove password from the details send to server.
-  
-     res.send({ msg: '200', userData: others})
-    } catch (err) {
-      res.status(500).json(err.message);
-      console.log(err.message);
+
+  // get current user account details/profile here..
+router.get("/userProfileMobile/:id", async (req, res) => {
+  let userId = req.params.id;
+  //console.log(userId);
+  try {
+    const userDetails = await User.findOne({ _id: userId });
+    const { password, ...others } = userDetails._doc; // this will remove password from the details send to server.
+
+    res.send({ msg: '200', userData: others})
+  } catch (err) {
+    if(!userDetails(err)) {
+        console.log("user found found");
     }
-  });
+    throw err;
+}
+});
+
+
+  // get users bank details via Mobile 
+router.get("/user_bankDetails/:id", async (req, res) => {
+  let userId = req.params.id;
+  console.log(" userId: " + userId)
+  if(req.params.id === undefined) {
+    return res.json({status: 403, message: 'Access denied'});
+  }
+  try {
+    const userDetails = await userBankDetails.findOne({ user_id: userId });
+    if(!userDetails){
+      return res.json({status: 404, message: 'No record found'})
+    }
+
+    res.send({ msg: '200', bankDetail: userDetails})
+
+  } catch (err) {
+    res.status(500).json(err.message);
+    console.log(err.message);
+  }
+});
   
+
   // get current user financial details here..
   router.get("/income_details/:id", async (req, res) => {
     let userId = req.params.id;

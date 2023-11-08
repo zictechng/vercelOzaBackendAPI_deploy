@@ -1,8 +1,7 @@
 const mongoose = require('mongoose')
 
 const userSchema = new mongoose.Schema({
-    surname: String,
-    first_name: String,
+    display_name: String,
     gender: String,
     dob: String,
     email: String,
@@ -10,12 +9,11 @@ const userSchema = new mongoose.Schema({
     state: String,
     city: String,
     currency_type: String,
-    user_bank_name:{
-        type: String,
-        default: 'Agro Bank'
-    },
     acct_type: String,
     username: {
+        type: String,
+    },
+    verify2fa_code: {
         type: String,
     },
     password: {
@@ -27,32 +25,57 @@ const userSchema = new mongoose.Schema({
         },
     country: String,
     address: String,
-    image_photo: String,
-    acct_cot:  String,
-    acct_imf_code: String,
-    acct_pin: String,
+    profile_photo: String,
+    acct_cot_pin:  String,
+    reg_stage1: {
+        type: String,
+        default: 'Yes',
+    },
+    reg_stage2:{
+        type: String,
+        default: 'null',
+    },
+    reg_stage3:{
+        type: String,
+        default: 'null',
+    },
+    reg_stage4:{
+        type: String,
+        default: 'null',
+    },
+    reg_stage5:{
+        type: String,
+        default: 'null',
+    },
     acct_tax_code: String,
     acct_status: {
         type: String,
         default: 'Pending',
         },
+    acct_active_status: {
+        type: String,
+        default: 'none',
+        },
+    acct_approved_status: {
+            type: String,
+            default: 'none',
+            },
     amount: {
         type: Number,
-        default: 0.0,   
+        //type: mongoose.SchemaTypes.Mixed,
+        default: 0.5,   
     },
     acct_balance: {
         type: Number,
-        default: 0.0,
+        default: 0.1,
     },
-    // roles: [{
-    //     type: String,
-    //     default: "Employee"
-    // }],
     active: {
         type: Boolean,
         default: true
     },
-    acct_number: Number,
+    tag_id:{
+        type: String,
+    },
     last_transaction: {
         type: Number,
         default: 0.0,
@@ -61,7 +84,8 @@ const userSchema = new mongoose.Schema({
         type: String,
     },
     user_role:{
-        type: String, default: 'User'
+        type: String, 
+        default: 'User'
     },
     createdOn: {type: Date, default: Date.now},
 })
