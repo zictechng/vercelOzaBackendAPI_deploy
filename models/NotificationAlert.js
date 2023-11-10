@@ -20,7 +20,9 @@ const notificationAlertSchema = new mongoose.Schema({
         type: Number,
         default: 0,
         },
-createdOn: {type: Date, default: Date.now},
+    createdOn: {
+        type: Date,
+    },
  })
  notificationAlertSchema.plugin(mongoosePaginate)
 // export it

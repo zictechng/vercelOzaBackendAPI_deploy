@@ -17,7 +17,7 @@ exports.isAuth = async (req, res, next) =>{
             
         } catch (error) {
             if(error.name === 'JsonWebTokenError'){
-                return res.json({status: 500, message: ' Access denied'});
+                return res.json({status: 500, message: ' Invalid authorization'});
             }
             // to check if token has expired error message
             if(error.name === 'TokenExpiredError'){

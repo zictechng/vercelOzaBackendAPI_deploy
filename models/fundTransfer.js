@@ -19,7 +19,11 @@ const transferSchema = new Schema({
     sender_currency_type: String,
     tran_type: String,
     transac_nature: String,
+    transac_category: String,
     tran_desc: String,
+    trans_method:String,
+    currency_level: String,
+    tran_rate: String,
     trans_balance: 
     {
         type: Number,
@@ -32,7 +36,9 @@ const transferSchema = new Schema({
         type: String, default: 'Pending'
     },
     tid: String,
-    tr_year: String,
+    pay_tran: String,
+    pay_token: String,
+    payer_tran: String,
     tr_month: String,
     tr_day: String,
     checked: Boolean,
@@ -41,7 +47,9 @@ const transferSchema = new Schema({
         ref: 'Users'
         // this will get the user ID automatically by mongoose in nodejs
     },
-    createdOn: {type: Date, default: Date.now},
+    createdOn: {
+        type: String,
+    },
     creditOn: {type: Date, default: Date.now},
 });
 

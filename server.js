@@ -1,5 +1,5 @@
 require('dotenv').config()
-
+const paypal = require('paypal-rest-sdk');
 const express = require('express')
 
 const registerUser = require("./routes/registerRoutes");
@@ -51,6 +51,14 @@ app.use("public/images", express.static("images"));
 // app route goes here
 app.use('/', require('./routes/root'))
 
+paypal.configure({
+    'mode': 'sandbox', //sandbox or live
+    'client_id': 'AZIQ8UQS1ZaBQYU8CwV39QC-qTbihvNjyb3hcM6dcOChZn01tBUo4X80cZjmnach3sf41IagLSBOhCPq',
+    'client_secret': 'EEe6YAUzp5Q5MQgRsnuHEE28H_6ANbnWphfG0i76QWxcY8eKpZJ73xSWDXFjqqhXBoSSfL2mlvLkYH-H'
+  });
+
+  var amt = null;
+  
 app.use('/api/users', require('./routes/userRoutes'))
 app.use("/api", registerUser)
 app.use("/api", userData)
@@ -59,6 +67,75 @@ app.use("/api", transactionData)
 app.use("/api", adminUpdateData)
 //app.use('/notes', require('./routes/noteRoutes'))
 
+app.get('/pay/:amt', (req, res) => {
+    amt = req.params.amt
+    console.log("Paypal Details received ", amt);
+    const create_payment_json = {
+        "intent": "sale",
+        "payer": {
+            "payment_method": "paypal"
+        },
+        "redirect_urls": {
+            "return_url": "http://192.168.1.169:3500/success",
+            "cancel_url": "http://192.168.1.169:3500/cancel"
+        },
+        "transactions": [{
+            "item_list": {
+                "items": [{
+                    "name": "Red Hat",
+                    "sku": "001",
+                    "price": amt,
+                    "currency": "USD",
+                    "quantity": 1
+                }]
+            },
+            "amount": {
+                "currency": "USD",
+                "total": amt
+            },
+            "description": "Hat for the best team ever"
+        }]
+    };
+
+
+paypal.payment.create(create_payment_json, function (error, payment) {
+    if (error) {
+        throw error;
+    } else {
+        for(let i = 0;i < payment.links.length;i++){
+          if(payment.links[i].rel === 'approval_url'){
+            res.redirect(payment.links[i].href);
+          }
+        }
+    }
+  });
+});
+
+app.get('/success', (req, res) => {
+    const payerId = req.query.PayerID;
+    const paymentId = req.query.paymentId;
+    console.log("payerId",payerId,"paymentId",paymentId) 
+    const execute_payment_json = {
+      "payer_id": payerId,
+      "transactions": [{
+          "amount": {
+              "currency": "USD",
+              "total": amt
+          }
+      }]
+    };
+  
+    paypal.payment.execute(paymentId, execute_payment_json, function (error, payment) {
+      if (error) {
+          console.log("error",error.response);
+          throw error;
+      } else {
+          res.sendFile(__dirname + "/success.html")
+      }
+  });
+});
+
+app.get('/cancel', (req, res) => res.send('Cancelled'));
 // this will handle any request/routes that is not found in the server
 // and then send 404 error page to the users
 app.all('*', (req, res) =>{

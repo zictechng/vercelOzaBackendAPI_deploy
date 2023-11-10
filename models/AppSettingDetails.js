@@ -4,7 +4,8 @@ const systemSettingSchema = new mongoose.Schema({
     app_name: String,
     app_short_name: String,
     app_logo: String,
-    ticket_status: {
+    app_version: String,
+    app_status: {
         type: String,
         default: 'Pending',
         },

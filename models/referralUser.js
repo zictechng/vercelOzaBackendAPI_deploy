@@ -1,0 +1,19 @@
+const mongoose = require('mongoose')
+
+const referralUserSchema = new mongoose.Schema({
+    ref_mainEmail: String,
+    ref_mainTag: String,
+    ref_userEmail: String,
+    ref_userName: String,
+    ref_status: String,
+    active: {
+        type: Boolean,
+        default: false,
+    },
+    createdBy: String,
+
+    createdOn: {type: Date, default: Date.now},
+ })
+
+// export it
+module.exports = mongoose.model('referral', referralUserSchema)

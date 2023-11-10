@@ -16,6 +16,18 @@ const userSchema = new mongoose.Schema({
     verify2fa_code: {
         type: String,
     },
+    receive_email_notification: {
+        type: Boolean,
+        default: false,
+    },
+    activate_2fa_login: {
+        type: Boolean,
+        default: false,
+    },
+    receive_app_message: {
+        type: Boolean,
+        default: false,
+    },
     password: {
         type: String,
         require: true
