@@ -270,7 +270,7 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
                         <tr>
                             <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
                                 <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                Hello ${user.first_name}, this is to notify you that your account has been opened successfully, your account officer will contact you shortly for more details, thank you.
+                                Hello ${user.display_name}, this is to notify you that your account has been opened successfully, your account officer will contact you shortly for more details, thank you.
                                 </p>
                             </td>
                         </tr>
