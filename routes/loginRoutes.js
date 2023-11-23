@@ -42,6 +42,7 @@ router.post("/login", async (req, res, next) => {
     const file = req.file;
     const filter = req.body;
             //console.log("Login Data ", req.body);
+
             //check in input fields is empty
             if(filter.username == '' || filter.password == ''){
                 return res.json({status: 400, message: ' All fields are required'})
