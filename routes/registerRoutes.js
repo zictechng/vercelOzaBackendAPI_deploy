@@ -14,7 +14,7 @@ const nodemailer = require("nodemailer");
 
 const transporter = require('../controllers/mailSender');
 const { isAuth } = require('../middleware/auth');
-const DocumentUpload = require('../models/documentUpload');
+const DocumentUpload = require('../models/DocumentUpload');
 
 const uploadLocation = "public/images"; // this is the image store location in the project
 const storage = multer.diskStorage({
