@@ -308,7 +308,6 @@ router.get("/user_logout/:id", async (req, res, next) => {
 
     var today = new Date();
     var month = today.toLocaleString('default', { month: 'long' });
-        
        // console.log("User ID", req.params.id);
         try {
             const userData = await User.find({_id: req.params.id });
@@ -416,7 +415,6 @@ router.post("/otp_verify", async (req, res) => {
     //const file = req.file;
     const filter = req.body ;
     const filterUser = { email: req.body.user_email };
-
     //console.log("OTP Data from APP", req.body);
 
        //check in input fields is empty
