@@ -1,7 +1,7 @@
 {
   "name": "backend_api",
   "version": "1.0.0",
-  "description": "Back demo application with MEAN Stack",
+  "description": "Oza backend web service demo application for mobile applications",
   "main": "server.js",
   "dependencies": {
     "-": "^0.0.1",

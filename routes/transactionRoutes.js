@@ -62,10 +62,6 @@ paypal.configure({
   var amt = null;
   
 
-
-
-
-
 // get dates and format it
 var now = new Date();
 var dateString = moment(now).format('YYYY-MM-DD');

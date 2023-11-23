@@ -9,8 +9,7 @@ const bcrypt = require('bcrypt')
 const multer = require("multer");
 const User = require('../models/User');
 const SystemActivity = require('../models/SystemActivityLogs');
-const userBankDetails = require('../models/userBankDetails');
-
+const userBankDetails = require('../models/UserBankDetails');
 const nodemailer = require("nodemailer");
 
 const transporter = require('../controllers/mailSender');

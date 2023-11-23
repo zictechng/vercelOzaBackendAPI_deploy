@@ -30,7 +30,7 @@ const GetRate = require('../models/businessRate')
 const CompanyBank = require('../models/companyBankDetails')
 const transporter = require('../controllers/mailSender');
 const { isAuth } = require('../middleware/auth');
-const userBankDetails = require('../models/userBankDetails');
+const userBankDetails = require('../models/UserBankDetails');
 const DocumentUpload = require('../models/documentUpload');
 const Referrals = require('../models/referralUser')
 
