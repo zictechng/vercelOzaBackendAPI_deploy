@@ -67,7 +67,7 @@ app.use("/api", transactionData)
 app.use("/api", adminUpdateData)
 //app.use('/notes', require('./routes/noteRoutes'))
 
-router.get('/pay/:amt', (req, res) => {
+app.get('/pay/:amt', (req, res) => {
     amt = req.params.amt
     // const page = req.query.page
     // const method = req.query.method
@@ -119,7 +119,7 @@ router.get('/pay/:amt', (req, res) => {
      });
 });
 
-router.get('/success', (req, res) => {
+app.get('/success', (req, res) => {
     //const TransID = transactionID(25)
     const payerId = req.query.PayerID;
     const paymentId = req.query.paymentId;
@@ -212,7 +212,7 @@ router.get('/success', (req, res) => {
   });
 });
 
-router.get('/cancel', (req, res) => res.send('Cancelled'));
+app.get('/cancel', (req, res) => res.send('Cancelled'));
 
 // this will handle any request/routes that is not found in the server
 // and then send 404 error page to the users
