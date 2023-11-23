@@ -174,8 +174,8 @@ router.get('/pay/:amt', (req, res) => {
             "payment_method": "paypal"
         },
         "redirect_urls": {
-            "return_url": "http://192.168.1.169:3500/api/success",
-            "cancel_url": "http://192.168.1.169:3500/api/cancel"
+            "return_url": "https://ozawebservice.onrender.com/api/success",
+            "cancel_url": "https://ozawebservice.onrender.com/api/cancel"
         },
         "transactions": [{
             "item_list": {
