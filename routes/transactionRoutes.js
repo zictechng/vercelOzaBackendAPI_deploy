@@ -52,14 +52,6 @@ function verifyToken(req, res, next) {
     }
     return result;
 }
-
-paypal.configure({
-    'mode': 'sandbox', //sandbox or live
-    'client_id': 'AZIQ8UQS1ZaBQYU8CwV39QC-qTbihvNjyb3hcM6dcOChZn01tBUo4X80cZjmnach3sf41IagLSBOhCPq',
-    'client_secret': 'EEe6YAUzp5Q5MQgRsnuHEE28H_6ANbnWphfG0i76QWxcY8eKpZJ73xSWDXFjqqhXBoSSfL2mlvLkYH-H'
-  });
-
-  var amt = null;
   
 
 // get dates and format it
@@ -159,153 +151,66 @@ router.post("/wire_transfer_funds", verifyToken, async (req, res) => {
   }); 
   
 // paypal checkout routes goes here
-// router.get('/pay/:amt', (req, res) => {
-//     amt = req.params.amt
-//     // const page = req.query.page
-//     // const method = req.query.method
-//     // const service_name = req.query.service_name
-//     // const myId = req.query.myId
-//     // const pay_note = req.query.pay_note
-//     // const category = req.query.category
-    
-//     const create_payment_json = {
-//         "intent": "sale",
-//         "payer": {
-//             "payment_method": "paypal"
-//         },
-//         "redirect_urls": {
-//             "return_url": "https://ozawebservice.onrender.com/api/success",
-//             "cancel_url": "https://ozawebservice.onrender.com/api/cancel"
-//         },
-//         "transactions": [{
-//             "item_list": {
-//                 "items": [{
-//                     "name": "Red Hat",
-//                     "sku": "001",
-//                     "price": amt,
-//                     "currency": "USD",
-//                     "quantity": 1
-//                 }]
-//             },
-//             "amount": {
-//                 "currency": "USD",
-//                 "total": amt
-//             },
-//             "description": "Hat for the best team ever"
-//         }]
-//     };
 
-//     paypal.payment.create(create_payment_json, function (error, payment) {
-//         if (error) {
-//             console.error("Paypal Payment Error", error.message);
-//             //return res.json({status: 400, message: 'Operation Failed, try again'});
-//             throw error;
-             
-//         } else {
-//             for(let i = 0;i < payment.links.length;i++){
-//             if(payment.links[i].rel === 'approval_url'){
-//                 res.redirect(payment.links[i].href);
-//             }
-//             }
-//         }
-//      });
-// });
-
-// router.get('/success', (req, res) => {
-//     //const TransID = transactionID(25)
-//     const payerId = req.query.PayerID;
-//     const paymentId = req.query.paymentId;
-//     const payToken = req.query.token;
-
-//     console.log("payerId",payerId,"paymentId",paymentId, "Payment token", payToken); 
-//     const execute_payment_json = {
-//       "payer_id": payerId,
-//       "transactions": [{
-//           "amount": {
-//               "currency": "USD",
-//               "total": amt
-//           }
-//       }]  
-//     };
+paypal.configure({
+    'mode': 'sandbox',
+    'client_id': 'AZIQ8UQS1ZaBQYU8CwV39QC-qTbihvNjyb3hcM6dcOChZn01tBUo4X80cZjmnach3sf41IagLSBOhCPq',
+    'client_secret': 'EEe6YAUzp5Q5MQgRsnuHEE28H_6ANbnWphfG0i76QWxcY8eKpZJ73xSWDXFjqqhXBoSSfL2mlvLkYH-H'
+  });
   
-//     paypal.payment.execute(paymentId, execute_payment_json, function (error, payment) {
-//       if (error) {
-//           console.log("error",error.response);
-//           throw error;
-//       } else {
-
-//         // process database requests and insert payers information
-//         // if(userFund){
-//         //     const method = req.query.method
-//         //     const service_name = req.query.service_name
-//         //     const myId = req.query.myId
-//         //     const pay_note = req.query.pay_note
-//         //     const category = req.query.category
-
-//         //     // create record for funding purposes
-//         //     const createRecord = TransferFund.create({
-//         //         acct_name: userFund.display_name,
-//         //         acct_number: userFund.tag_id,
-//         //         amount: amt,
-//         //         bank_name: 'Paypal',
-//         //         sender_name: userFund.display_name,
-//         //         sender_acct_number: userFund.tag_id,
-//         //         sender_currency_type: '$',
-//         //         tran_type: 'Credit',
-//         //         transac_nature: req.query.service_name+' '+category,
-//         //         transac_category: req.query.service_name,
-//         //         tran_desc:'Request for virtual funds exchange with '+req.query.service_name+" \n "+req.query.pay_note,
-//         //         tr_year:'',
-//         //         colorcode:'green',
-//         //         trans_method: req.query.method,
-//         //         currency_level:'2',
-//         //         createdBy: userFund._id,
-//         //         tid: TransID,
-//         //         pay_tran: paymentId,
-//         //         pay_token: payToken,
-//         //         payer_tran: payerId,
-//         //         tran_rate: req.query.service_name == 'PayPal'? getCurrentRate.paypal_buying: req.query.service_name == 'Payoneer'? getCurrentRate.payooner_buying: req.query.service_name=='Bitcoin'? getCurrentRate.btc_buying: ''
-//         //         });
-//         //     // check if user activate in-app notification and send notification
-//         //     if(userFund.receive_app_message == true) {
-//         //         const userLogs = Notification.create({
-//         //          alert_username: userFund.display_name,
-//         //          alert_name: userFund.display_name,
-//         //          alert_user_ip: '',
-//         //          alert_country: '',
-//         //          alert_browser: '',
-//         //          alert_date:  Date.now(),
-//         //          alert_user_id: userFund._id,
-//         //          alert_nature: 'Request for virtual funds exchange with '+req.query.service_name,
-//         //          alert_status: 1,
-//         //          alert_read_date: ''
-//         //          })
-//         //      }
- 
-//         //      // create log here
-//         //      const addLogs = SystemActivity.create({
-//         //        log_username: userFund.email,
-//         //        log_name: userFund.display_name,
-//         //        log_acct_number: userFund?.tag_id,
-//         //        log_receiver_name: '',
-//         //        log_receiver_number: '',
-//         //        log_receiver_bank: '',
-//         //        log_country: '',
-//         //        log_swift_code: '',
-//         //        log_desc:'Funds exchange request made',
-//         //        log_amt: '',
-//         //        log_status: 'Successful',
-//         //        log_nature:'Fund exchange request',
-//         //        })
-//         // }
-
-//           res.sendFile(__dirname + "/success.html")
-//       }
-//   });
-// });
-
-// router.get('/cancel', (req, res) => res.send('Cancelled'));
-
+router.post('/create-payment', (req, res) => {
+    const { amount, currency } = req.body;
+    console.log('body details', amount, currency);
+    const createPaymentJson = {
+      intent: 'sale',
+      payer: {
+        payment_method: 'paypal',
+      },
+      redirect_urls: {
+        return_url: "https://ozawebservice.onrender.com/api/success",
+        cancel_url: "https://ozawebservice.onrender.com/api/cancel",
+      },
+      transactions: [{
+        item_list: {
+          items: [{
+            name: 'Product Name',
+            sku: '001',
+            price: amount,
+            currency: currency,
+            quantity: 1,
+          }],
+        },
+        amount: {
+          currency: "USD",
+          total: amount,
+        },
+        description: 'Description of the product',
+      }],
+    };
+  
+    paypal.payment.create(createPaymentJson, (error, payment) => {
+      if (error) {
+        console.error('PayPal Payment Error:', error.response);
+        res.status(500).json({ error: 'Internal Server Error' });
+      } else {
+        for (let i = 0; i < payment.links.length; i++) {
+          if (payment.links[i].rel === 'approval_url') {
+            res.json({ approvalUrl: payment.links[i].href });
+          }
+        }
+      }
+    });
+  });
+  
+router.get('/success', (req, res) => {
+    // Handle successful payment execution here
+    res.send('Payment successful!');
+  });
+  
+router.get('/cancel', (req, res) => {
+    // Handle canceled payment here
+    res.send('Payment canceled.');
+  });
 
 
   // wire transfer pin confirm routes goes here...
