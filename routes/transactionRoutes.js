@@ -1544,6 +1544,265 @@ router.post("/fundBuy_funding", isAuth, async (req, res) => {
         return res.json({status: 500, message: 'Technical issues occurred' })
      }
   });
+
+  // process user sales/purchase request fund goes here...
+router.post("/paypal_checkout", isAuth, async (req, res) => {
+    const dataReceive = req.body;
+    console.log("My data: ", req.body)
+    const TransID = transactionID(25)
+    const nowRate = '';
+    // get the transfer record ID here
+    const filter = { _id: dataReceive.myId };
+        if (dataReceive.myId == "" || dataReceive.myId == null) {
+        return res.json({status: 401, message: 'Invalid user access'})
+        }
+        const getCurrentRate = await GetRate.findOne();
+        
+    try {
+          let userFund = await User.findOne({ _id:  dataReceive.myId }); // here I am checking if user exist then I will get user details
+          if (!userFund) {
+            //console.log("User details: ", userDetails)
+            return res.json({status: 404, message: 'User not found'})// user not found
+          } 
+          else if (userFund){
+              // create record for funding purposes
+              const createRecord = TransferFund.create({
+                acct_name: userFund.display_name,
+                acct_number: userFund.tag_id,
+                amount: dataReceive.amt,
+                bank_name: '',
+                sender_name: userFund.display_name,
+                sender_acct_number: userFund.tag_id,
+                sender_currency_type: '$',
+                tran_type: 'Credit',
+                transac_nature:dataReceive.serviceName+' '+dataReceive.serviceCategory,
+                transac_category: dataReceive.serviceName,
+                tran_desc:'Request for virtual funds exchange with '+dataReceive.serviceName+" \n "+dataReceive.buy_note,
+                tr_year:'',
+                colorcode:'red',
+                trans_method: dataReceive.method,
+                currency_level:'2',
+                createdBy: dataReceive.myId,
+                tid: TransID,
+                pay_tran: dataReceive.orderId,
+                tran_rate: dataReceive.serviceName == 'PayPal'? getCurrentRate.paypal_selling: dataReceive.serviceName == 'Payoneer'? getCurrentRate.payooner_selling: dataReceive.serviceName=='Bitcoin'? getCurrentRate.btc_selling: ''
+                });
+                
+              // check if user activate in-app notification and send notification
+              if(userFund.receive_app_message == true) {
+                 const userLogs = Notification.create({
+                  alert_username: userFund.display_name,
+                  alert_name: userFund.display_name,
+                  alert_user_ip: '',
+                  alert_country: '',
+                  alert_browser: '',
+                  alert_date:  Date.now(),
+                  alert_user_id: userFund._id,
+                  alert_nature: 'Request for virtual funds exchange with '+dataReceive.serviceName,
+                  alert_status: 1,
+                  alert_read_date: ''
+                  })
+              }
+  
+              // create log here
+              const addLogs = await SystemActivity.create({
+                log_username: userFund.email,
+                log_name: userFund.display_name,
+                log_acct_number: userFund?.tag_id,
+                log_receiver_name: '',
+                log_receiver_number: '',
+                log_receiver_bank: '',
+                log_country: '',
+                log_swift_code: '',
+                log_desc:'Funds exchange request made',
+                log_amt: '',
+                log_status: 'Successful',
+                log_nature:'Fund exchange request',
+                })
+              // check if the user activate email notification and send notification
+              if(userFund.receive_email_notification == true){
+                 // send email notification to user
+                 async function main() {
+                  // send mail with defined transport object
+                  const info = await transporter .sendMail({
+                      from: '"Mappido" <noreply@rugipoalumni.zictech-ng.com>', // sender address
+                      to: userFund.email, // list of receivers
+                      subject: 'Account Funding Notification',
+                  text: `Hello ${userFund.display_name}, this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n Order ID is ${dataReceive.orderId}`,
+                      html: `<!DOCTYPE html>
+                      <html>
+                      <head>
+                      <title></title>
+                      <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+                      <meta name="viewport" content="width=device-width, initial-scale=1">
+                      <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+                      <style type="text/css">
+                      
+                      body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+                      table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+                      img { -ms-interpolation-mode: bicubic; }
+                      
+                      img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+                      table { border-collapse: collapse !important; }
+                      body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
+                      
+                      
+                      a[x-apple-data-detectors] {
+                          color: inherit !important;
+                          text-decoration: none !important;
+                          font-size: inherit !important;
+                          font-family: inherit !important;
+                          font-weight: inherit !important;
+                          line-height: inherit !important;
+                      }
+                      
+                      @media screen and (max-width: 480px) {
+                          .mobile-hide {
+                              display: none !important;
+                          }
+                          .mobile-center {
+                              text-align: center !important;
+                          }
+                      }
+                      div[style*="margin: 16px 0;"] { margin: 0 !important; }
+                      </style>
+                      <body style="margin: 0 !important; padding: 0 !important; background-color: #eeeeee;" bgcolor="#eeeeee">
+                      
+                      <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                          <tr>
+                              <td align="center" style="background-color: #eeeeee;" bgcolor="#eeeeee">
+                              
+                              <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
+                                  <tr>
+                                      <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#F44336">
+                                  
+                                      <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;">
+                                          <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
+                                              <tr>
+                                                  <td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; line-height: 35px;" class="mobile-center">
+                                              <h3 style="font-size: 25px; font-weight: 700; margin: 0; color: #ffffff;">Rugipo Alumni Finance</h3>
+                                          </td>
+                                      </tr>
+                                  </table>
+                              </div>
+                              
+                              <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;" class="mobile-hide">
+                                  <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
+                                      <tr>
+                                          <td align="right" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 48px; font-weight: 400; line-height: 48px;">
+                                              <table cellspacing="0" cellpadding="0" border="0" align="right">
+                                                  <tr>
+                                                      <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
+                                                          <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
+                                                          <img src="https://rugipofinance.onrender.com/images/RAF_LOGO.png" width="100" height="100"/> &nbsp;</a></p>
+                                                      </td>
+                                                     
+                                                  </tr>
+                                              </table>
+                                          </td>
+                                      </tr>
+                                  </table>
+                              </div>
+                            
+                              </td>
+                          </tr>
+                          <tr>
+                              <td align="center" style="padding: 35px 35px 20px 35px; background-color: #ffffff;" bgcolor="#ffffff">
+                              <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
+                                  <tr>
+                                      <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
+                                      <img src="https://img.icons8.com/ios/100/null/user-male-circle--v2.png" style="display: block; border: 0px;" /><br>
+                                          <h4 style="font-size: 30px; font-weight: 800; line-height: 36px; color: #333333; margin: 0;">
+                                          Account Opening Successful
+                                          </h4>
+                                      </td>
+                                  </tr>
+                                  <tr>
+                                      <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
+                                          <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
+                                          Hello ${userFund.display_name}, this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment received. \n Request reference / Transaction ID is ${TransID}, \n 
+                                          Order ID is ${dataReceive.orderId} Thank you
+                                          </p>
+                                      </td>
+                                  </tr>
+                                  
+                                  <tr>
+                                      <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
+                                          <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
+                                          </p>
+                                      </td>
+                                  </tr>
+                              </table>
+                              
+                              </td>
+                          </tr>
+                          
+                          <tr>
+                              <td align="center" style=" padding: 35px; background-color: #ff7361;" bgcolor="#1b9ba3">
+                              <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
+                                  <tr>
+                                      <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
+                                          <h5 style="font-size: 18px; font-weight: 600; line-height: 15px; color: #ffffff; margin: 0;">
+                                              Contact support for more details.
+                                          </h5>
+                                      </td>
+                                  </tr>
+                                  <tr>
+                                      <td align="center" style="padding: 25px 0 15px 0;">
+                                          <table border="0" cellspacing="0" cellpadding="0">
+                                              <tr>
+                                                  <td align="center" style="border-radius: 5px;" bgcolor="#66b3b7">
+                                                    <a href="https://veeapps.co.in/en/" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #F44336; padding: 15px 30px; border: 1px solid #F44336; display: block;">Contact</a>
+                                                  </td>
+                                              </tr>
+                                          </table>
+                                      </td>
+                                  </tr>
+                              </table>
+                              </td>
+                          </tr>
+                          <tr>
+                              <td align="center" style="padding: 35px; background-color: #ffffff;" bgcolor="#ffffff">
+                              <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
+                                  
+                                  <tr>
+                                      <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px; padding: 5px 0 10px 0;">
+                                          <p style="font-size: 14px; font-weight: 800; line-height: 18px; color: #333333;">
+                                              675 Parko Avenue<br>
+                                              LA, CA 02232
+                                          </p>
+                                      </td>
+                                  </tr>
+                                  <tr>
+                                      <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
+                                          <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
+                                              You have received this email because you are a Customer of Rugipo Alumni Finance<br>
+              This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of Rugipo Alumni Finance. It is confidential, private and intended for the addressee only.
+                                          </p>
+                                      </td>
+                                  </tr>
+                              </table>
+                              </td>
+                          </tr>
+                      </table>
+                      </td>
+                  </tr>
+              </table>
+              </body>
+                      </html>`,
+                       });
+                  }
+                main().catch('Email Message Error', console.error);
+              }       
+         // success message
+          res.status(201).json({msg: '200'})
+          }
+      } catch (err) {
+         // err message
+       console.log(err)
+        return res.json({status: 500, message: 'Technical issues occurred' })
+     }
+  });
   
   // confirm pin from mobile app here..
 router.post("/confirm_pinMobile", async (req, res) => {
