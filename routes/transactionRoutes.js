@@ -4,7 +4,6 @@ const jwt = require("jsonwebtoken");
 const currencyFormatter = require('currency-formatter');
 const paypal = require('paypal-rest-sdk');
 var fetch = require('node-fetch');
-
 const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
 
@@ -53,7 +52,6 @@ function verifyToken(req, res, next) {
     return result;
 }
   
-
 // get dates and format it
 var now = new Date();
 var dateString = moment(now).format('YYYY-MM-DD');
@@ -159,8 +157,12 @@ paypal.configure({
   });
   
   var newAmt = null;
+
 router.post('/create-payment', (req, res, next) => {
     const { amount, currency } = req.body;
+    if(amount == null || amount == '' || amount ==undefined){
+        return res.status(500).json({ error: 'Invalid request! User reload the page' });
+    }
     var receiveAmt = amount;
     newAmt = receiveAmt;
     const amt = req.body.amount;
@@ -171,8 +173,8 @@ router.post('/create-payment', (req, res, next) => {
         payment_method: 'paypal',
       },
       redirect_urls: {
-        return_url: "https://ozawebservice.onrender.com/api/success",
-        cancel_url: "https://ozawebservice.onrender.com/api/cancel",
+        return_url: "http://192.168.1.169:3500/api/success",
+        cancel_url: "http://192.168.1.169:3500/api/cancel",
       },
       transactions: [{
         item_list: {
@@ -192,6 +194,7 @@ router.post('/create-payment', (req, res, next) => {
       }],
     };
   
+
 paypal.payment.create(createPaymentJson, (error, payment) => {
       if (error) {
         console.error('PayPal Payment Error:', error.response);
@@ -226,20 +229,22 @@ console.log("payerId",payerId,"paymentId",paymentId, "Payment token", payToken);
     }]  
   };
   
+  if(payerId == null || paymentId==null || payToken ==null){
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
 paypal.payment.execute(paymentId, execute_payment_json, function (error, payment) {
-    
     if (error) {
         console.log("error",error.response);
+        return res.status(500).json({ error: 'Internal Server Error' });
         throw error;
     } else {
 
-res.send('Payment successful!');
-//res.sendFile(__dirname + "/success.html")
+//res.send('Payment successful!');
+res.sendFile(__dirname + "/successful.html")
     }
     });
   });
- 
-  
+
 router.get('/cancel', (req, res) => {
     // Handle canceled payment here
     res.send('Payment canceled.');
