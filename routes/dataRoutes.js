@@ -382,7 +382,7 @@ router.get("/all_historyMobile/:id", isAuth, async (req, res) => {
 // history base on paypal transaction
 router.get("/all_historyMobilePapay/:id",isAuth, async (req, res) => {
         const userId = req.params.id;
-        const paypalSales = 'Paypal'
+        const paypalSales = 'PayPal'
         const filterReceiver = 'Paypal';
         const user_id = {_id: req.params.id }
         const itemsPerPage = 5; // Number of transactions per page

@@ -3,6 +3,7 @@ const router = express.Router()
 const jwt = require("jsonwebtoken");
 const currencyFormatter = require('currency-formatter');
 const paypal = require('paypal-rest-sdk');
+var fetch = require('node-fetch');
 
 const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
@@ -11,7 +12,6 @@ const User = require('../models/User');
 const TransferFund = require('../models/fundTransfer');
 const TransfersHistory = require('../models/fundTransfer')
 const Investment = require('../models/investPlan')
-
 const InvestorsCreditAccount = require('../models/InvestorsEarning');
 const FundUserAccount = require('../models/fundAccount')
 const SystemActivity = require('../models/SystemActivityLogs');
@@ -158,8 +158,10 @@ paypal.configure({
     'client_secret': 'EEe6YAUzp5Q5MQgRsnuHEE28H_6ANbnWphfG0i76QWxcY8eKpZJ73xSWDXFjqqhXBoSSfL2mlvLkYH-H'
   });
   
+  var amt = null;
 router.post('/create-payment', (req, res) => {
     const { amount, currency } = req.body;
+    const amt = req.body.amount;
     console.log('body details', amount, currency);
     const createPaymentJson = {
       intent: 'sale',
@@ -175,20 +177,20 @@ router.post('/create-payment', (req, res) => {
           items: [{
             name: 'Product Name',
             sku: '001',
-            price: amount,
+            price: amt,
             currency: currency,
             quantity: 1,
           }],
         },
         amount: {
           currency: "USD",
-          total: amount,
+          total: amt,
         },
         description: 'Description of the product',
       }],
     };
   
-    paypal.payment.create(createPaymentJson, (error, payment) => {
+paypal.payment.create(createPaymentJson, (error, payment) => {
       if (error) {
         console.error('PayPal Payment Error:', error.response);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -199,13 +201,54 @@ router.post('/create-payment', (req, res) => {
           }
         }
       }
+      //var transaction = response.purchase_units[0].payments.captures[0];
+      console.log("Transaction : ", payment)
     });
   });
   
+  // success route here
 router.get('/success', (req, res) => {
     // Handle successful payment execution here
-    res.send('Payment successful!');
+  const payerId = req.query.PayerID;
+  const paymentId = req.query.paymentId;
+  const payToken = req.query.token;
+
+    // try to get the payment details from here
+    const paymentDetails = fetch('https://api-m.paypal.com/v2/payments/captures/4DM37382183629411', {
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer AZIQ8UQS1ZaBQYU8CwV39QC-qTbihvNjyb3hcM6dcOChZn01tBUo4X80cZjmnach3sf41IagLSBOhCPq'
+        }
+    });
+        paymentDetails.then(function(result){
+        console.log('Pay Details ', result)
+        })
+
+
+console.log("payerId",payerId,"paymentId",paymentId, "Payment token", payToken); 
+  const execute_payment_json = {
+    "payer_id": payerId,
+    "transactions": [{
+        "amount": {
+            "currency": "USD",
+            "total": 15
+        }
+    }]  
+  };
+  
+paypal.payment.execute(paymentId, execute_payment_json, function (error, payment) {
+    
+    if (error) {
+        console.log("error",error.response);
+        throw error;
+    } else {
+
+res.send('Payment successful!');
+//res.sendFile(__dirname + "/success.html")
+    }
+    });
   });
+ 
   
 router.get('/cancel', (req, res) => {
     // Handle canceled payment here
@@ -1577,9 +1620,9 @@ router.post("/paypal_checkout", isAuth, async (req, res) => {
                 tran_type: 'Credit',
                 transac_nature:dataReceive.serviceName+' '+dataReceive.serviceCategory,
                 transac_category: dataReceive.serviceName,
-                tran_desc:'Request for virtual funds exchange with '+dataReceive.serviceName+" \n "+dataReceive.buy_note,
+                tran_desc:'Request for virtual funds exchange with '+dataReceive.serviceName+" \n "+dataReceive.sell_note,
                 tr_year:'',
-                colorcode:'red',
+                colorcode:'green',
                 trans_method: dataReceive.method,
                 currency_level:'2',
                 createdBy: dataReceive.myId,

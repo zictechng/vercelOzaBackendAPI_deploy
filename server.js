@@ -51,13 +51,7 @@ app.use("public/images", express.static("images"));
 // app route goes here
 app.use('/', require('./routes/root'))
 
-// paypal.configure({
-//     'mode': 'sandbox', //sandbox or live
-//     'client_id': 'AZIQ8UQS1ZaBQYU8CwV39QC-qTbihvNjyb3hcM6dcOChZn01tBUo4X80cZjmnach3sf41IagLSBOhCPq',
-//     'client_secret': 'EEe6YAUzp5Q5MQgRsnuHEE28H_6ANbnWphfG0i76QWxcY8eKpZJ73xSWDXFjqqhXBoSSfL2mlvLkYH-H'
-//   });
 
-//   var amt = null;
   
 app.use('/api/users', require('./routes/userRoutes'))
 app.use("/api", registerUser)
@@ -67,65 +61,90 @@ app.use("/api", transactionData)
 app.use("/api", adminUpdateData)
 //app.use('/notes', require('./routes/noteRoutes'))
 
-paypal.configure({
-    'mode': 'sandbox',
-    'client_id': 'AZIQ8UQS1ZaBQYU8CwV39QC-qTbihvNjyb3hcM6dcOChZn01tBUo4X80cZjmnach3sf41IagLSBOhCPq',
-    'client_secret': 'EEe6YAUzp5Q5MQgRsnuHEE28H_6ANbnWphfG0i76QWxcY8eKpZJ73xSWDXFjqqhXBoSSfL2mlvLkYH-H'
-  });
-  
-  app.post('/create-payment', (req, res) => {
-    const { amount, currency } = req.body;
-  
-    const createPaymentJson = {
-      intent: 'sale',
-      payer: {
-        payment_method: 'paypal',
-      },
-      redirect_urls: {
-        return_url: "https://ozawebservice.onrender.com/success",
-        cancel_url: "https://ozawebservice.onrender.com/cancel",
-      },
-      transactions: [{
-        item_list: {
-          items: [{
-            name: 'Product Name',
-            sku: '001',
-            price: amount,
-            currency,
-            quantity: 1,
-          }],
-        },
-        amount: {
-          currency: "USD",
-          total: amount,
-        },
-        description: 'Description of the product',
-      }],
-    };
-  
-    paypal.payment.create(createPaymentJson, (error, payment) => {
-      if (error) {
-        console.error('PayPal Payment Error:', error.response);
-        res.status(500).json({ error: 'Internal Server Error' });
-      } else {
-        for (let i = 0; i < payment.links.length; i++) {
-          if (payment.links[i].rel === 'approval_url') {
-            res.json({ approvalUrl: payment.links[i].href });
-          }
-        }
-      }
-    });
-  });
-  
-  app.get('/success', (req, res) => {
-    // Handle successful payment execution here
-    res.send('Payment successful!');
-  });
-  
-  app.get('/cancel', (req, res) => {
-    // Handle canceled payment here
-    res.send('Payment canceled.');
-  });
+// paypal.configure({
+//   'mode': 'sandbox', //sandbox or live
+//   'client_id': 'AZIQ8UQS1ZaBQYU8CwV39QC-qTbihvNjyb3hcM6dcOChZn01tBUo4X80cZjmnach3sf41IagLSBOhCPq',
+//   'client_secret': 'EEe6YAUzp5Q5MQgRsnuHEE28H_6ANbnWphfG0i76QWxcY8eKpZJ73xSWDXFjqqhXBoSSfL2mlvLkYH-H'
+// });
+
+// var amt = null;
+
+
+// app.get('/create-payment', (req, res) => {
+//   //amt = req.body.amount
+//   amt = req.params.amount
+//  const { amount, currency } = req.body;
+//   console.log("Money ", amt)
+//   const create_payment_json = {
+//       "intent": "sale",
+//       "payer": {
+//           "payment_method": "paypal"
+//       },
+//       "redirect_urls": {
+//           "return_url": "192.168.1.169:3500/success",
+//           "cancel_url": "192.168.1.169:3500/cancel"
+//       },
+//       "transactions": [{
+//           "item_list": {
+//               "items": [{
+//                   "name": "Red Hat",
+//                   "sku": "001",
+//                   "price": 11,
+//                   "currency": "USD",
+//                   "quantity": 1
+//               }]
+//           },
+//           "amount": {
+//               "currency": "USD",
+//               "total": 11
+//           },
+//           "description": "Hat for the best team ever"
+//       }]
+//   };
+
+//   paypal.payment.create(create_payment_json, function (error, payment) {
+//       if (error) {
+//           console.error("Paypal Payment Error", error.message);
+//           //return res.json({status: 400, message: 'Operation Failed, try again'});
+//           throw error;
+           
+//       } else {
+//           for(let i = 0;i < payment.links.length;i++){
+//           if(payment.links[i].rel === 'approval_url'){
+//               res.redirect(payment.links[i].href);
+//           }
+//           }
+//       }
+//    });
+// });
+
+// app.get('/success', (req, res) => {
+//   //const TransID = transactionID(25)
+//   const payerId = req.query.PayerID;
+//   const paymentId = req.query.paymentId;
+//   const payToken = req.query.token;
+
+//   console.log("payerId",payerId,"paymentId",paymentId, "Payment token", payToken); 
+//   const execute_payment_json = {
+//     "payer_id": payerId,
+//     "transactions": [{
+//         "amount": {
+//             "currency": "USD",
+//             "total": 11
+//         }
+//     }]  
+//   };
+
+//   paypal.payment.execute(paymentId, execute_payment_json, function (error, payment) {
+//     if (error) {
+//         console.log("error",error.response);
+//         throw error;
+//     } else {
+
+// res.sendFile(__dirname + "/success.html")
+//     }
+// });
+// });
 
 // this will handle any request/routes that is not found in the server
 // and then send 404 error page to the users
