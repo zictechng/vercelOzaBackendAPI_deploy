@@ -158,9 +158,11 @@ paypal.configure({
     'client_secret': 'EEe6YAUzp5Q5MQgRsnuHEE28H_6ANbnWphfG0i76QWxcY8eKpZJ73xSWDXFjqqhXBoSSfL2mlvLkYH-H'
   });
   
-  var amt = null;
-router.post('/create-payment', (req, res) => {
+  var newAmt = null;
+router.post('/create-payment', (req, res, next) => {
     const { amount, currency } = req.body;
+    var receiveAmt = amount;
+    newAmt = receiveAmt;
     const amt = req.body.amount;
     console.log('body details', amount, currency);
     const createPaymentJson = {
@@ -201,10 +203,8 @@ paypal.payment.create(createPaymentJson, (error, payment) => {
           }
         }
       }
-      //var transaction = response.purchase_units[0].payments.captures[0];
-      console.log("Transaction : ", payment)
     });
-  });
+});
   
   // success route here
 router.get('/success', (req, res) => {
@@ -212,18 +212,8 @@ router.get('/success', (req, res) => {
   const payerId = req.query.PayerID;
   const paymentId = req.query.paymentId;
   const payToken = req.query.token;
-
-    // try to get the payment details from here
-    const paymentDetails = fetch('https://api-m.paypal.com/v2/payments/captures/4DM37382183629411', {
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer AZIQ8UQS1ZaBQYU8CwV39QC-qTbihvNjyb3hcM6dcOChZn01tBUo4X80cZjmnach3sf41IagLSBOhCPq'
-        }
-    });
-        paymentDetails.then(function(result){
-        console.log('Pay Details ', result)
-        })
-
+  
+console.log('Successful payment execution ', newAmt)
 
 console.log("payerId",payerId,"paymentId",paymentId, "Payment token", payToken); 
   const execute_payment_json = {
@@ -231,7 +221,7 @@ console.log("payerId",payerId,"paymentId",paymentId, "Payment token", payToken);
     "transactions": [{
         "amount": {
             "currency": "USD",
-            "total": 15
+            "total": newAmt
         }
     }]  
   };
@@ -254,7 +244,6 @@ router.get('/cancel', (req, res) => {
     // Handle canceled payment here
     res.send('Payment canceled.');
   });
-
 
   // wire transfer pin confirm routes goes here...
 router.post("/confirm_pin", verifyToken, async (req, res, next) => {
