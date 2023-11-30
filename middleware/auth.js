@@ -17,11 +17,11 @@ exports.isAuth = async (req, res, next) =>{
             
         } catch (error) {
             if(error.name === 'JsonWebTokenError'){
-                return res.json({status: 500, message: ' Invalid authorization'});
+                return res.json({status: 401, message: ' Invalid authorization'});
             }
             // to check if token has expired error message
             if(error.name === 'TokenExpiredError'){
-                return res.json({status: 500, message: ' Session has expired, login again'});
+                return res.json({status: 402, message: ' Session has expired, login again'});
             }
         }
              //return res.json({status: 500, message: ' Internal Server Error occurred'});

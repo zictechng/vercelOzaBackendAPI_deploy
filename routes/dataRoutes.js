@@ -34,8 +34,6 @@ const userBankDetails = require('../models/UserBankDetails');
 const DocumentUpload = require('../models/DocumentUpload');
 const Referrals = require('../models/referralUser')
 
-
-
 const uploadLocation = "public/images"; // this is the image store location in the project
 const storage = multer.diskStorage({
   destination: (req, file, callBack) => {
@@ -108,9 +106,10 @@ router.get("/userProfileMobile/:id", async (req, res) => {
   //console.log(userId);
   try {
     const userDetails = await User.findOne({ _id: userId });
+    const getAppSetting = await AppSetting.findOne();
     const { password, ...others } = userDetails._doc; // this will remove password from the details send to server.
 
-    res.send({ msg: '200', userData: others})
+    res.send({ msg: '200', userData: others, appData: getAppSetting})
   } catch (err) {
     if(!userDetails(err)) {
         console.log("user found found");
@@ -243,10 +242,9 @@ router.get("/fetchBankInfo", async (req, res) => {
     //console.log("Recent record ", userId);
     try {
       const recentTransaction = await TransferFund.find({createdBy: userId})
-      .sort({ creditOn: -1 }).limit(6);
+      .sort({ creditOn: -1 }).limit(5);
       res.send(recentTransaction)
-      //res.json({status: 201, message: ' Login Successful'})
-      //console.log("Data fetch", recentTransaction)
+        //console.log("Data fetch", recentTransaction)
     } catch (err) {
       res.status(500).json(err.message);
       console.log(err.message);
@@ -319,7 +317,7 @@ router.get("/fetchBankInfo", async (req, res) => {
   
 router.get("/all_statementMobile/:id", async (req, res) => {
     const userId = req.params.id;
-    const itemsPerPage = 10; // Number of transactions per page
+    const itemsPerPage = 15; // Number of transactions per page
     const page = parseInt(req.query.page) || 1; // Get page number from query or default to 1
     const skip = (page - 1) * itemsPerPage;
       const countAll = await TransferFund.find({createdBy: userId }).count();
@@ -351,7 +349,7 @@ router.get("/all_statementMobile/:id", async (req, res) => {
     // all history transactions here
 router.get("/all_historyMobile/:id", isAuth, async (req, res) => {
       const userId = req.params.id;
-      const itemsPerPage = 5; // Number of transactions per page
+      const itemsPerPage = 15; // Number of transactions per page
       const page = parseInt(req.query.page) || 1; // Get page number from query or default to 1
       const skip = (page - 1) * itemsPerPage;
       const countAll = await TransferFund.find({createdBy: userId }).count();
@@ -385,7 +383,7 @@ router.get("/all_historyMobilePapay/:id",isAuth, async (req, res) => {
         const paypalSales = 'PayPal'
         const filterReceiver = 'Paypal';
         const user_id = {_id: req.params.id }
-        const itemsPerPage = 5; // Number of transactions per page
+        const itemsPerPage = 15; // Number of transactions per page
         const page = parseInt(req.query.page) || 1; // Get page number from query or default to 1
         const skip = (page - 1) * itemsPerPage;
         const countAll = await TransferFund.find({createdBy: userId, transac_category: paypalSales }).count();
@@ -422,7 +420,7 @@ router.get("/all_historyMobilePapay/:id",isAuth, async (req, res) => {
 router.get("/all_historyMobilePayooner/:id",isAuth, async (req, res) => {
   const userId = req.params.id;
   const paypalSales = 'Payoneer'
-  const itemsPerPage = 5; // Number of transactions per page
+  const itemsPerPage = 15; // Number of transactions per page
   const page = parseInt(req.query.page) || 1; // Get page number from query or default to 1
   const skip = (page - 1) * itemsPerPage;
     const countAll = await TransferFund.find({createdBy: userId, transac_category: paypalSales }).count();
@@ -458,7 +456,7 @@ router.get("/all_historyMobilePayooner/:id",isAuth, async (req, res) => {
 router.get("/user_referrals/:id",isAuth, async (req, res) => {
   const userId = req.params.id;
   const paypalSales = 'Referrals';
-  const itemsPerPage = 10; // Number of transactions per page
+  const itemsPerPage = 15; // Number of transactions per page
   const page = parseInt(req.query.page) || 1; // Get page number from query or default to 1
   const skip = (page - 1) * itemsPerPage;
   const countAll = await Referrals.find({createdBy: userId}).count();
@@ -512,7 +510,7 @@ router.get("/history-wallet/:id", isAuth, async (req, res) => {
     try {
       const walletStatement = await FundUserAccount.find({ fund_tag_id: userId })
         .sort({ creditOn: -1 })
-        .limit(5);
+        .limit(10);
       //const totalItems =  await TransferFund.countDocuments()
       res.status(200).send(walletStatement);
       //console.log(walletStatement);
@@ -527,12 +525,11 @@ router.get("/user_Wallet_summary/:id", isAuth, async (req, res) => {
   let userId = req.params.id;
   //console.log("My ID", userId);
   try {
-    
-      //console.log('Balance ', userWalletBalance)
+       //console.log('Balance ', userWalletBalance)
     const userWallet = await FundUserAccount.aggregate(
       [{$match: {fund_tag_id: userId, fund_status: 'Approved'}, },
       {$group: {_id: null, totalAmount: { $sum: '$amount' }}}]);
-      console.log(" wallet", userWallet)
+        //console.log(" wallet", userWallet)
       res.send({ msg: '201', feedback: userWallet})
     } catch (err) {
     res.status(500).json(err.message);
@@ -641,7 +638,7 @@ router.get("/user_tran_history", verifyToken, async (req, res) => {
 // user request route to block their account goes here...
 router.post("/block_user_acct", isAuth, async (req, res) => {
   const userId = req.body;
-  console.log("My Blocked ID: ", req.body)
+    //console.log("My Blocked ID: ", req.body)
   // get the transfer record ID here
   const filter = { _id: userId.block_id };
       if (userId == "" || userId == null) {
@@ -1781,7 +1778,7 @@ router.get("/user_finance_chart/:id", async (req, res) => {
  // get user notification from Mobile here here..
  router.get("/user_notificationMobile/:id", isAuth, async (req, res) => {
   let myId = req.params.id;
-  console.log('My ID ', req.params.id)
+  //console.log('My ID ', req.params.id)
   const itemsPerPage = 10; // Number of transactions per page
   const page = parseInt(req.query.page) || 1; // Get page number from query or default to 1
   const skip = (page - 1) * itemsPerPage;
@@ -1816,7 +1813,7 @@ router.get("/user_finance_chart/:id", async (req, res) => {
       return res.json({status: 404, message: 'No more records'})
     }
     if(notifyDetails){
-    console.log("Notification Details ", notifyDetails)
+      //console.log("Notification Details ", notifyDetails)
     //res.status(200).send(notifyDetails);
       res.send(notifyDetails)
     }
@@ -1826,8 +1823,6 @@ router.get("/user_finance_chart/:id", async (req, res) => {
     console.log(err.message);
   }
 });
-
-
 
 // count user notification Message Mobile here here..
 router.get("/user_messageCount/:id", isAuth, async (req, res) => {

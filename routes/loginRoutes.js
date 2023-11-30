@@ -8,10 +8,12 @@ const bcrypt = require('bcrypt')
 const User = require('../models/User');
 const SystemActivity = require('../models/SystemActivityLogs');
 const UserLogs = require('../models/UserLogs')
+const AppSetting = require('../models/AppSettingDetails')
 
 const nodemailer = require("nodemailer");
 
 const transporter = require('../controllers/mailSender');
+const { isAuth } = require('../middleware/auth');
 // this function verify if the token user sent is valid
 function verifyToken(req, res, next) {
     if (!req.headers.authorization){
@@ -42,8 +44,7 @@ router.post("/login", async (req, res, next) => {
     const file = req.file;
     const filter = req.body;
             //console.log("Login Data ", req.body);
-
-            //check in input fields is empty
+         //check in input fields is empty
             if(filter.username == '' || filter.password == ''){
                 return res.json({status: 400, message: ' All fields are required'})
                 //return res.status(400).json({msg: '400'}) //Fields required
@@ -52,6 +53,7 @@ router.post("/login", async (req, res, next) => {
             try {
             // Check if user exist
             const userExist = await User.findOne({email: filter.username})
+            const getAppSetting = await AppSetting.findOne();
             
             if(!userExist){
                 //console.log('Wrong username entered!');
@@ -78,16 +80,18 @@ router.post("/login", async (req, res, next) => {
                     //console.log('The password does NOT match!');
                 }
                 else {
-                    
                     const token = jwt.sign({userId:userExist._id}, process.env.SECRET_LOGIN_KEY,
                         {expiresIn:'1d'});
+                    // get system settings here
+                   
 
-                     //let payload = { subject: userExist._id }; 
+                   //let payload = { subject: userExist._id }; 
                     // subject is the key, User._id the value
                     //let token = jwt.sign(payload, process.env.SECRET_LOGIN_KEY); 
                     // 'secretkey' can be anything of your choice and you can put it in .env file
                     const { password, ...others } = userExist._doc; // this will remove password from the details send to server.
-                      // create log here
+                    
+                    // create log here
                 const addLogs = SystemActivity.create({
                     log_username: userExist.email,
                     log_name: userExist.surname+' '+userExist.display_name,
@@ -292,7 +296,7 @@ router.post("/login", async (req, res, next) => {
                   }
                     main().catch('Message Error', console.error);
                     
-                 res.send({ msg: '200', token: token, userData: others})
+                 res.send({ msg: '200', token: token, userData: others, appData: getAppSetting})
                 //res.json({msg: 200, token: token, userData: others})
             //console.log('Environment data!', process.env.SECRET_KEY);
         }
@@ -348,6 +352,11 @@ router.get("/user_logout/:id", async (req, res, next) => {
             res.status(500).json(err);
             console.log(err.message);
         }
+    }); 
+
+    // route to logout user
+router.get("/authenticate_user/:id", isAuth, async (req, res, next) => {
+    let myId = req.params.id;
     }); 
     
     // verify user login state if it is valid or not
@@ -440,7 +449,7 @@ router.post("/otp_verify", async (req, res) => {
               };
 
                 if (!matches){
-                    console.log("OTP not matched ");
+                    //console.log("OTP not matched ");
                     return res.json({status: 404, message: ' Invalid otp code'})
                   }
                 else if(matches){
@@ -462,15 +471,7 @@ router.post("/otp_verify", async (req, res) => {
                     log_nature:'User verify account',
                     })
                
-                    var transporter  = nodemailer.createTransport({
-                        host: process.env.EMAIL_HOST,
-                        port: 587,
-                        auth: {
-                          user: process.env.EMAIL_USER_KEY,
-                          pass: process.env.EMAIL_API_PASSWORD
-                        }
-                      });
-                      
+                   
                       // async..await is not allowed in global scope, must use a wrapper
                       async function main() {
                         // send mail with defined transport object

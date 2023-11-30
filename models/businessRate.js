@@ -5,8 +5,8 @@ const DealingRateSchema = new mongoose.Schema({
     btc_buying: String,
     paypal_selling: String,
     paypal_buying: String,
-    payooner_selling: String,
-    payooner_buying: String,
+    payoneer_selling: String,
+    payoneer_buying: String,
     app_status: {
         type: String,
         default: 'Pending',

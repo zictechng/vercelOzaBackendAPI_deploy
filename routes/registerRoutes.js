@@ -10,6 +10,7 @@ const multer = require("multer");
 const User = require('../models/User');
 const SystemActivity = require('../models/SystemActivityLogs');
 const userBankDetails = require('../models/UserBankDetails');
+const UserReferral = require('../models/referralUser');
 const nodemailer = require("nodemailer");
 
 const transporter = require('../controllers/mailSender');
@@ -109,14 +110,14 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
     const randomSixDigitNumber = generateRandomNumber();
     //console.log("Data submitted ", req.body)
     
-    const dataReceived = {display_name: req.body.display_name,
+    const dataReceived = {display_name: req.body.display_name, share_code: req.body.share_code,
     gender: req.body.gender, dob: req.body.dob, email: req.body.email, username: req.body.username,
     password: req.body.password, phone: req.body.phone, state: req.body.state, city: req.body.city,
     currency_type: req.body.currency_type, acct_type: req.body.acct_type, country: req.body.country,
     address: req.body.address };
     
     //get the object values of the request properties received
-    const {display_name, gender, 
+    const {display_name, gender,
         dob, email, username, password, phone, state, city, currency_type,
         acct_type, country, address, image_photo} = req.body
        
@@ -374,7 +375,21 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
         //now let create/save the user details
             const user = await User.create(userObject)
             if(user){
-             // create log here
+            let userDetails = await User.findOne({tag_id: req.body.share_code });
+             // create referral here
+             if(userDetails){
+                const createReferral = await UserReferral.create({
+                    ref_mainEmail: userDetails.email,
+                    ref_mainTag: userDetails.tag_id,
+                    ref_userEmail: req.body.email,
+                    ref_userName: req.body.display_name,
+                    ref_status: 'Pending',
+                    createdBy: userDetails._id
+                   });
+             }
+           
+
+           // create log here
            const addLogs = await SystemActivity.create({
             log_username: user.username,
             log_name: user.display_name,

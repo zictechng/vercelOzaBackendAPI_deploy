@@ -51,7 +51,6 @@ function verifyToken(req, res, next) {
     }
     return result;
 }
-  
 // get dates and format it
 var now = new Date();
 var dateString = moment(now).format('YYYY-MM-DD');
@@ -151,36 +150,40 @@ router.post("/wire_transfer_funds", verifyToken, async (req, res) => {
 // paypal checkout routes goes here
 
 paypal.configure({
-    'mode': 'sandbox',
-    'client_id': 'AZIQ8UQS1ZaBQYU8CwV39QC-qTbihvNjyb3hcM6dcOChZn01tBUo4X80cZjmnach3sf41IagLSBOhCPq',
-    'client_secret': 'EEe6YAUzp5Q5MQgRsnuHEE28H_6ANbnWphfG0i76QWxcY8eKpZJ73xSWDXFjqqhXBoSSfL2mlvLkYH-H'
+    'mode': process.env.PAYPAL_MODE,
+    'client_id': process.env.PAYPAL_KEY,
+    'client_secret': process.env.PAYPAL_SECRET,
   });
   
   var newAmt = null;
+  var passDetails = '';
 
-router.post('/create-payment', (req, res, next) => {
+router.post('/create-payment', isAuth, (req, res, next) => {
     const { amount, currency } = req.body;
+    const {tag_id,myId,sell_note,serviceName,serviceCategory,method} = req.body;
     if(amount == null || amount == '' || amount ==undefined){
         return res.status(500).json({ error: 'Invalid request! User reload the page' });
     }
     var receiveAmt = amount;
     newAmt = receiveAmt;
     const amt = req.body.amount;
-    console.log('body details', amount, currency);
+   // console.log('body details', req.body);
+    passDetails = req.body;
+
     const createPaymentJson = {
       intent: 'sale',
       payer: {
         payment_method: 'paypal',
       },
       redirect_urls: {
-        return_url: "http://192.168.1.169:3500/api/success",
-        cancel_url: "http://192.168.1.169:3500/api/cancel",
+        return_url: process.env.SERVER_BASEURL+'/api/success',
+        cancel_url: process.env.SERVER_BASEURL+'/api/cancel',
       },
       transactions: [{
         item_list: {
           items: [{
-            name: 'Product Name',
-            sku: '001',
+            name: 'OZA Paypal payment transaction',
+            sku: 'OZA-PAYPAL',
             price: amt,
             currency: currency,
             quantity: 1,
@@ -190,10 +193,9 @@ router.post('/create-payment', (req, res, next) => {
           currency: "USD",
           total: amt,
         },
-        description: 'Description of the product',
+        description: 'Paypal funds exchange payment request',
       }],
     };
-  
 
 paypal.payment.create(createPaymentJson, (error, payment) => {
       if (error) {
@@ -215,10 +217,8 @@ router.get('/success', (req, res) => {
   const payerId = req.query.PayerID;
   const paymentId = req.query.paymentId;
   const payToken = req.query.token;
-  
-console.log('Successful payment execution ', newAmt)
 
-console.log("payerId",payerId,"paymentId",paymentId, "Payment token", payToken); 
+//console.log("payerId",payerId, "paymentId ", paymentId, "Payment token", payToken); 
   const execute_payment_json = {
     "payer_id": payerId,
     "transactions": [{
@@ -238,9 +238,11 @@ paypal.payment.execute(paymentId, execute_payment_json, function (error, payment
         return res.status(500).json({ error: 'Internal Server Error' });
         throw error;
     } else {
-
-//res.send('Payment successful!');
-res.sendFile(__dirname + "/successful.html")
+        //console.log("success ID ", req.query)
+        // the custom function to execute the payment record details creation here
+        processPaymentDetails(passDetails, paymentId)
+        res.send('Payment successful')
+//res.sendFile(__dirname + "/successful.html")
     }
     });
   });
@@ -250,6 +252,257 @@ router.get('/cancel', (req, res) => {
     res.send('Payment canceled.');
   });
 
+  // custom function to handle payment details record creation here
+const processPaymentDetails = async(data, paymentId) =>{
+    const TransID = transactionID(25)
+       
+    const getCurrentRate = await GetRate.findOne();
+    try {
+        let userFund = await User.findOne({ _id: data.myId }); // here I am checking if user exist then I will get user details
+        if (!userFund) {
+          //console.log("User details: ", userDetails)
+          return res.json({status: 404, message: 'User not found'})// user not found
+        } 
+        else if (userFund){
+            // create record for funding purposes
+            const createRecord = TransferFund.create({
+              acct_name: userFund.display_name,
+              acct_number: userFund.tag_id,
+              amount: data.amount,
+              bank_name: '',
+              sender_name: userFund.display_name,
+              sender_acct_number: userFund.tag_id,
+              sender_currency_type: '$',
+              tran_type: 'Credit',
+              transac_nature:data.serviceName+' '+data.serviceCategory,
+              transac_category: data.serviceName,
+              tran_desc:'Request for virtual funds exchange with '+data.serviceName+" \n "+data.sell_note,
+              tr_year:'',
+              colorcode:'green',
+              trans_method: data.method,
+              currency_level:'2',
+              createdBy: data.myId,
+              tid: TransID,
+              trans_balance: data.total_money,
+              pay_tran: paymentId,
+              tran_rate: data.serviceName == 'PayPal'? getCurrentRate.paypal_selling: data.serviceName == 'Payoneer'? getCurrentRate.payooner_selling: data.serviceName=='Bitcoin'? getCurrentRate.btc_selling: ''
+              });
+              
+            // check if user activate in-app notification and send notification
+            if(userFund.receive_app_message == true) {
+               const userLogs = Notification.create({
+                alert_username: userFund.display_name,
+                alert_name: userFund.display_name,
+                alert_user_ip: '',
+                alert_country: '',
+                alert_browser: '',
+                alert_date:  Date.now(),
+                alert_user_id: userFund._id,
+                alert_nature: 'Request for virtual funds exchange with '+data.serviceName,
+                alert_status: 1,
+                alert_read_date: ''
+                })
+            }
+
+            // create log here
+            const addLogs = await SystemActivity.create({
+              log_username: userFund.email,
+              log_name: userFund.display_name,
+              log_acct_number: userFund?.tag_id,
+              log_receiver_name: '',
+              log_receiver_number: '',
+              log_receiver_bank: '',
+              log_country: '',
+              log_swift_code: '',
+              log_desc:'Funds exchange request made',
+              log_amt: '',
+              log_status: 'Successful',
+              log_nature:'Fund exchange request',
+              })
+            // check if the user activate email notification and send notification
+            if(userFund.receive_email_notification == true){
+               // send email notification to user
+               async function main() {
+                // send mail with defined transport object
+                const info = await transporter .sendMail({
+                    from: '"Mappido" <noreply@rugipoalumni.zictech-ng.com>', // sender address
+                    to: userFund.email, // list of receivers
+                    subject: 'Account Funding Notification',
+                text: `Hello ${userFund.display_name}, this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n Order ID is ${paymentId}`,
+                    html: `<!DOCTYPE html>
+                    <html>
+                    <head>
+                    <title></title>
+                    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+                    <meta name="viewport" content="width=device-width, initial-scale=1">
+                    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+                    <style type="text/css">
+                    
+                    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+                    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+                    img { -ms-interpolation-mode: bicubic; }
+                    
+                    img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+                    table { border-collapse: collapse !important; }
+                    body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
+                    
+                    
+                    a[x-apple-data-detectors] {
+                        color: inherit !important;
+                        text-decoration: none !important;
+                        font-size: inherit !important;
+                        font-family: inherit !important;
+                        font-weight: inherit !important;
+                        line-height: inherit !important;
+                    }
+                    
+                    @media screen and (max-width: 480px) {
+                        .mobile-hide {
+                            display: none !important;
+                        }
+                        .mobile-center {
+                            text-align: center !important;
+                        }
+                    }
+                    div[style*="margin: 16px 0;"] { margin: 0 !important; }
+                    </style>
+                    <body style="margin: 0 !important; padding: 0 !important; background-color: #eeeeee;" bgcolor="#eeeeee">
+                    
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                        <tr>
+                            <td align="center" style="background-color: #eeeeee;" bgcolor="#eeeeee">
+                            
+                            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
+                                <tr>
+                                    <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#F44336">
+                                
+                                    <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;">
+                                        <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
+                                            <tr>
+                                                <td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; line-height: 35px;" class="mobile-center">
+                                            <h3 style="font-size: 25px; font-weight: 700; margin: 0; color: #ffffff;">Rugipo Alumni Finance</h3>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            
+                            <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;" class="mobile-hide">
+                                <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
+                                    <tr>
+                                        <td align="right" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 48px; font-weight: 400; line-height: 48px;">
+                                            <table cellspacing="0" cellpadding="0" border="0" align="right">
+                                                <tr>
+                                                    <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
+                                                        <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
+                                                        <img src="https://rugipofinance.onrender.com/images/RAF_LOGO.png" width="100" height="100"/> &nbsp;</a></p>
+                                                    </td>
+                                                   
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                          
+                            </td>
+                        </tr>
+                        <tr>
+                            <td align="center" style="padding: 35px 35px 20px 35px; background-color: #ffffff;" bgcolor="#ffffff">
+                            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
+                                <tr>
+                                    <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
+                                    <img src="https://img.icons8.com/ios/100/null/user-male-circle--v2.png" style="display: block; border: 0px;" /><br>
+                                        <h4 style="font-size: 30px; font-weight: 800; line-height: 36px; color: #333333; margin: 0;">
+                                        Account Opening Successful
+                                        </h4>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
+                                        <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
+                                        Hello ${userFund.display_name}, this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment received. \n Request reference / Transaction ID is ${TransID}, \n 
+                                        Order ID is ${paymentId} Thank you
+                                        </p>
+                                    </td>
+                                </tr>
+                                
+                                <tr>
+                                    <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
+                                        <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td align="center" style=" padding: 35px; background-color: #ff7361;" bgcolor="#1b9ba3">
+                            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
+                                <tr>
+                                    <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
+                                        <h5 style="font-size: 18px; font-weight: 600; line-height: 15px; color: #ffffff; margin: 0;">
+                                            Contact support for more details.
+                                        </h5>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="center" style="padding: 25px 0 15px 0;">
+                                        <table border="0" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td align="center" style="border-radius: 5px;" bgcolor="#66b3b7">
+                                                  <a href="https://veeapps.co.in/en/" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #F44336; padding: 15px 30px; border: 1px solid #F44336; display: block;">Contact</a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td align="center" style="padding: 35px; background-color: #ffffff;" bgcolor="#ffffff">
+                            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
+                                
+                                <tr>
+                                    <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px; padding: 5px 0 10px 0;">
+                                        <p style="font-size: 14px; font-weight: 800; line-height: 18px; color: #333333;">
+                                            675 Parko Avenue<br>
+                                            LA, CA 02232
+                                        </p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
+                                        <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
+                                            You have received this email because you are a Customer of Rugipo Alumni Finance<br>
+            This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of Rugipo Alumni Finance. It is confidential, private and intended for the addressee only.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                            </td>
+                        </tr>
+                    </table>
+                    </td>
+                </tr>
+            </table>
+            </body>
+                    </html>`,
+                     });
+                }
+              main().catch('Email Message Error', console.error);
+            }       
+       // success message
+       // res.status(201).json({msg: '200'})
+        }
+    } catch (err) {
+       // err message
+     console.log(err)
+     // return res.json({status: 500, message: 'Technical issues occurred' })
+   }
+  }
   // wire transfer pin confirm routes goes here...
 router.post("/confirm_pin", verifyToken, async (req, res, next) => {
     const userId = req.body.createdBy;
@@ -862,14 +1115,32 @@ router.post("/userAccount_funding", isAuth, async (req, res) => {
                   alert_user_ip: '',
                   alert_country: '',
                   alert_browser: '',
-                  alert_date:  dateStringWithTime,
+                  alert_date: Date.now(),
                   alert_user_id: userFund._id,
                   alert_nature: 'Account funding request submitted! You wallet will be funded once confirmed payment!',
                   alert_status: 1,
                   alert_read_date: ''
                   })
               }
-  
+              
+              // create record for sender history purposes
+              const TransfersHistory = TransferFund.create({
+                acct_name: userFund.display_name,
+                acct_number: userFund.tag_id,
+                amount: req.body.amt,
+                sender_name: userFund.display_name,
+                tran_type: 'Credit',
+                transac_nature: 'In-app funding',
+                tran_desc: req.body.note,
+                createdBy: userFund._id,
+                tid: Trans_ID,
+                colorcode:'green',
+                pay_tran: req.body.payId,
+                sender_acct_number: userFund.tag_id,
+                transaction_status: 'Pending',
+                createdOn: Date.now(),
+              });
+
               // create log here
               const addLogs = await SystemActivity.create({
                 log_username: userFund.email,
@@ -894,7 +1165,8 @@ router.post("/userAccount_funding", isAuth, async (req, res) => {
                       from: '"Mappido" <noreply@rugipoalumni.zictech-ng.com>', // sender address
                       to: userFund.email, // list of receivers
                       subject: 'Account Funding Notification',
-                  text: `Hello ${userFund.display_name}, this is to notify you that your account funding request has been logged and will treat as soon as your payment received. \n Transaction ID is ${Trans_ID}`,
+                  text: `Hello ${userFund.display_name}, this is to notify you that your account funding request has been logged and we will treat as soon as your payment received. \n Transaction ID is ${Trans_ID} \n
+                  Transaction Reference ID ${req.body.payId}`,
                       html: `<!DOCTYPE html>
                       <html>
                       <head>
@@ -986,7 +1258,8 @@ router.post("/userAccount_funding", isAuth, async (req, res) => {
                                   <tr>
                                       <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
                                           <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                          Hello ${userFund.display_name}, this is to notify you that your account funding request has been logged and we will treat as soon as your payment received. \n Account funding reference / Transaction ID is ${Trans_ID}, \nThank you
+                                          Hello ${userFund.display_name}, this is to notify you that your account funding request has been logged and we will treat as soon as we confirm your payment status. \n Account funding Transaction ID is ${Trans_ID}, \n 
+                                          Transaction Reference ID ${req.body.payId} \n Thank you
                                           </p>
                                       </td>
                                   </tr>
@@ -1060,7 +1333,7 @@ router.post("/userAccount_funding", isAuth, async (req, res) => {
                 main().catch('Email Message Error', console.error);
               }       
          // success message
-          res.status(201).json({msg: '200'})
+          res.status(200).json({msg: '200'})
           }
       } catch (err) {
          // err message
@@ -1106,7 +1379,9 @@ router.post("/fundPurchase_funding", isAuth, async (req, res) => {
                 trans_method: dataReceive.method,
                 currency_level:'2',
                 createdBy: dataReceive.myId,
+                trans_balance: dataReceive.total_money,
                 tid: TransID,
+                pay_tran: dataReceive.method =='Paystack Checkout'? dataReceive.payId : null,
                 tran_rate: dataReceive.serviceName == 'PayPal'? getCurrentRate.paypal_buying: dataReceive.serviceName == 'Payoneer'? getCurrentRate.payooner_buying: dataReceive.serviceName=='Bitcoin'? getCurrentRate.btc_buying: ''
                 });
                 
@@ -1364,6 +1639,8 @@ router.post("/fundBuy_funding", isAuth, async (req, res) => {
                 currency_level:'2',
                 createdBy: dataReceive.myId,
                 tid: TransID,
+                trans_balance: dataReceive.total_money,
+                pay_tran: dataReceive.method =='Paystack Checkout'? dataReceive.payId : null,
                 tran_rate: dataReceive.serviceName == 'PayPal'? getCurrentRate.paypal_buying: dataReceive.serviceName == 'Payoneer'? getCurrentRate.payooner_buying: dataReceive.serviceName=='Bitcoin'? getCurrentRate.btc_buying: ''
                 });
                 
@@ -1407,7 +1684,7 @@ router.post("/fundBuy_funding", isAuth, async (req, res) => {
                       from: '"Mappido" <noreply@rugipoalumni.zictech-ng.com>', // sender address
                       to: userFund.email, // list of receivers
                       subject: 'Account Funding Notification',
-                  text: `Hello ${userFund.display_name}, this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID}`,
+                  text: `Hello ${userFund.display_name}, this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId: ''}`,
                       html: `<!DOCTYPE html>
                       <html>
                       <head>
@@ -1499,7 +1776,9 @@ router.post("/fundBuy_funding", isAuth, async (req, res) => {
                                   <tr>
                                       <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
                                           <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                          Hello ${userFund.display_name}, this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment received. \n Request reference / Transaction ID is ${TransID}, \nThank you
+                                          Hello ${userFund.display_name}, this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment received. \n Request reference / Transaction ID is ${TransID}, \n
+                                          \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId: ''}
+                                          \n Thank you
                                           </p>
                                       </td>
                                   </tr>
