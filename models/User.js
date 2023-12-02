@@ -81,6 +81,10 @@ const userSchema = new mongoose.Schema({
         type: Number,
         default: 0.1,
     },
+    tran_account: {
+        type: Number,
+        default: 0.1,
+    },
     active: {
         type: Boolean,
         default: true

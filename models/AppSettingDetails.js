@@ -30,6 +30,14 @@ const systemSettingSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+    app_launch_title:{
+        type: String,
+        default: false,
+    },
+    app_launch_desc:{
+        type: String,
+        default: false,
+    },
 
     app_state: {
         type: String,

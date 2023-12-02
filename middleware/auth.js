@@ -5,7 +5,6 @@ exports.isAuth = async (req, res, next) =>{
     if(req.headers && req.headers.authorization){
         let token = req.headers.authorization.split(' ')[1];
         // to handle some errors case that might occurred that you might not know, use try catch
-        
         try {
             let payload = jwt.verify(token, process.env.SECRET_LOGIN_KEY);
             let user = await User.findById(payload.userId)

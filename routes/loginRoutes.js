@@ -14,6 +14,11 @@ const nodemailer = require("nodemailer");
 
 const transporter = require('../controllers/mailSender');
 const { isAuth } = require('../middleware/auth');
+const { mailTemplate } = require('../middleware/emailTemplate');
+const contentMail = require('../middleware/emailTemplate');
+const { welcomeEmail } = require('../middleware/welcome');
+const { loginEmail, loginText } = require('../emailTemplate/emailLogin');
+const { passwordResetEmail, passwordResetText } = require('../emailTemplate/emailPasswordReset');
 // this function verify if the token user sent is valid
 function verifyToken(req, res, next) {
     if (!req.headers.authorization){
@@ -49,8 +54,7 @@ router.post("/login", async (req, res, next) => {
                 return res.json({status: 400, message: ' All fields are required'})
                 //return res.status(400).json({msg: '400'}) //Fields required
             } 
-            
-            try {
+         try {
             // Check if user exist
             const userExist = await User.findOne({email: filter.username})
             const getAppSetting = await AppSetting.findOne();
@@ -123,184 +127,27 @@ router.post("/login", async (req, res, next) => {
                 });
 
                   // send email notification
+                  //const output = welcomeEmail(userExist.display_name, userExist.email)
+                 const mailBody = loginEmail('Mappido', 'Login Authentication', userExist.display_name, 'this is to notify you that your account has just been logged into successfully, If this is not you, contact support for immediate intervention, thank you.')
+                 const TextBody = loginText(userExist.display_name,);
+                 let mailOptions = {
+                     from: '"Mappido " <noreply@rugipoalumni.zictech-ng.com>',
+                     to: userExist.email,
+                     subject: 'Login notification!',
+                     text: TextBody,
+                     html: mailBody,
+                 }
                   async function main() {
                     // send mail with defined transport object
-                    const info = await transporter .sendMail({
-                      from: '"Rugipo Alumni" <noreply@rugipoalumni.zictech-ng.com>', // sender address
-                      to: userExist.email, // list of receivers
-                      subject: "Login Notification", // Subject line
-                      text: `Hello ${userExist.first_name}, this is to notify you that your account has just been logged into successfully, If this is not you, contact support for immediate intervention, thank you.`,
-                      html: `<!DOCTYPE html>
-                        <html>
-                        <head>
-                        <title></title>
-                        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-                        <meta name="viewport" content="width=device-width, initial-scale=1">
-                        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-                        <style type="text/css">
-                        
-                        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-                        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-                        img { -ms-interpolation-mode: bicubic; }
-                        
-                        img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
-                        table { border-collapse: collapse !important; }
-                        body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
-                        
-                        
-                        a[x-apple-data-detectors] {
-                            color: inherit !important;
-                            text-decoration: none !important;
-                            font-size: inherit !important;
-                            font-family: inherit !important;
-                            font-weight: inherit !important;
-                            line-height: inherit !important;
-                        }
-                        
-                        @media screen and (max-width: 480px) {
-                            .mobile-hide {
-                                display: none !important;
-                            }
-                            .mobile-center {
-                                text-align: center !important;
-                            }
-                        }
-                        div[style*="margin: 16px 0;"] { margin: 0 !important; }
-                        </style>
-                        <body style="margin: 0 !important; padding: 0 !important; background-color: #eeeeee;" bgcolor="#eeeeee">
-                        
-                
-                <div style="display: none; font-size: 1px; color: #fefefe; line-height: 1px; font-family: Open Sans, Helvetica, Arial, sans-serif; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
-                For what reason would it be advisable for me to think about business content? That might be little bit risky to have crew member like them. 
-                </div>
-                
-                <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                    <tr>
-                        <td align="center" style="background-color: #eeeeee;" bgcolor="#eeeeee">
-                        
-                        <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                            <tr>
-                                <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#F44336">
-                               
-                                <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;">
-                                    <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                                        <tr>
-                                            <td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; line-height: 35px;" class="mobile-center">
-                                                <h3 style="font-size: 25px; font-weight: 700; margin: 0; color: #ffffff;">Rugipo Alumni Finance</h3>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </div>
-                                
-                                <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;" class="mobile-hide">
-                                    <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                                        <tr>
-                                            <td align="right" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 48px; font-weight: 400; line-height: 48px;">
-                                                <table cellspacing="0" cellpadding="0" border="0" align="right">
-                                                    <tr>
-                                                        <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
-                                                            <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
-                                                            <img src="https://rugipofinance.onrender.com/images/RAF_LOGO.png" width="100" height="100"/> &nbsp;</a></p>
-                                                        </td>
-                                                        
-                                                    </tr>
-                                                </table>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </div>
-                              
-                                </td>
-                            </tr>
-                            <tr>
-                                <td align="center" style="padding: 35px 35px 20px 35px; background-color: #ffffff;" bgcolor="#ffffff">
-                                <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                    <tr>
-                                        <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                                        <img src="https://img.icons8.com/ios/50/null/appointment-reminders--v2.png" style="display: block; border: 0px;" /><br>
-                                            <h4 style="font-size: 20px; font-weight: 600; line-height: 25px; color: #333333; margin: 0;">
-                                                Account Login Notification
-                                            </h4>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                                            <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                            Hello ${userExist.first_name}, this is to notify you that your account has just been logged into successfully, If this is not you, contact support for immediate intervention, thank you.
-                                            </p>
-                                        </td>
-                                    </tr>
-                                    
-                                    <tr>
-                                        <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                                            <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                               
-                                            </p>
-                                        </td>
-                                    </tr>
-                            <tr>
-                                <td align="center" style=" padding: 35px; background-color: #ff7361;" bgcolor="#1b9ba3">
-                                <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                    <tr>
-                                        <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                                            <h5 style="font-size: 18px; font-weight: 600; line-height: 15px; color: #ffffff; margin: 0;">
-                                               Please, contact support for any irregularity in your account.
-                                            </h5>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td align="center" style="padding: 25px 0 15px 0;">
-                                            <table border="0" cellspacing="0" cellpadding="0">
-                                                <tr>
-                                                    <td align="center" style="border-radius: 5px;" bgcolor="#66b3b7">
-                                                      <a href="https://veeapps.co.in/en/" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #F44336; padding: 15px 30px; border: 1px solid #F44336; display: block;">Contact</a>
-                                                    </td>
-                                                </tr>
-                                            </table>
-                                        </td>
-                                    </tr>
-                                </table>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td align="center" style="padding: 35px; background-color: #ffffff;" bgcolor="#ffffff">
-                                <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                    
-                                    <tr>
-                                        <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px; padding: 5px 0 10px 0;">
-                                            <p style="font-size: 14px; font-weight: 600; line-height: 12px; color: #333333;">
-                                                675 Parko Avenue<br>
-                                                LA, CA 02232
-                                            </p>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
-                                            <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
-                                                You have received this email because you are a Customer of Rugipo Alumni Finance<br>
-                This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of Rugipo Alumni Finance. It is confidential, private and intended for the addressee only.
-                                            </p>
-                                        </td>
-                                    </tr>
-                                </table>
-                                </td>
-                            </tr>
-                        </table>
-                        </td>
-                    </tr>
-                </table>
-                    
-                </body>
-                    </html>`,
-                    });
-                  }
-                    main().catch('Message Error', console.error);
-                    
+                    const info = await transporter .sendMail(mailOptions);
+                 }
+                    main().catch('Email Message Error', console.error);
+   
                  res.send({ msg: '200', token: token, userData: others, appData: getAppSetting})
                 //res.json({msg: 200, token: token, userData: others})
             //console.log('Environment data!', process.env.SECRET_KEY);
-        }
-    });
+            }
+        });
             } catch (err) {
             res.status(500).send({ msg: "500" });
           }
@@ -357,6 +204,14 @@ router.get("/user_logout/:id", async (req, res, next) => {
     // route to logout user
 router.get("/authenticate_user/:id", isAuth, async (req, res, next) => {
     let myId = req.params.id;
+    if(myId == '' || myId == null || myId == undefined) {
+        return res.json({status: 401, message: 'Login Required'});
+        }
+        let user = await User.findById({_id: myId})
+            if(!user) {
+                return res.json({status: 401, message: ' Access denied'});
+            }
+        res.send({ msg: '200',})
     }); 
     
     // verify user login state if it is valid or not
@@ -471,183 +326,21 @@ router.post("/otp_verify", async (req, res) => {
                     log_nature:'User verify account',
                     })
                
-                   
+                    const mailBody = loginEmail('Mappido', 'Account Verified', userExist.display_name, 'this is to notify you that your account has been verified successfully, You can now be able to use your account, thank you.')
+                    const TextBody = loginText(userExist.display_name,);
+                    let mailOptions = {
+                        from: '"Mappido " <noreply@rugipoalumni.zictech-ng.com>',
+                        to: userExist.email,
+                        subject: 'Account verified!',
+                        text: TextBody,
+                        html: mailBody,
+                    }
                       // async..await is not allowed in global scope, must use a wrapper
                       async function main() {
-                        // send mail with defined transport object
-                        const info = await transporter .sendMail({
-                          from: '"Rugipo Alumni Finance" <noreply@rugipoalumni.zictech-ng.com>', // sender address
-                          to: userExist.email, // list of receivers
-                          subject: "Account verified", // Subject line
-                          text: `Hello ${userExist.first_name}, this is to notify you that your account has been verified successfully, You can now be able to use your account, thank you.`,
-                          html: `<!DOCTYPE html>
-                            <html>
-                            <head>
-                            <title></title>
-                            <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-                            <meta name="viewport" content="width=device-width, initial-scale=1">
-                            <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-                            <style type="text/css">
-                            
-                            body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-                            table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-                            img { -ms-interpolation-mode: bicubic; }
-                            
-                            img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
-                            table { border-collapse: collapse !important; }
-                            body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
-                            
-                            
-                            a[x-apple-data-detectors] {
-                                color: inherit !important;
-                                text-decoration: none !important;
-                                font-size: inherit !important;
-                                font-family: inherit !important;
-                                font-weight: inherit !important;
-                                line-height: inherit !important;
-                            }
-                            
-                            @media screen and (max-width: 480px) {
-                                .mobile-hide {
-                                    display: none !important;
-                                }
-                                .mobile-center {
-                                    text-align: center !important;
-                                }
-                            }
-                            div[style*="margin: 16px 0;"] { margin: 0 !important; }
-                            </style>
-                            <body style="margin: 0 !important; padding: 0 !important; background-color: #eeeeee;" bgcolor="#eeeeee">
-                            
-                    
-                    <div style="display: none; font-size: 1px; color: #fefefe; line-height: 1px; font-family: Open Sans, Helvetica, Arial, sans-serif; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
-                    For what reason would it be advisable for me to think about business content? That might be little bit risky to have crew member like them. 
-                    </div>
-                    
-                    <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                        <tr>
-                            <td align="center" style="background-color: #eeeeee;" bgcolor="#eeeeee">
-                            
-                            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                <tr>
-                                    <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#F44336">
-                                   
-                                    <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;">
-                                        <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                                            <tr>
-                                                <td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; line-height: 35px;" class="mobile-center">
-                                                    <h3 style="font-size: 25px; font-weight: 700; margin: 0; color: #ffffff;">Rugipo Alumni Finance</h3>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </div>
-                                    
-                                    <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;" class="mobile-hide">
-                                        <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                                            <tr>
-                                                <td align="right" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 48px; font-weight: 400; line-height: 48px;">
-                                                    <table cellspacing="0" cellpadding="0" border="0" align="right">
-                                                        <tr>
-                                                            <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
-                                                                <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
-                                                                <img src="https://rugipofinance.onrender.com/images/RAF_LOGO.png" width="100" height="100"/> &nbsp;</a></p>
-                                                            </td>
-                                                            
-                                                        </tr>
-                                                    </table>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </div>
-                                  
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td align="center" style="padding: 35px 35px 20px 35px; background-color: #ffffff;" bgcolor="#ffffff">
-                                    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                        <tr>
-                                            <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                                            <img src="https://img.icons8.com/ios/50/null/appointment-reminders--v2.png" style="display: block; border: 0px;" /><br>
-                                                <h4 style="font-size: 20px; font-weight: 600; line-height: 25px; color: #333333; margin: 0;">
-                                                    Account Login Notification
-                                                </h4>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                                                <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                                Hello ${userExist.first_name}, this is to notify you that your account has been verified successfully, You can now be able to use your account, thank you.
-                                                </p>
-                                            </td>
-                                        </tr>
-                                        
-                                        <tr>
-                                            <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                                                <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                                   
-                                                </p>
-                                            </td>
-                                        </tr>
-                                <tr>
-                                    <td align="center" style=" padding: 35px; background-color: #ff7361;" bgcolor="#1b9ba3">
-                                    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                        <tr>
-                                            <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                                                <h5 style="font-size: 18px; font-weight: 600; line-height: 15px; color: #ffffff; margin: 0;">
-                                                   Please, contact support for any irregularity in your account.
-                                                </h5>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td align="center" style="padding: 25px 0 15px 0;">
-                                                <table border="0" cellspacing="0" cellpadding="0">
-                                                    <tr>
-                                                        <td align="center" style="border-radius: 5px;" bgcolor="#66b3b7">
-                                                          <a href="https://veeapps.co.in/en/" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #F44336; padding: 15px 30px; border: 1px solid #F44336; display: block;">Contact</a>
-                                                        </td>
-                                                    </tr>
-                                                </table>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td align="center" style="padding: 35px; background-color: #ffffff;" bgcolor="#ffffff">
-                                    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                        
-                                        <tr>
-                                            <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px; padding: 5px 0 10px 0;">
-                                                <p style="font-size: 14px; font-weight: 600; line-height: 12px; color: #333333;">
-                                                    675 Parko Avenue<br>
-                                                    LA, CA 02232
-                                                </p>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
-                                                <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
-                                                    You have received this email because you are a Customer of Rugipo Alumni Finance<br>
-                    This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of Rugipo Alumni Finance. It is confidential, private and intended for the addressee only.
-                                                </p>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                    </td>
-                                </tr>
-                            </table>
-                            </td>
-                        </tr>
-                    </table>
-                        
-                    </body>
-                        </html>`,
-                        });
-                       
+                        const info = await transporter.sendMail(mailOptions);
                         }
                     main().catch('Message Error', console.error);
                     //res.status(200).json({ msg: '200'}) // success message
-                    
                     res.send({ msg: '200'})
                 }
                 else{
@@ -696,183 +389,21 @@ router.post("/forgetPasswordMobile", async (req, res) => {
                         log_nature:'Passwords reset request',
                         })
                      // async..await is not allowed in global scope, must use a wrapper
-                          async function main() {
-                            // send mail with defined transport object
-                            const info = await transporter .sendMail({
-                              from: '"Rugipo Alumni Finance" <noreply@rugipoalumni.zictech-ng.com>', // sender address
-                              to: userExist.email, // list of receivers
-                              subject: "Forget password reset", // Subject line
-                              text: `Hello ${userExist.display_name}, this is to notify you that your account has been requested to reset password, If this is not your, contact our support immediately.\n
-                                OTP Code ${otpCode}, Use this code to complete your password reset.`,
-                              html: `<!DOCTYPE html>
-                                <html>
-                                <head>
-                                <title></title>
-                                <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-                                <meta name="viewport" content="width=device-width, initial-scale=1">
-                                <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-                                <style type="text/css">
-                                
-                                body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-                                table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-                                img { -ms-interpolation-mode: bicubic; }
-                                
-                                img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
-                                table { border-collapse: collapse !important; }
-                                body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
-                                
-                                
-                                a[x-apple-data-detectors] {
-                                    color: inherit !important;
-                                    text-decoration: none !important;
-                                    font-size: inherit !important;
-                                    font-family: inherit !important;
-                                    font-weight: inherit !important;
-                                    line-height: inherit !important;
-                                }
-                                
-                                @media screen and (max-width: 480px) {
-                                    .mobile-hide {
-                                        display: none !important;
-                                    }
-                                    .mobile-center {
-                                        text-align: center !important;
-                                    }
-                                }
-                                div[style*="margin: 16px 0;"] { margin: 0 !important; }
-                                </style>
-                                <body style="margin: 0 !important; padding: 0 !important; background-color: #eeeeee;" bgcolor="#eeeeee">
-                                
-                        
-                        <div style="display: none; font-size: 1px; color: #fefefe; line-height: 1px; font-family: Open Sans, Helvetica, Arial, sans-serif; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
-                        For what reason would it be advisable for me to think about business content? That might be little bit risky to have crew member like them. 
-                        </div>
-                        
-                        <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                            <tr>
-                                <td align="center" style="background-color: #eeeeee;" bgcolor="#eeeeee">
-                                
-                                <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                    <tr>
-                                        <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#F44336">
-                                       
-                                        <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;">
-                                            <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                                                <tr>
-                                                    <td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; line-height: 35px;" class="mobile-center">
-                                                        <h3 style="font-size: 25px; font-weight: 700; margin: 0; color: #ffffff;">Rugipo Alumni Finance</h3>
-                                                    </td>
-                                                </tr>
-                                            </table>
-                                        </div>
-                                        
-                                        <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;" class="mobile-hide">
-                                            <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                                                <tr>
-                                                    <td align="right" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 48px; font-weight: 400; line-height: 48px;">
-                                                        <table cellspacing="0" cellpadding="0" border="0" align="right">
-                                                            <tr>
-                                                                <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
-                                                                    <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
-                                                                    <img src="https://rugipofinance.onrender.com/images/RAF_LOGO.png" width="100" height="100"/> &nbsp;</a></p>
-                                                                </td>
-                                                                
-                                                            </tr>
-                                                        </table>
-                                                    </td>
-                                                </tr>
-                                            </table>
-                                        </div>
-                                      
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td align="center" style="padding: 35px 35px 20px 35px; background-color: #ffffff;" bgcolor="#ffffff">
-                                        <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                            <tr>
-                                                <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                                                <img src="https://img.icons8.com/ios/50/null/appointment-reminders--v2.png" style="display: block; border: 0px;" /><br>
-                                                    <h4 style="font-size: 20px; font-weight: 600; line-height: 25px; color: #333333; margin: 0;">
-                                                        Account Login Notification
-                                                    </h4>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                                                    <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                                    Hello ${userExist.display_name}, this is to notify you that your account has been requested to reset password, If this is not your, contact our support immediately.
-                                                    </p>
-                                                </td>
-                                            </tr>
-                                            
-                                            <tr>
-                                                <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                                                <h3 style="font-size: 30px; font-weight: 800; line-height: 36px; color: #333333; margin: 0;">
-                                                OTP Code ${otpCode}
-                                                </h3>
-                                                <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                                    Use this code to complete your password reset request.
-                                                    </p>
-                                                </td>
-                                            </tr>
-                                    <tr>
-                                        <td align="center" style=" padding: 35px; background-color: #ff7361;" bgcolor="#1b9ba3">
-                                        <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                            <tr>
-                                                <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                                                    <h5 style="font-size: 18px; font-weight: 600; line-height: 15px; color: #ffffff; margin: 0;">
-                                                       Please, contact support for any irregularity in your account.
-                                                    </h5>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td align="center" style="padding: 25px 0 15px 0;">
-                                                    <table border="0" cellspacing="0" cellpadding="0">
-                                                        <tr>
-                                                            <td align="center" style="border-radius: 5px;" bgcolor="#66b3b7">
-                                                              <a href="https://veeapps.co.in/en/" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #F44336; padding: 15px 30px; border: 1px solid #F44336; display: block;">Contact</a>
-                                                            </td>
-                                                        </tr>
-                                                    </table>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td align="center" style="padding: 35px; background-color: #ffffff;" bgcolor="#ffffff">
-                                        <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                            
-                                            <tr>
-                                                <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px; padding: 5px 0 10px 0;">
-                                                    <p style="font-size: 14px; font-weight: 600; line-height: 12px; color: #333333;">
-                                                        675 Parko Avenue<br>
-                                                        LA, CA 02232
-                                                    </p>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
-                                                    <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
-                                                        You have received this email because you are a Customer of Rugipo Alumni Finance<br>
-                        This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of Rugipo Alumni Finance. It is confidential, private and intended for the addressee only.
-                                                    </p>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                        </td>
-                                    </tr>
-                                </table>
-                                </td>
-                            </tr>
-                        </table>
-                            
-                        </body>
-                            </html>`,
-                            });
-                           
-                            }
-                        main().catch('Message Error', console.error);
+                     const mailBody = passwordResetEmail('Mappido', 'Forget password reset', userExist.display_name, 'this is to notify you that your account has been requested to reset password, If this is not your, contact our support immediately. \n', otpCode)
+                     const TextBody = passwordResetText(userExist.display_name, otpCode);
+                     let mailOptions = {
+                        from: '"Mappido " <noreply@rugipoalumni.zictech-ng.com>',
+                        to: userExist.email,
+                        subject: 'Forget password reset!',
+                        text: TextBody,
+                        html: mailBody,
+                    }
+                      // async..await is not allowed in global scope, must use a wrapper
+                      async function main() {
+                        const info = await transporter.sendMail(mailOptions);
+                        }
+                    main().catch('Message Error', console.error);
+
                         //res.status(200).json({ msg: '200'}) // success message
                         
                         res.send({ msg: '200', otpPin: otpCode, myEmail:userExist.email })
@@ -934,176 +465,25 @@ router.post("/resetPasswordMobile", async (req, res) => {
                     log_nature:'User update password',
                     })
                  // async..await is not allowed in global scope, must use a wrapper
-                      async function main() {
-                        // send mail with defined transport object
-                        const info = await transporter .sendMail({
-                          from: '"Rugipo Alumni Finance" <noreply@rugipoalumni.zictech-ng.com>', // sender address
-                          to: userExist.email, // list of receivers
-                          subject: "Password reset successfully", // Subject line
-                          text: `Hello ${userExist.display_name}, this is to notify you that your account password has been reset, If this is not you, contact our support immediately.\n`,
-                          html: `<!DOCTYPE html>
-                            <html>
-                            <head>
-                            <title></title>
-                            <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-                            <meta name="viewport" content="width=device-width, initial-scale=1">
-                            <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-                            <style type="text/css">
-                            
-                            body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-                            table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-                            img { -ms-interpolation-mode: bicubic; }
-                            
-                            img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
-                            table { border-collapse: collapse !important; }
-                            body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
-                            
-                            
-                            a[x-apple-data-detectors] {
-                                color: inherit !important;
-                                text-decoration: none !important;
-                                font-size: inherit !important;
-                                font-family: inherit !important;
-                                font-weight: inherit !important;
-                                line-height: inherit !important;
-                            }
-                            
-                            @media screen and (max-width: 480px) {
-                                .mobile-hide {
-                                    display: none !important;
-                                }
-                                .mobile-center {
-                                    text-align: center !important;
-                                }
-                            }
-                            div[style*="margin: 16px 0;"] { margin: 0 !important; }
-                            </style>
-                            <body style="margin: 0 !important; padding: 0 !important; background-color: #eeeeee;" bgcolor="#eeeeee">
-                            
-                    
-                    <div style="display: none; font-size: 1px; color: #fefefe; line-height: 1px; font-family: Open Sans, Helvetica, Arial, sans-serif; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
-                    For what reason would it be advisable for me to think about business content? That might be little bit risky to have crew member like them. 
-                    </div>
-                    
-                    <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                        <tr>
-                            <td align="center" style="background-color: #eeeeee;" bgcolor="#eeeeee">
-                            
-                            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                <tr>
-                                    <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#F44336">
-                                   
-                                    <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;">
-                                        <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                                            <tr>
-                                                <td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; line-height: 35px;" class="mobile-center">
-                                                    <h3 style="font-size: 25px; font-weight: 700; margin: 0; color: #ffffff;">Rugipo Alumni Finance</h3>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </div>
-                                    
-                                    <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;" class="mobile-hide">
-                                        <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                                            <tr>
-                                                <td align="right" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 48px; font-weight: 400; line-height: 48px;">
-                                                    <table cellspacing="0" cellpadding="0" border="0" align="right">
-                                                        <tr>
-                                                            <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
-                                                                <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
-                                                                <img src="https://rugipofinance.onrender.com/images/RAF_LOGO.png" width="100" height="100"/> &nbsp;</a></p>
-                                                            </td>
-                                                            
-                                                        </tr>
-                                                    </table>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </div>
-                                  
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td align="center" style="padding: 35px 35px 20px 35px; background-color: #ffffff;" bgcolor="#ffffff">
-                                    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                        <tr>
-                                            <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                                            <img src="https://img.icons8.com/ios/50/null/appointment-reminders--v2.png" style="display: block; border: 0px;" /><br>
-                                                <h4 style="font-size: 20px; font-weight: 600; line-height: 25px; color: #333333; margin: 0;">
-                                                    Account Login Notification
-                                                </h4>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                                                <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                                Hello ${userExist.display_name}, this is to notify you that your account password has been reset, If this is not you, contact our support immediately.
-                                                </p>
-                                            </td>
-                                        </tr>
-                                   <tr>
-                                    <td align="center" style=" padding: 35px; background-color: #ff7361;" bgcolor="#1b9ba3">
-                                    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                        <tr>
-                                            <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                                                <h5 style="font-size: 18px; font-weight: 600; line-height: 15px; color: #ffffff; margin: 0;">
-                                                   Please, contact support for any irregularity in your account.
-                                                </h5>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td align="center" style="padding: 25px 0 15px 0;">
-                                                <table border="0" cellspacing="0" cellpadding="0">
-                                                    <tr>
-                                                        <td align="center" style="border-radius: 5px;" bgcolor="#66b3b7">
-                                                          <a href="https://veeapps.co.in/en/" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #F44336; padding: 15px 30px; border: 1px solid #F44336; display: block;">Contact</a>
-                                                        </td>
-                                                    </tr>
-                                                </table>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td align="center" style="padding: 35px; background-color: #ffffff;" bgcolor="#ffffff">
-                                    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                        
-                                        <tr>
-                                            <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px; padding: 5px 0 10px 0;">
-                                                <p style="font-size: 14px; font-weight: 600; line-height: 12px; color: #333333;">
-                                                    675 Parko Avenue<br>
-                                                    LA, CA 02232
-                                                </p>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
-                                                <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
-                                                    You have received this email because you are a Customer of Rugipo Alumni Finance<br>
-                    This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of Rugipo Alumni Finance. It is confidential, private and intended for the addressee only.
-                                                </p>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                    </td>
-                                </tr>
-                            </table>
-                            </td>
-                        </tr>
-                    </table>
-                        
-                    </body>
-                        </html>`,
-                        });
-                       
-                        }
-                    main().catch('Message Error', console.error);
-                    //res.status(200).json({ msg: '200'}) // success message
-                    
+                      
+                 const mailBody = loginEmail('Mappido', 'Password reset successfully', userExist.display_name, 'this is to notify you that your account password has been reset, If this is not you, contact our support immediately. \n')
+                 const TextBody = loginText(userExist.display_name, 'this is to notify you that your account password has been reset, If this is not you, contact our support immediately');
+                 let mailOptions = {
+                    from: '"Mappido " <noreply@rugipoalumni.zictech-ng.com>',
+                    to: userExist.email,
+                    subject: 'Password reset successfully!',
+                    text: TextBody,
+                    html: mailBody,
+                }
+                  // async..await is not allowed in global scope, must use a wrapper
+                  async function main() {
+                    const info = await transporter.sendMail(mailOptions);
+                    }
+                main().catch('Message Error', console.error);
+                 
+                //res.status(200).json({ msg: '200'}) // success message
                     res.send({ msg: '200'}) 
                     }
-                
                 }
                 else{
                     console.log('Password reset : Something went wrong');

@@ -20,6 +20,8 @@ const nodemailer = require("nodemailer");
 const transporter = require('../controllers/mailSender');
 const { isAuth } = require('../middleware/auth');
 const moment = require('moment');
+const { transactEmail, transactEmailText } = require('../emailTemplate/emailRegister');
+const { loginEmail, loginText } = require('../emailTemplate/emailLogin');
 // this function verify if the token user sent is valid
 function verifyToken(req, res, next) {
   if (!req.headers.authorization){
@@ -654,7 +656,7 @@ router.post("/confirm_pin", verifyToken, async (req, res, next) => {
                 colorcode:'green',
                 sender_acct_number: userFund.tag_id,
                 transaction_status: 'Successful',
-                createdOn: dateString,
+                createdOn: Date.now(),
               });
               // create record for sender history purposes
               const TransfersHistory = TransferFund.create({
@@ -671,7 +673,7 @@ router.post("/confirm_pin", verifyToken, async (req, res, next) => {
                 colorcode:'red',
                 sender_acct_number: userFund.tag_id,
                 transaction_status: 'Successful',
-                createdOn: dateString,
+                createdOn: Date.now(),
               });
               // check if user activate in-app notification and send notification
               if(userFund.receive_app_message == true) {
@@ -723,351 +725,38 @@ router.post("/confirm_pin", verifyToken, async (req, res, next) => {
               // check if the sender user activate email notification and send notification
               if(userFund.receive_email_notification === true){
                  // send email notification to user
-                 async function main() {
-                  // send mail with defined transport object
-                  const info = await transporter.sendMail({
-                      from: '"Mappido" <noreply@rugipoalumni.zictech-ng.com>', // sender address
-                      to: userFund.email, // list of receivers
-                      subject: 'Account Debit Notification',
-                      text: `Hello ${userFund.display_name}, this is to notify you that your transfer request was successful and your account has been debited with \u20A6${new Intl.NumberFormat().format(req.body.amt)}. \n Transaction ID is ${Trans_ID}`,
-                      html: `<!DOCTYPE html>
-                      <html>
-                      <head>
-                      <title></title>
-                      <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-                      <meta name="viewport" content="width=device-width, initial-scale=1">
-                      <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-                      <style type="text/css">
-                      
-                      body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-                      table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-                      img { -ms-interpolation-mode: bicubic; }
-                      
-                      img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
-                      table { border-collapse: collapse !important; }
-                      body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
-                      
-                      
-                      a[x-apple-data-detectors] {
-                          color: inherit !important;
-                          text-decoration: none !important;
-                          font-size: inherit !important;
-                          font-family: inherit !important;
-                          font-weight: inherit !important;
-                          line-height: inherit !important;
-                      }
-                      
-                      @media screen and (max-width: 480px) {
-                          .mobile-hide {
-                              display: none !important;
-                          }
-                          .mobile-center {
-                              text-align: center !important;
-                          }
-                      }
-                      div[style*="margin: 16px 0;"] { margin: 0 !important; }
-                      </style>
-                      <body style="margin: 0 !important; padding: 0 !important; background-color: #eeeeee;" bgcolor="#eeeeee">
-                      
-                      <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                          <tr>
-                              <td align="center" style="background-color: #eeeeee;" bgcolor="#eeeeee">
-                              
-                              <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                  <tr>
-                                      <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#F44336">
-                                  
-                                      <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;">
-                                          <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                                              <tr>
-                                                  <td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; line-height: 35px;" class="mobile-center">
-                                              <h3 style="font-size: 25px; font-weight: 700; margin: 0; color: #ffffff;">Rugipo Alumni Finance</h3>
-                                          </td>
-                                      </tr>
-                                  </table>
-                              </div>
-                              
-                              <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;" class="mobile-hide">
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                                      <tr>
-                                          <td align="right" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 48px; font-weight: 400; line-height: 48px;">
-                                              <table cellspacing="0" cellpadding="0" border="0" align="right">
-                                                  <tr>
-                                                      <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
-                                                          <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
-                                                          <img src="https://rugipofinance.onrender.com/images/RAF_LOGO.png" width="100" height="100"/> &nbsp;</a></p>
-                                                      </td>
-                                                     
-                                                  </tr>
-                                              </table>
-                                          </td>
-                                      </tr>
-                                  </table>
-                              </div>
-                            
-                              </td>
-                          </tr>
-                          <tr>
-                              <td align="center" style="padding: 35px 35px 20px 35px; background-color: #ffffff;" bgcolor="#ffffff">
-                              <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                  <tr>
-                                      <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                                      <img src="https://img.icons8.com/ios/100/null/user-male-circle--v2.png" style="display: block; border: 0px;" /><br>
-                                          <h4 style="font-size: 20px; font-weight: 800; line-height: 26px; color: #333333; margin: 0;">
-                                          Transaction notifications
-                                          </h4>
-                                      </td>
-                                  </tr>
-                                  <tr>
-                                      <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                                          <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                          Hello ${userFund.display_name}, this is to notify you that your transfer request was successful and your account has been debited with \u20A6${new Intl.NumberFormat().format(req.body.amt)} \n Transaction ID is ${Trans_ID}  \nThank you
-                                          </p>
-                                      </td>
-                                  </tr>
-                                  
-                                  <tr>
-                                      <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                                          <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                          </p>
-                                      </td>
-                                  </tr>
-                              </table>
-                              
-                              </td>
-                          </tr>
-                          
-                          <tr>
-                              <td align="center" style=" padding: 35px; background-color: #ff7361;" bgcolor="#1b9ba3">
-                              <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                  <tr>
-                                      <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                                          <h5 style="font-size: 18px; font-weight: 600; line-height: 15px; color: #ffffff; margin: 0;">
-                                              Contact support for more details.
-                                          </h5>
-                                      </td>
-                                  </tr>
-                                  <tr>
-                                      <td align="center" style="padding: 25px 0 15px 0;">
-                                          <table border="0" cellspacing="0" cellpadding="0">
-                                              <tr>
-                                                  <td align="center" style="border-radius: 5px;" bgcolor="#66b3b7">
-                                                    <a href="https://veeapps.co.in/en/" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #F44336; padding: 15px 30px; border: 1px solid #F44336; display: block;">Contact</a>
-                                                  </td>
-                                              </tr>
-                                          </table>
-                                      </td>
-                                  </tr>
-                              </table>
-                              </td>
-                          </tr>
-                          <tr>
-                              <td align="center" style="padding: 35px; background-color: #ffffff;" bgcolor="#ffffff">
-                              <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                  
-                                  <tr>
-                                      <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px; padding: 5px 0 10px 0;">
-                                          <p style="font-size: 14px; font-weight: 800; line-height: 18px; color: #333333;">
-                                              675 Parko Avenue<br>
-                                              LA, CA 02232
-                                          </p>
-                                      </td>
-                                  </tr>
-                                  <tr>
-                                      <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
-                                          <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
-                                              You have received this email because you are a Customer of Rugipo Alumni Finance<br>
-              This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of Rugipo Alumni Finance. It is confidential, private and intended for the addressee only.
-                                          </p>
-                                      </td>
-                                  </tr>
-                              </table>
-                              </td>
-                          </tr>
-                      </table>
-                      </td>
-                  </tr>
-              </table>
-              </body>
-                      </html>`,
-                     });
-                  }
-                main().catch('Email Message Error', console.error);
+                    const mailBody = transactEmail('Mappido', 'Account Debit Notification', userFund.display_name, `this is to notify you that your transfer request was successful and your account has been debited with`, req.body.amt, Trans_ID)
+                    const TextBody = transactEmailText(userFund.display_name, `this is to notify you that your transfer request was successful and your account has been debited with`, req.body.amt, Trans_ID );
+                    let sendFundMailOptions = {
+                    from: '"Mappido " <noreply@rugipoalumni.zictech-ng.com>',
+                    to: userFund.email,
+                    subject: 'Account Debit Notification!',
+                    text: TextBody,
+                    html: mailBody,
+                }
+                // async..await is not allowed in global scope, must use a wrapper
+                async function main() {
+                    const info = await transporter.sendMail(sendFundMailOptions);
+                    }
+                 main().catch('Message Error', console.error);
               }  
               // check if the receiver user activate email notification and send notification
               if(receiverUser.receive_email_notification == true){
                 // send email notification to user
+                const mailBody = transactEmail('Mappido', 'Account Credit Notification', receiverUser.display_name, `this is to notify you that your account was credited with `, req.body.amt, Trans_ID)
+                    const TextBody = transactEmailText(receiverUser.display_name, `this is to notify you that your account was credited with`, req.body.amt, Trans_ID);
+                    let getFundMailOptions = {
+                    from: '"Mappido " <noreply@rugipoalumni.zictech-ng.com>',
+                    to: receiverUser.email,
+                    subject: 'Account Credit Notification!',
+                    text: TextBody,
+                    html: mailBody,
+                }
+                // async..await is not allowed in global scope, must use a wrapper
                 async function main() {
-                 // send mail with defined transport object
-                 const info = await transporter .sendMail({
-                     from: '"Mappido" <noreply@rugipoalumni.zictech-ng.com>', // sender address
-                     to: receiverUser.email, // list of receivers
-                     subject: 'Account Credit Notification',
-                 text: `Hello ${receiverUser.display_name}, this is to notify you that your account was credited with \u20A6${new Intl.NumberFormat().format(req.body.amt)}. \n Transaction ID is ${Trans_ID}`,
-                     html: `<!DOCTYPE html>
-                     <html>
-                     <head>
-                     <title></title>
-                     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-                     <meta name="viewport" content="width=device-width, initial-scale=1">
-                     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-                     <style type="text/css">
-                     
-                     body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-                     table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-                     img { -ms-interpolation-mode: bicubic; }
-                     
-                     img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
-                     table { border-collapse: collapse !important; }
-                     body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
-                     
-                     
-                     a[x-apple-data-detectors] {
-                         color: inherit !important;
-                         text-decoration: none !important;
-                         font-size: inherit !important;
-                         font-family: inherit !important;
-                         font-weight: inherit !important;
-                         line-height: inherit !important;
-                     }
-                     
-                     @media screen and (max-width: 480px) {
-                         .mobile-hide {
-                             display: none !important;
-                         }
-                         .mobile-center {
-                             text-align: center !important;
-                         }
-                     }
-                     div[style*="margin: 16px 0;"] { margin: 0 !important; }
-                     </style>
-                     <body style="margin: 0 !important; padding: 0 !important; background-color: #eeeeee;" bgcolor="#eeeeee">
-                     
-                     <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                         <tr>
-                             <td align="center" style="background-color: #eeeeee;" bgcolor="#eeeeee">
-                             
-                             <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                 <tr>
-                                     <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#F44336">
-                                 
-                                     <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;">
-                                         <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                                             <tr>
-                                                 <td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; line-height: 35px;" class="mobile-center">
-                                             <h3 style="font-size: 25px; font-weight: 700; margin: 0; color: #ffffff;">Rugipo Alumni Finance</h3>
-                                         </td>
-                                     </tr>
-                                 </table>
-                             </div>
-                             
-                             <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;" class="mobile-hide">
-                                 <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                                     <tr>
-                                         <td align="right" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 48px; font-weight: 400; line-height: 48px;">
-                                             <table cellspacing="0" cellpadding="0" border="0" align="right">
-                                                 <tr>
-                                                     <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
-                                                         <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
-                                                         <img src="https://rugipofinance.onrender.com/images/RAF_LOGO.png" width="100" height="100"/> &nbsp;</a></p>
-                                                     </td>
-                                                    
-                                                 </tr>
-                                             </table>
-                                         </td>
-                                     </tr>
-                                 </table>
-                             </div>
-                           
-                             </td>
-                         </tr>
-                         <tr>
-                             <td align="center" style="padding: 35px 35px 20px 35px; background-color: #ffffff;" bgcolor="#ffffff">
-                             <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                 <tr>
-                                     <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                                     <img src="https://img.icons8.com/ios/100/null/user-male-circle--v2.png" style="display: block; border: 0px;" /><br>
-                                     <h4 style="font-size: 20px; font-weight: 800; line-height: 26px; color: #333333; margin: 0;">
-                                     Transaction notifications
-                                     </h4>
-                                     </td>
-                                 </tr>
-                                 <tr>
-                                     <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                                         <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                         Hello ${receiverUser.display_name}, this is to notify you that your account was credited with \u20A6${new Intl.NumberFormat().format(req.body.amt)}. \n Transaction ID is ${Trans_ID} \n Thank you
-                                         </p>
-                                     </td>
-                                 </tr>
-                                 
-                                 <tr>
-                                     <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                                         <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                         </p>
-                                     </td>
-                                 </tr>
-                             </table>
-                             
-                             </td>
-                         </tr>
-                         
-                         <tr>
-                             <td align="center" style=" padding: 35px; background-color: #ff7361;" bgcolor="#1b9ba3">
-                             <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                 <tr>
-                                     <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                                         <h5 style="font-size: 18px; font-weight: 600; line-height: 15px; color: #ffffff; margin: 0;">
-                                             Contact support for more details.
-                                         </h5>
-                                     </td>
-                                 </tr>
-                                 <tr>
-                                     <td align="center" style="padding: 25px 0 15px 0;">
-                                         <table border="0" cellspacing="0" cellpadding="0">
-                                             <tr>
-                                                 <td align="center" style="border-radius: 5px;" bgcolor="#66b3b7">
-                                                   <a href="https://veeapps.co.in/en/" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #F44336; padding: 15px 30px; border: 1px solid #F44336; display: block;">Contact</a>
-                                                 </td>
-                                             </tr>
-                                         </table>
-                                     </td>
-                                 </tr>
-                             </table>
-                             </td>
-                         </tr>
-                         <tr>
-                             <td align="center" style="padding: 35px; background-color: #ffffff;" bgcolor="#ffffff">
-                             <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                 
-                                 <tr>
-                                     <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px; padding: 5px 0 10px 0;">
-                                         <p style="font-size: 14px; font-weight: 800; line-height: 18px; color: #333333;">
-                                             675 Parko Avenue<br>
-                                             LA, CA 02232
-                                         </p>
-                                     </td>
-                                 </tr>
-                                 <tr>
-                                     <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
-                                         <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
-                                             You have received this email because you are a Customer of Rugipo Alumni Finance<br>
-             This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of Rugipo Alumni Finance. It is confidential, private and intended for the addressee only.
-                                         </p>
-                                     </td>
-                                 </tr>
-                             </table>
-                             </td>
-                         </tr>
-                     </table>
-                     </td>
-                 </tr>
-             </table>
-             </body>
-            </html>`,
-            });
-                   
-            }
-               main().catch('Email Message Error', console.error);
+                    const info = await transporter.sendMail(getFundMailOptions);
+                    }
+                 main().catch('Message Error', console.error);
              }  
          // success message
           res.status(201).json({msg: '200'})
@@ -1083,7 +772,7 @@ router.post("/confirm_pin", verifyToken, async (req, res, next) => {
 router.post("/userAccount_funding", isAuth, async (req, res) => {
     const dataReceive = req.body;
     //console.log("My Blocked ID: ", req.body)
-    const Trans_ID = generateRandomNumber()
+    const Trans_ID = transactionID(25)
     // get the transfer record ID here
     const filter = { _id: dataReceive.userId };
         if (dataReceive.userId == "" || dataReceive.userId == null) {
@@ -1117,7 +806,7 @@ router.post("/userAccount_funding", isAuth, async (req, res) => {
                   alert_browser: '',
                   alert_date: Date.now(),
                   alert_user_id: userFund._id,
-                  alert_nature: 'Account funding request submitted! You wallet will be funded once confirmed payment!',
+                  alert_nature: 'Account funding request submitted! Your wallet will be funded once confirmed payment!',
                   alert_status: 1,
                   alert_read_date: ''
                   })
@@ -1159,178 +848,22 @@ router.post("/userAccount_funding", isAuth, async (req, res) => {
               // check if the user activate email notification and send notification
               if(userFund.receive_email_notification == true){
                  // send email notification to user
-                 async function main() {
-                  // send mail with defined transport object
-                  const info = await transporter .sendMail({
-                      from: '"Mappido" <noreply@rugipoalumni.zictech-ng.com>', // sender address
-                      to: userFund.email, // list of receivers
-                      subject: 'Account Funding Notification',
-                  text: `Hello ${userFund.display_name}, this is to notify you that your account funding request has been logged and we will treat as soon as your payment received. \n Transaction ID is ${Trans_ID} \n
-                  Transaction Reference ID ${req.body.payId}`,
-                      html: `<!DOCTYPE html>
-                      <html>
-                      <head>
-                      <title></title>
-                      <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-                      <meta name="viewport" content="width=device-width, initial-scale=1">
-                      <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-                      <style type="text/css">
-                      
-                      body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-                      table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-                      img { -ms-interpolation-mode: bicubic; }
-                      
-                      img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
-                      table { border-collapse: collapse !important; }
-                      body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
-                      
-                      
-                      a[x-apple-data-detectors] {
-                          color: inherit !important;
-                          text-decoration: none !important;
-                          font-size: inherit !important;
-                          font-family: inherit !important;
-                          font-weight: inherit !important;
-                          line-height: inherit !important;
-                      }
-                      
-                      @media screen and (max-width: 480px) {
-                          .mobile-hide {
-                              display: none !important;
-                          }
-                          .mobile-center {
-                              text-align: center !important;
-                          }
-                      }
-                      div[style*="margin: 16px 0;"] { margin: 0 !important; }
-                      </style>
-                      <body style="margin: 0 !important; padding: 0 !important; background-color: #eeeeee;" bgcolor="#eeeeee">
-                      
-                      <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                          <tr>
-                              <td align="center" style="background-color: #eeeeee;" bgcolor="#eeeeee">
-                              
-                              <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                  <tr>
-                                      <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#F44336">
-                                  
-                                      <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;">
-                                          <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                                              <tr>
-                                                  <td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; line-height: 35px;" class="mobile-center">
-                                              <h3 style="font-size: 25px; font-weight: 700; margin: 0; color: #ffffff;">Rugipo Alumni Finance</h3>
-                                          </td>
-                                      </tr>
-                                  </table>
-                              </div>
-                              
-                              <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;" class="mobile-hide">
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                                      <tr>
-                                          <td align="right" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 48px; font-weight: 400; line-height: 48px;">
-                                              <table cellspacing="0" cellpadding="0" border="0" align="right">
-                                                  <tr>
-                                                      <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
-                                                          <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
-                                                          <img src="https://rugipofinance.onrender.com/images/RAF_LOGO.png" width="100" height="100"/> &nbsp;</a></p>
-                                                      </td>
-                                                     
-                                                  </tr>
-                                              </table>
-                                          </td>
-                                      </tr>
-                                  </table>
-                              </div>
-                            
-                              </td>
-                          </tr>
-                          <tr>
-                              <td align="center" style="padding: 35px 35px 20px 35px; background-color: #ffffff;" bgcolor="#ffffff">
-                              <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                  <tr>
-                                      <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                                      <img src="https://img.icons8.com/ios/100/null/user-male-circle--v2.png" style="display: block; border: 0px;" /><br>
-                                          <h4 style="font-size: 30px; font-weight: 800; line-height: 36px; color: #333333; margin: 0;">
-                                          Account Opening Successful
-                                          </h4>
-                                      </td>
-                                  </tr>
-                                  <tr>
-                                      <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                                          <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                          Hello ${userFund.display_name}, this is to notify you that your account funding request has been logged and we will treat as soon as we confirm your payment status. \n Account funding Transaction ID is ${Trans_ID}, \n 
-                                          Transaction Reference ID ${req.body.payId} \n Thank you
-                                          </p>
-                                      </td>
-                                  </tr>
-                                  
-                                  <tr>
-                                      <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                                          <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                          </p>
-                                      </td>
-                                  </tr>
-                              </table>
-                              
-                              </td>
-                          </tr>
-                          
-                          <tr>
-                              <td align="center" style=" padding: 35px; background-color: #ff7361;" bgcolor="#1b9ba3">
-                              <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                  <tr>
-                                      <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                                          <h5 style="font-size: 18px; font-weight: 600; line-height: 15px; color: #ffffff; margin: 0;">
-                                              Contact support for more details.
-                                          </h5>
-                                      </td>
-                                  </tr>
-                                  <tr>
-                                      <td align="center" style="padding: 25px 0 15px 0;">
-                                          <table border="0" cellspacing="0" cellpadding="0">
-                                              <tr>
-                                                  <td align="center" style="border-radius: 5px;" bgcolor="#66b3b7">
-                                                    <a href="https://veeapps.co.in/en/" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #F44336; padding: 15px 30px; border: 1px solid #F44336; display: block;">Contact</a>
-                                                  </td>
-                                              </tr>
-                                          </table>
-                                      </td>
-                                  </tr>
-                              </table>
-                              </td>
-                          </tr>
-                          <tr>
-                              <td align="center" style="padding: 35px; background-color: #ffffff;" bgcolor="#ffffff">
-                              <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                  
-                                  <tr>
-                                      <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px; padding: 5px 0 10px 0;">
-                                          <p style="font-size: 14px; font-weight: 800; line-height: 18px; color: #333333;">
-                                              675 Parko Avenue<br>
-                                              LA, CA 02232
-                                          </p>
-                                      </td>
-                                  </tr>
-                                  <tr>
-                                      <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
-                                          <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
-                                              You have received this email because you are a Customer of Rugipo Alumni Finance<br>
-              This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of Rugipo Alumni Finance. It is confidential, private and intended for the addressee only.
-                                          </p>
-                                      </td>
-                                  </tr>
-                              </table>
-                              </td>
-                          </tr>
-                      </table>
-                      </td>
-                  </tr>
-              </table>
-              </body>
-                      </html>`,
-                       });
-                  }
-                main().catch('Email Message Error', console.error);
+                 const mailBody = loginEmail('Mappido', 'Account Funding Notification', userFund.display_name, `this is to notify you that your account funding request has been logged and we will treat as soon as we confirm your payment status. \n Account funding Transaction ID is ${Trans_ID}, \n 
+                 Transaction Reference ID ${req.body.payId ? req.body.payId: 'None. ' } \n Thank you`)
+                    const TextBody = loginText(userFund.display_name, `this is to notify you that your account funding request has been logged and we will treat as soon as your payment received. \n Transaction ID is ${Trans_ID} \n
+                    Transaction Reference ID ${req.body.payId? req.body.payId: 'None.'}`);
+                    let fundAcctMailOptions = {
+                    from: '"Mappido " <noreply@rugipoalumni.zictech-ng.com>',
+                    to: userFund.email,
+                    subject: 'Account Funding Notification!',
+                    text: TextBody,
+                    html: mailBody,
+                }
+                // async..await is not allowed in global scope, must use a wrapper
+                async function main() {
+                    const info = await transporter.sendMail(fundAcctMailOptions);
+                    }
+                 main().catch('Message Error', console.error);
               }       
          // success message
           res.status(200).json({msg: '200'})
@@ -1419,176 +952,20 @@ router.post("/fundPurchase_funding", isAuth, async (req, res) => {
               // check if the user activate email notification and send notification
               if(userFund.receive_email_notification == true){
                  // send email notification to user
-                 async function main() {
-                  // send mail with defined transport object
-                  const info = await transporter .sendMail({
-                      from: '"Mappido" <noreply@rugipoalumni.zictech-ng.com>', // sender address
-                      to: userFund.email, // list of receivers
-                      subject: 'Account Funding Notification',
-                  text: `Hello ${userFund.display_name}, this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID}`,
-                      html: `<!DOCTYPE html>
-                      <html>
-                      <head>
-                      <title></title>
-                      <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-                      <meta name="viewport" content="width=device-width, initial-scale=1">
-                      <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-                      <style type="text/css">
-                      
-                      body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-                      table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-                      img { -ms-interpolation-mode: bicubic; }
-                      
-                      img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
-                      table { border-collapse: collapse !important; }
-                      body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
-                      
-                      
-                      a[x-apple-data-detectors] {
-                          color: inherit !important;
-                          text-decoration: none !important;
-                          font-size: inherit !important;
-                          font-family: inherit !important;
-                          font-weight: inherit !important;
-                          line-height: inherit !important;
-                      }
-                      
-                      @media screen and (max-width: 480px) {
-                          .mobile-hide {
-                              display: none !important;
-                          }
-                          .mobile-center {
-                              text-align: center !important;
-                          }
-                      }
-                      div[style*="margin: 16px 0;"] { margin: 0 !important; }
-                      </style>
-                      <body style="margin: 0 !important; padding: 0 !important; background-color: #eeeeee;" bgcolor="#eeeeee">
-                      
-                      <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                          <tr>
-                              <td align="center" style="background-color: #eeeeee;" bgcolor="#eeeeee">
-                              
-                              <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                  <tr>
-                                      <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#F44336">
-                                  
-                                      <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;">
-                                          <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                                              <tr>
-                                                  <td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; line-height: 35px;" class="mobile-center">
-                                              <h3 style="font-size: 25px; font-weight: 700; margin: 0; color: #ffffff;">Rugipo Alumni Finance</h3>
-                                          </td>
-                                      </tr>
-                                  </table>
-                              </div>
-                              
-                              <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;" class="mobile-hide">
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                                      <tr>
-                                          <td align="right" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 48px; font-weight: 400; line-height: 48px;">
-                                              <table cellspacing="0" cellpadding="0" border="0" align="right">
-                                                  <tr>
-                                                      <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
-                                                          <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
-                                                          <img src="https://rugipofinance.onrender.com/images/RAF_LOGO.png" width="100" height="100"/> &nbsp;</a></p>
-                                                      </td>
-                                                     
-                                                  </tr>
-                                              </table>
-                                          </td>
-                                      </tr>
-                                  </table>
-                              </div>
-                            
-                              </td>
-                          </tr>
-                          <tr>
-                              <td align="center" style="padding: 35px 35px 20px 35px; background-color: #ffffff;" bgcolor="#ffffff">
-                              <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                  <tr>
-                                      <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                                      <img src="https://img.icons8.com/ios/100/null/user-male-circle--v2.png" style="display: block; border: 0px;" /><br>
-                                          <h4 style="font-size: 30px; font-weight: 800; line-height: 36px; color: #333333; margin: 0;">
-                                          Account Opening Successful
-                                          </h4>
-                                      </td>
-                                  </tr>
-                                  <tr>
-                                      <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                                          <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                          Hello ${userFund.display_name}, this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment received. \n Request reference / Transaction ID is ${TransID}, \nThank you
-                                          </p>
-                                      </td>
-                                  </tr>
-                                  
-                                  <tr>
-                                      <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                                          <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                          </p>
-                                      </td>
-                                  </tr>
-                              </table>
-                              
-                              </td>
-                          </tr>
-                          
-                          <tr>
-                              <td align="center" style=" padding: 35px; background-color: #ff7361;" bgcolor="#1b9ba3">
-                              <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                  <tr>
-                                      <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                                          <h5 style="font-size: 18px; font-weight: 600; line-height: 15px; color: #ffffff; margin: 0;">
-                                              Contact support for more details.
-                                          </h5>
-                                      </td>
-                                  </tr>
-                                  <tr>
-                                      <td align="center" style="padding: 25px 0 15px 0;">
-                                          <table border="0" cellspacing="0" cellpadding="0">
-                                              <tr>
-                                                  <td align="center" style="border-radius: 5px;" bgcolor="#66b3b7">
-                                                    <a href="https://veeapps.co.in/en/" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #F44336; padding: 15px 30px; border: 1px solid #F44336; display: block;">Contact</a>
-                                                  </td>
-                                              </tr>
-                                          </table>
-                                      </td>
-                                  </tr>
-                              </table>
-                              </td>
-                          </tr>
-                          <tr>
-                              <td align="center" style="padding: 35px; background-color: #ffffff;" bgcolor="#ffffff">
-                              <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                  
-                                  <tr>
-                                      <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px; padding: 5px 0 10px 0;">
-                                          <p style="font-size: 14px; font-weight: 800; line-height: 18px; color: #333333;">
-                                              675 Parko Avenue<br>
-                                              LA, CA 02232
-                                          </p>
-                                      </td>
-                                  </tr>
-                                  <tr>
-                                      <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
-                                          <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
-                                              You have received this email because you are a Customer of Rugipo Alumni Finance<br>
-              This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of Rugipo Alumni Finance. It is confidential, private and intended for the addressee only.
-                                          </p>
-                                      </td>
-                                  </tr>
-                              </table>
-                              </td>
-                          </tr>
-                      </table>
-                      </td>
-                  </tr>
-              </table>
-              </body>
-                      </html>`,
-                       });
-                  }
-                main().catch('Email Message Error', console.error);
+                 const mailBody = loginEmail('Mappido', 'Account Funding Notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment received. \n Request reference / Transaction ID is ${TransID}, \nThank you`)
+                    const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID}`);
+                    let fundAcctMailOptions = {
+                    from: '"Mappido " <noreply@rugipoalumni.zictech-ng.com>',
+                    to: userFund.email,
+                    subject: 'Account Funding Notification!',
+                    text: TextBody,
+                    html: mailBody,
+                }
+                // async..await is not allowed in global scope, must use a wrapper
+                async function main() {
+                    const info = await transporter.sendMail(fundAcctMailOptions);
+                    }
+                 main().catch('Message Error', console.error);
               }       
          // success message
           res.status(201).json({msg: '200', feedback: TransID})
@@ -1603,7 +980,7 @@ router.post("/fundPurchase_funding", isAuth, async (req, res) => {
   // process user sales/purchase request fund goes here...
 router.post("/fundBuy_funding", isAuth, async (req, res) => {
     const dataReceive = req.body;
-    console.log("My data: ", req.body)
+    //console.log("My data: ", req.body)
     const TransID = transactionID(25)
     const nowRate = '';
     // get the transfer record ID here
@@ -1678,178 +1055,22 @@ router.post("/fundBuy_funding", isAuth, async (req, res) => {
               // check if the user activate email notification and send notification
               if(userFund.receive_email_notification == true){
                  // send email notification to user
-                 async function main() {
-                  // send mail with defined transport object
-                  const info = await transporter .sendMail({
-                      from: '"Mappido" <noreply@rugipoalumni.zictech-ng.com>', // sender address
-                      to: userFund.email, // list of receivers
-                      subject: 'Account Funding Notification',
-                  text: `Hello ${userFund.display_name}, this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId: ''}`,
-                      html: `<!DOCTYPE html>
-                      <html>
-                      <head>
-                      <title></title>
-                      <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-                      <meta name="viewport" content="width=device-width, initial-scale=1">
-                      <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-                      <style type="text/css">
-                      
-                      body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-                      table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-                      img { -ms-interpolation-mode: bicubic; }
-                      
-                      img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
-                      table { border-collapse: collapse !important; }
-                      body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
-                      
-                      
-                      a[x-apple-data-detectors] {
-                          color: inherit !important;
-                          text-decoration: none !important;
-                          font-size: inherit !important;
-                          font-family: inherit !important;
-                          font-weight: inherit !important;
-                          line-height: inherit !important;
-                      }
-                      
-                      @media screen and (max-width: 480px) {
-                          .mobile-hide {
-                              display: none !important;
-                          }
-                          .mobile-center {
-                              text-align: center !important;
-                          }
-                      }
-                      div[style*="margin: 16px 0;"] { margin: 0 !important; }
-                      </style>
-                      <body style="margin: 0 !important; padding: 0 !important; background-color: #eeeeee;" bgcolor="#eeeeee">
-                      
-                      <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                          <tr>
-                              <td align="center" style="background-color: #eeeeee;" bgcolor="#eeeeee">
-                              
-                              <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                  <tr>
-                                      <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#F44336">
-                                  
-                                      <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;">
-                                          <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                                              <tr>
-                                                  <td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; line-height: 35px;" class="mobile-center">
-                                              <h3 style="font-size: 25px; font-weight: 700; margin: 0; color: #ffffff;">Rugipo Alumni Finance</h3>
-                                          </td>
-                                      </tr>
-                                  </table>
-                              </div>
-                              
-                              <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;" class="mobile-hide">
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                                      <tr>
-                                          <td align="right" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 48px; font-weight: 400; line-height: 48px;">
-                                              <table cellspacing="0" cellpadding="0" border="0" align="right">
-                                                  <tr>
-                                                      <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
-                                                          <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
-                                                          <img src="https://rugipofinance.onrender.com/images/RAF_LOGO.png" width="100" height="100"/> &nbsp;</a></p>
-                                                      </td>
-                                                     
-                                                  </tr>
-                                              </table>
-                                          </td>
-                                      </tr>
-                                  </table>
-                              </div>
-                            
-                              </td>
-                          </tr>
-                          <tr>
-                              <td align="center" style="padding: 35px 35px 20px 35px; background-color: #ffffff;" bgcolor="#ffffff">
-                              <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                  <tr>
-                                      <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                                      <img src="https://img.icons8.com/ios/100/null/user-male-circle--v2.png" style="display: block; border: 0px;" /><br>
-                                          <h4 style="font-size: 30px; font-weight: 800; line-height: 36px; color: #333333; margin: 0;">
-                                          Account Opening Successful
-                                          </h4>
-                                      </td>
-                                  </tr>
-                                  <tr>
-                                      <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                                          <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                          Hello ${userFund.display_name}, this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment received. \n Request reference / Transaction ID is ${TransID}, \n
-                                          \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId: ''}
-                                          \n Thank you
-                                          </p>
-                                      </td>
-                                  </tr>
-                                  
-                                  <tr>
-                                      <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                                          <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                          </p>
-                                      </td>
-                                  </tr>
-                              </table>
-                              
-                              </td>
-                          </tr>
-                          
-                          <tr>
-                              <td align="center" style=" padding: 35px; background-color: #ff7361;" bgcolor="#1b9ba3">
-                              <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                  <tr>
-                                      <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                                          <h5 style="font-size: 18px; font-weight: 600; line-height: 15px; color: #ffffff; margin: 0;">
-                                              Contact support for more details.
-                                          </h5>
-                                      </td>
-                                  </tr>
-                                  <tr>
-                                      <td align="center" style="padding: 25px 0 15px 0;">
-                                          <table border="0" cellspacing="0" cellpadding="0">
-                                              <tr>
-                                                  <td align="center" style="border-radius: 5px;" bgcolor="#66b3b7">
-                                                    <a href="https://veeapps.co.in/en/" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #F44336; padding: 15px 30px; border: 1px solid #F44336; display: block;">Contact</a>
-                                                  </td>
-                                              </tr>
-                                          </table>
-                                      </td>
-                                  </tr>
-                              </table>
-                              </td>
-                          </tr>
-                          <tr>
-                              <td align="center" style="padding: 35px; background-color: #ffffff;" bgcolor="#ffffff">
-                              <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                  
-                                  <tr>
-                                      <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px; padding: 5px 0 10px 0;">
-                                          <p style="font-size: 14px; font-weight: 800; line-height: 18px; color: #333333;">
-                                              675 Parko Avenue<br>
-                                              LA, CA 02232
-                                          </p>
-                                      </td>
-                                  </tr>
-                                  <tr>
-                                      <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
-                                          <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
-                                              You have received this email because you are a Customer of Rugipo Alumni Finance<br>
-              This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of Rugipo Alumni Finance. It is confidential, private and intended for the addressee only.
-                                          </p>
-                                      </td>
-                                  </tr>
-                              </table>
-                              </td>
-                          </tr>
-                      </table>
-                      </td>
-                  </tr>
-              </table>
-              </body>
-                      </html>`,
-                       });
-                  }
-                main().catch('Email Message Error', console.error);
+                 const mailBody = loginEmail('Mappido', 'Account Funding Notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment received. \n Request reference / Transaction ID is ${TransID}, \n
+                 \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId: ''}
+                 \n Thank you`)
+                 const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId:''}`);
+                 let fundAcctMailOptions = {
+                 from: '"Mappido " <noreply@rugipoalumni.zictech-ng.com>',
+                 to: userFund.email,
+                 subject: 'Account Funding Notification!',
+                 text: TextBody,
+                 html: mailBody,
+             }
+             // async..await is not allowed in global scope, must use a wrapper
+             async function main() {
+                 const info = await transporter.sendMail(fundAcctMailOptions);
+                 }
+              main().catch('Message Error', console.error);
               }       
          // success message
           res.status(201).json({msg: '200', feedback: TransID})
@@ -1938,177 +1159,21 @@ router.post("/paypal_checkout", isAuth, async (req, res) => {
               // check if the user activate email notification and send notification
               if(userFund.receive_email_notification == true){
                  // send email notification to user
-                 async function main() {
-                  // send mail with defined transport object
-                  const info = await transporter .sendMail({
-                      from: '"Mappido" <noreply@rugipoalumni.zictech-ng.com>', // sender address
-                      to: userFund.email, // list of receivers
-                      subject: 'Account Funding Notification',
-                  text: `Hello ${userFund.display_name}, this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n Order ID is ${dataReceive.orderId}`,
-                      html: `<!DOCTYPE html>
-                      <html>
-                      <head>
-                      <title></title>
-                      <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-                      <meta name="viewport" content="width=device-width, initial-scale=1">
-                      <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-                      <style type="text/css">
-                      
-                      body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-                      table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-                      img { -ms-interpolation-mode: bicubic; }
-                      
-                      img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
-                      table { border-collapse: collapse !important; }
-                      body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
-                      
-                      
-                      a[x-apple-data-detectors] {
-                          color: inherit !important;
-                          text-decoration: none !important;
-                          font-size: inherit !important;
-                          font-family: inherit !important;
-                          font-weight: inherit !important;
-                          line-height: inherit !important;
-                      }
-                      
-                      @media screen and (max-width: 480px) {
-                          .mobile-hide {
-                              display: none !important;
-                          }
-                          .mobile-center {
-                              text-align: center !important;
-                          }
-                      }
-                      div[style*="margin: 16px 0;"] { margin: 0 !important; }
-                      </style>
-                      <body style="margin: 0 !important; padding: 0 !important; background-color: #eeeeee;" bgcolor="#eeeeee">
-                      
-                      <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                          <tr>
-                              <td align="center" style="background-color: #eeeeee;" bgcolor="#eeeeee">
-                              
-                              <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                  <tr>
-                                      <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#F44336">
-                                  
-                                      <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;">
-                                          <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                                              <tr>
-                                                  <td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; line-height: 35px;" class="mobile-center">
-                                              <h3 style="font-size: 25px; font-weight: 700; margin: 0; color: #ffffff;">Rugipo Alumni Finance</h3>
-                                          </td>
-                                      </tr>
-                                  </table>
-                              </div>
-                              
-                              <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;" class="mobile-hide">
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                                      <tr>
-                                          <td align="right" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 48px; font-weight: 400; line-height: 48px;">
-                                              <table cellspacing="0" cellpadding="0" border="0" align="right">
-                                                  <tr>
-                                                      <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
-                                                          <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
-                                                          <img src="https://rugipofinance.onrender.com/images/RAF_LOGO.png" width="100" height="100"/> &nbsp;</a></p>
-                                                      </td>
-                                                     
-                                                  </tr>
-                                              </table>
-                                          </td>
-                                      </tr>
-                                  </table>
-                              </div>
-                            
-                              </td>
-                          </tr>
-                          <tr>
-                              <td align="center" style="padding: 35px 35px 20px 35px; background-color: #ffffff;" bgcolor="#ffffff">
-                              <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                  <tr>
-                                      <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                                      <img src="https://img.icons8.com/ios/100/null/user-male-circle--v2.png" style="display: block; border: 0px;" /><br>
-                                          <h4 style="font-size: 30px; font-weight: 800; line-height: 36px; color: #333333; margin: 0;">
-                                          Account Opening Successful
-                                          </h4>
-                                      </td>
-                                  </tr>
-                                  <tr>
-                                      <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                                          <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                          Hello ${userFund.display_name}, this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment received. \n Request reference / Transaction ID is ${TransID}, \n 
-                                          Order ID is ${dataReceive.orderId} Thank you
-                                          </p>
-                                      </td>
-                                  </tr>
-                                  
-                                  <tr>
-                                      <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                                          <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                          </p>
-                                      </td>
-                                  </tr>
-                              </table>
-                              
-                              </td>
-                          </tr>
-                          
-                          <tr>
-                              <td align="center" style=" padding: 35px; background-color: #ff7361;" bgcolor="#1b9ba3">
-                              <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                  <tr>
-                                      <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                                          <h5 style="font-size: 18px; font-weight: 600; line-height: 15px; color: #ffffff; margin: 0;">
-                                              Contact support for more details.
-                                          </h5>
-                                      </td>
-                                  </tr>
-                                  <tr>
-                                      <td align="center" style="padding: 25px 0 15px 0;">
-                                          <table border="0" cellspacing="0" cellpadding="0">
-                                              <tr>
-                                                  <td align="center" style="border-radius: 5px;" bgcolor="#66b3b7">
-                                                    <a href="https://veeapps.co.in/en/" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #F44336; padding: 15px 30px; border: 1px solid #F44336; display: block;">Contact</a>
-                                                  </td>
-                                              </tr>
-                                          </table>
-                                      </td>
-                                  </tr>
-                              </table>
-                              </td>
-                          </tr>
-                          <tr>
-                              <td align="center" style="padding: 35px; background-color: #ffffff;" bgcolor="#ffffff">
-                              <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                  
-                                  <tr>
-                                      <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px; padding: 5px 0 10px 0;">
-                                          <p style="font-size: 14px; font-weight: 800; line-height: 18px; color: #333333;">
-                                              675 Parko Avenue<br>
-                                              LA, CA 02232
-                                          </p>
-                                      </td>
-                                  </tr>
-                                  <tr>
-                                      <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
-                                          <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
-                                              You have received this email because you are a Customer of Rugipo Alumni Finance<br>
-              This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of Rugipo Alumni Finance. It is confidential, private and intended for the addressee only.
-                                          </p>
-                                      </td>
-                                  </tr>
-                              </table>
-                              </td>
-                          </tr>
-                      </table>
-                      </td>
-                  </tr>
-              </table>
-              </body>
-                      </html>`,
-                       });
-                  }
-                main().catch('Email Message Error', console.error);
+                 const mailBody = loginEmail('Mappido', 'Account Funding Notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment received. \n Request reference / Transaction ID is ${TransID}, \n 
+                 Order ID is ${dataReceive.orderId} Thank you`)
+                 const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n Order ID is ${dataReceive.orderId}`);
+                 let acctFundMailOptions = {
+                 from: '"Mappido " <noreply@rugipoalumni.zictech-ng.com>',
+                 to: userFund.email,
+                 subject: 'Account Funding Notification!',
+                 text: TextBody,
+                 html: mailBody,
+             }
+             // async..await is not allowed in global scope, must use a wrapper
+             async function main() {
+                 const info = await transporter.sendMail(acctFundMailOptions);
+                 }
+              main().catch('Message Error', console.error);
               }       
          // success message
           res.status(201).json({msg: '200'})
@@ -2261,7 +1326,21 @@ router.post("/confirm_pinMobile", async (req, res) => {
                     alert_read_date: ''
                 });
                 // email notification sending
-                
+            //     const mailBody = loginEmail('Mappido', 'Account Funding Notification', userDetails.display_name, `this is to notify you that a transaction of ${userDetails.currency_type+sendAmount} occurred in your account, Please contact your account officer if this is not you for immediate support.`)
+            //      const TextBody = loginText(userDetails.display_name, `this is to notify you that a transaction of ${userDetails.currency_type+sendAmount} occurred in your account, Please contact your account officer if this is not you for immediate intervention`);
+            //      let acctFundMailOptions = {
+            //      from: '"Mappido " <noreply@rugipoalumni.zictech-ng.com>',
+            //      to: userDetails.email,
+            //      subject: 'Account Funding Notification!',
+            //      text: TextBody,
+            //      html: mailBody,
+            //  }
+            //  // async..await is not allowed in global scope, must use a wrapper
+            //  async function main() {
+            //      const info = await transporter.sendMail(acctFundMailOptions);
+            //      }
+            //   main().catch('Message Error', console.error);
+
                 async function main() {
                     // send mail with defined transport object
                     const info = await transporter .sendMail({

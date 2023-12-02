@@ -11,6 +11,7 @@ const companyBankInfoSchema = new mongoose.Schema({
     company_btc_address: String,
     company_paypal_address: String,
     company_payoneer_address: String,
+    company_momoAccount: String,
     
     createdOn: {type: Date, default: Date.now},
 })

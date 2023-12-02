@@ -11,7 +11,7 @@ const nodemailer = require("nodemailer");
 
 const User = require('../models/User');
 const TransferFund = require('../models/fundTransfer');
-
+const AppSetting = require('../models/AppSettingDetails')
 const Officer = require('../models/accountOfficer');
 const Ticket = require('../models/ticketData');
 const Investment = require('../models/investPlan');
@@ -23,7 +23,6 @@ const UserLog = require('../models/UserLogs')
 const UserSystemLog = require('../models/SystemActivityLogs')
 const SystemActivity = require('../models/SystemActivityLogs');
 const Notification = require('../models/NotificationAlert');
-const AppSetting = require('../models/AppSettingDetails');
 const CompanyDetails = require('../models/aboutUs')
 const FundUserAccount = require('../models/fundAccount')
 const GetRate = require('../models/businessRate')
@@ -32,7 +31,10 @@ const transporter = require('../controllers/mailSender');
 const { isAuth } = require('../middleware/auth');
 const userBankDetails = require('../models/UserBankDetails');
 const DocumentUpload = require('../models/DocumentUpload');
-const Referrals = require('../models/referralUser')
+const Referrals = require('../models/referralUser');
+const moment = require('moment/moment');
+const { getBeginningOfTheWeek } = require('../middleware/getStartDate');
+
 
 const uploadLocation = "public/images"; // this is the image store location in the project
 const storage = multer.diskStorage({
@@ -101,7 +103,7 @@ router.get("/profile/:id", async (req, res) => {
   });
 
   // get current user account details/profile here..
-router.get("/userProfileMobile/:id", async (req, res) => {
+router.get("/userProfileMobile/:id", isAuth, async (req, res) => {
   let userId = req.params.id;
   //console.log(userId);
   try {
@@ -118,11 +120,10 @@ router.get("/userProfileMobile/:id", async (req, res) => {
 }
 });
 
-
   // get users bank details via Mobile 
-router.get("/user_bankDetails/:id", async (req, res) => {
+router.get("/user_bankDetails/:id", isAuth, async (req, res) => {
   let userId = req.params.id;
-  console.log(" userId: " + userId)
+  //console.log(" userId: " + userId)
   if(req.params.id === undefined) {
     return res.json({status: 403, message: 'Access denied'});
   }
@@ -171,6 +172,25 @@ router.get("/fetchAboutCompany", async (req, res) => {
     else if(compInfo){
       //res.status(200).send(compInfo);
       res.status(200).json({msg: '200', infoData: compInfo}) // success message
+    }
+     
+  } catch (err) {
+    res.status(500).json(err);
+    console.log(err.message);
+  }
+});
+
+// get company name details here..
+router.get("/fetchApp_info", async (req, res) => {
+  try {
+    const getAppSetting = await AppSetting.findOne();
+    //.sort({field_name: sort order})
+    if(!getAppSetting){
+      return res.json({status: 404, message: 'No record found'})
+    }
+    else if(getAppSetting){
+      //console.log(getAppSetting)
+      res.status(200).json({msg: '200', infoData: getAppSetting}) // success message
     }
      
   } catch (err) {
@@ -237,7 +257,7 @@ router.get("/fetchBankInfo", async (req, res) => {
   });
 
   // get recent transaction of the user financial details here..
-  router.get("/recent_transactions/:id", isAuth, async (req, res) => {
+router.get("/recent_transactions/:id", isAuth, async (req, res) => {
     let userId = req.params.id;
     //console.log("Recent record ", userId);
     try {
@@ -475,9 +495,7 @@ router.get("/user_referrals/:id",isAuth, async (req, res) => {
         .sort({ creditOn: -1 })
         .skip(skip)
         .limit(itemsPerPage);
-        
-        console.log(" Total Records is: ", countAll);
-  
+        //console.log(" Total Records is: ", countAll);
           if(!allReferral || allReferral < 1){
             return res.json({status: 404, message: 'No more records'})
           }
@@ -528,9 +546,69 @@ router.get("/user_Wallet_summary/:id", isAuth, async (req, res) => {
        //console.log('Balance ', userWalletBalance)
     const userWallet = await FundUserAccount.aggregate(
       [{$match: {fund_tag_id: userId, fund_status: 'Approved'}, },
-      {$group: {_id: null, totalAmount: { $sum: '$amount' }}}]);
-        //console.log(" wallet", userWallet)
+      {$group: {_id: null, totalAmount: { $sum: '$amount' }}}]
+      );
+
+      // const weeklyReport = await FundUserAccount.aggregate(
+      //   [{
+      //     $group: {
+      //     _id: {
+      //     $switch: {
+      //     branches: [
+      //     { case: { $eq: [interval, 'weekly'] }, then: { $week: '$createdOn' } },
+      //     { case: { $eq: [interval, 'monthly'] }, then: { $month: '$createdOn' } },
+      //     { case: { $eq: [interval, 'yearly'] }, then: { $year: '$createdOn' } },
+      //     ],
+      //     default: '$fund_status',
+      //     },
+      //     },
+      //     totalAmount: { $sum: '$amount' },
+      //     },
+      //     }],
+      // )
+      
+        //console.log("wallet weekly ", weeklyReport)
       res.send({ msg: '201', feedback: userWallet})
+    } catch (err) {
+    res.status(500).json(err.message);
+    console.log(err.message);
+  }
+});
+
+// get user wallet chat data account here..
+router.get("/chart_transactions/:id", isAuth, async (req, res) => {
+  let userId = req.params.id;
+  //console.log("My ID", userId);
+  var week_1 = new Date(); // current date
+  var pastDate = new Date() + 7;
+
+  dateStart = moment().format('YYYY-MM-DD 00:00:00');
+  dateLast = moment().add(7,'d').format('YYYY-MM-DD 00:00:00');
+
+  try {
+       //console.log('Balance ', userWalletBalance)
+    const payPalChartWallet = await TransferFund.aggregate(
+      [{$match: {createdBy: userId, transaction_status: 'Successful', transac_category:'Paypal'}, },
+      {$group: {_id: null, totalAmount: { $sum: '$amount' }}}]
+      );
+      const payoneerChartWallet = await TransferFund.aggregate(
+        [{$match: {createdBy: userId, transaction_status: 'Successful', transac_category:'Payoneer'}, },
+        {$group: {_id: null, totalAmount: { $sum: '$amount' }}}]
+        );
+        const bitCoinChartWallet = await TransferFund.aggregate(
+          [{$match: {createdBy: userId, transaction_status: 'Successful', transac_category:'Bitcoin'}, },
+          {$group: {_id: null, totalAmount: { $sum: '$amount' }}}]
+          );
+
+    // const chartWallet = await TransferFund.find(
+    //            {creditOn:{$gte: (dateStart), $lt: (dateLast)}}
+    //            )
+         
+    // console.log("current date ", dateStart)
+    // console.log("last date ", dateLast)
+    // console.log("All Data ", chartWallet)
+   
+      res.send({ msg: '201', paypal: payPalChartWallet, payoneer:payoneerChartWallet, bitcoin: bitCoinChartWallet})
     } catch (err) {
     res.status(500).json(err.message);
     console.log(err.message);
@@ -1015,182 +1093,22 @@ router.post("/block_AccountMobile", isAuth, async (req, res) => {
          }
         
       // email notification sending
-    
-    // async..await is not allowed in global scope, must use a wrapper
     if(checkUser.receive_email_notification == true){
 
-      async function main() {
-        // send mail with defined transport object
-        const info = await transporter .sendMail({
-          from: '"Rugipo Alumni Finance" <noreply@rugipoalumni.zictech-ng.com>', // sender address
-          to: checkUser.email, // list of receivers
-          subject: 'Account security',
-          text: `Hello ${checkUser.display_name}, this is to notify you that your request was submitted successfully, your account has been blocked.`,
-          html: `<!DOCTYPE html>
-                    <html>
-                    <head>
-                    <title></title>
-                    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-                    <meta name="viewport" content="width=device-width, initial-scale=1">
-                    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-                    <style type="text/css">
-                    
-                    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-                    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-                    img { -ms-interpolation-mode: bicubic; }
-                    
-                    img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
-                    table { border-collapse: collapse !important; }
-                    body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
-                    
-                    
-                    a[x-apple-data-detectors] {
-                        color: inherit !important;
-                        text-decoration: none !important;
-                        font-size: inherit !important;
-                        font-family: inherit !important;
-                        font-weight: inherit !important;
-                        line-height: inherit !important;
-                    }
-                    
-                    @media screen and (max-width: 480px) {
-                        .mobile-hide {
-                            display: none !important;
-                        }
-                        .mobile-center {
-                            text-align: center !important;
-                        }
-                    }
-                    div[style*="margin: 16px 0;"] { margin: 0 !important; }
-                    </style>
-                    <body style="margin: 0 !important; padding: 0 !important; background-color: #eeeeee;" bgcolor="#eeeeee">
-                    
-                    
-                    <div style="display: none; font-size: 1px; color: #fefefe; line-height: 1px; font-family: Open Sans, Helvetica, Arial, sans-serif; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
-                    For what reason would it be advisable for me to think about business content? That might be little bit risky to have crew member like them. 
-                    </div>
-                    
-                    <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                        <tr>
-                            <td align="center" style="background-color: #eeeeee;" bgcolor="#eeeeee">
-                            
-                            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                <tr>
-                                    <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#F44336">
-                                   
-                                    <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;">
-                                        <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                                            <tr>
-                                                <td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; line-height: 35px;" class="mobile-center">
-                                                    <h3 style="font-size: 25px; font-weight: 700; margin: 0; color: #ffffff;">Rugipo Alumni Finance</h3>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </div>
-                                    
-                                    <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;" class="mobile-hide">
-                                        <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                                            <tr>
-                                                <td align="right" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 48px; font-weight: 400; line-height: 48px;">
-                                                    <table cellspacing="0" cellpadding="0" border="0" align="right">
-                                                        <tr>
-                                                            <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
-                                                                <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
-                                                                <img src="https://rugipofinance.onrender.com/images/RAF_LOGO.png" width="100" height="100"/> &nbsp;</a></p>
-                                                            </td>
-                                                            
-                                                        </tr>
-                                                    </table>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </div>
-                                  
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td align="center" style="padding: 35px 35px 20px 35px; background-color: #ffffff;" bgcolor="#ffffff">
-                                    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                        <tr>
-                                            <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                                            <img src="https://img.icons8.com/ios/50/null/appointment-reminders--v2.png" style="display: block; border: 0px;" /><br>
-                                                <h2 style="font-size: 20px; font-weight: 600; line-height: 25px; color: #333333; margin: 0;">
-                                                Account blocked
-                                                </h2>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                                                <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                                Hello ${checkUser.display_name}, this is to notify you that your request to block your account was successful \n Contact admin to unlock the account any time thank you.
-                                                </p>
-                                            </td>
-                                        </tr>
-                                        
-                                        <tr>
-                                            <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                                                <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                                   
-                                                </p>
-                                            </td>
-                                        </tr>
-                                <tr>
-                                    <td align="center" style=" padding: 35px; background-color: #ff7361;" bgcolor="#1b9ba3">
-                                    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                        <tr>
-                                            <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                                                <h5 style="font-size: 18px; font-weight: 600; line-height: 15px; color: #ffffff; margin: 0;">
-                                                   Please, contact support for any other information about any query.
-                                                </h5>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td align="center" style="padding: 25px 0 15px 0;">
-                                                <table border="0" cellspacing="0" cellpadding="0">
-                                                    <tr>
-                                                        <td align="center" style="border-radius: 5px;" bgcolor="#66b3b7">
-                                                          <a href="https://veeapps.co.in/en/" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #F44336; padding: 15px 30px; border: 1px solid #F44336; display: block;">Contact</a>
-                                                        </td>
-                                                    </tr>
-                                                </table>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td align="center" style="padding: 35px; background-color: #ffffff;" bgcolor="#ffffff">
-                                    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                        
-                                        <tr>
-                                            <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px; padding: 5px 0 10px 0;">
-                                                <p style="font-size: 14px; font-weight: 600; line-height: 12px; color: #333333;">
-                                                    675 Parko Avenue<br>
-                                                    LA, CA 02232
-                                                </p>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
-                                                <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
-                                                    You have received this email because you are a Customer of Rugipo Alumni Finance<br>
-                    This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of Rugipo Alumni Finance. It is confidential, private and intended for the addressee only.
-                                                </p>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                    </td>
-                                </tr>
-                            </table>
-                            </td>
-                        </tr>
-                    </table>
-                        
-                    </body>
-                 </html>`,
-            });
-          }
-        main().catch('Email Message Error', console.error);
+      const mailBody = loginEmail('Mappido', 'Account Security', checkUser.display_name, 'this is to notify you that your request to block your account was successful \n Contact admin to unlock the account any time thank you.')
+        const TextBody = loginText(checkUser.display_name, 'this is to notify you that your request was submitted successfully, your account has been blocked.');
+        let mailOptions = {
+            from: '"Mappido " <noreply@rugipoalumni.zictech-ng.com>',
+            to: checkUser.email,
+            subject: 'Account security!',
+            text: TextBody,
+            html: mailBody,
+        }
+          // async..await is not allowed in global scope, must use a wrapper
+          async function main() {
+            const info = await transporter.sendMail(mailOptions);
+            }
+        main().catch('Message Error', console.error);
       }   
       //res.status(200).send({ msg: "200" });
       res.send({ msg: '200'})
@@ -1203,7 +1121,7 @@ router.post("/block_AccountMobile", isAuth, async (req, res) => {
 });
 
 // Block user account status from mobile app here..
-router.post("/reset_AccountPINMobile", async (req, res) => {
+router.post("/reset_AccountPINMobile", isAuth, async (req, res) => {
   //console.log("Backend Data receive ", req.body)
   const filter = { _id: req.body.uid };
 
@@ -1256,179 +1174,20 @@ router.post("/reset_AccountPINMobile", async (req, res) => {
      
      if(checkUser.receive_email_notification == true){
            // async..await is not allowed in global scope, must use a wrapper
-      async function main() {
-      // send mail with defined transport object
-      const info = await transporter .sendMail({
-        from: '"Rugipo Alumni Finance" <noreply@rugipoalumni.zictech-ng.com>', // sender address
-        to: checkUser.email, // list of receivers
-        subject: 'Account security',
-        text: `Hello ${checkUser.first_name}, this is to notify you that your request was submitted successfully, your account PIN been updated.`,
-        html: `<!DOCTYPE html>
-                  <html>
-                  <head>
-                  <title></title>
-                  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-                  <meta name="viewport" content="width=device-width, initial-scale=1">
-                  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-                  <style type="text/css">
-                  
-                  body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-                  table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-                  img { -ms-interpolation-mode: bicubic; }
-                  
-                  img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
-                  table { border-collapse: collapse !important; }
-                  body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
-                  
-                  
-                  a[x-apple-data-detectors] {
-                      color: inherit !important;
-                      text-decoration: none !important;
-                      font-size: inherit !important;
-                      font-family: inherit !important;
-                      font-weight: inherit !important;
-                      line-height: inherit !important;
-                  }
-                  
-                  @media screen and (max-width: 480px) {
-                      .mobile-hide {
-                          display: none !important;
-                      }
-                      .mobile-center {
-                          text-align: center !important;
-                      }
-                  }
-                  div[style*="margin: 16px 0;"] { margin: 0 !important; }
-                  </style>
-                  <body style="margin: 0 !important; padding: 0 !important; background-color: #eeeeee;" bgcolor="#eeeeee">
-                  
-                  
-                  <div style="display: none; font-size: 1px; color: #fefefe; line-height: 1px; font-family: Open Sans, Helvetica, Arial, sans-serif; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
-                  For what reason would it be advisable for me to think about business content? That might be little bit risky to have crew member like them. 
-                  </div>
-                  
-                  <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                      <tr>
-                          <td align="center" style="background-color: #eeeeee;" bgcolor="#eeeeee">
-                          
-                          <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                              <tr>
-                                  <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#F44336">
-                                 
-                                  <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;">
-                                      <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                                          <tr>
-                                              <td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; line-height: 35px;" class="mobile-center">
-                                                  <h3 style="font-size: 25px; font-weight: 700; margin: 0; color: #ffffff;">Rugipo Alumni Finance</h3>
-                                              </td>
-                                          </tr>
-                                      </table>
-                                  </div>
-                                  
-                                  <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;" class="mobile-hide">
-                                      <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                                          <tr>
-                                              <td align="right" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 48px; font-weight: 400; line-height: 48px;">
-                                                  <table cellspacing="0" cellpadding="0" border="0" align="right">
-                                                      <tr>
-                                                          <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
-                                                              <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
-                                                              <img src="https://rugipofinance.onrender.com/images/RAF_LOGO.png" width="100" height="100"/> &nbsp;</a></p>
-                                                          </td>
-                                                          
-                                                      </tr>
-                                                  </table>
-                                              </td>
-                                          </tr>
-                                      </table>
-                                  </div>
-                                
-                                  </td>
-                              </tr>
-                              <tr>
-                                  <td align="center" style="padding: 35px 35px 20px 35px; background-color: #ffffff;" bgcolor="#ffffff">
-                                  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                      <tr>
-                                          <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                                          <img src="https://img.icons8.com/ios/50/null/appointment-reminders--v2.png" style="display: block; border: 0px;" /><br>
-                                              <h2 style="font-size: 20px; font-weight: 600; line-height: 25px; color: #333333; margin: 0;">
-                                              Open Ticket For Support
-                                              </h2>
-                                          </td>
-                                      </tr>
-                                      <tr>
-                                          <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                                              <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                              Hello ${checkUser.first_name}, this is to notify you that your support ticket was submitted successfully, we will get in-touch shortly thank you.
-                                              </p>
-                                          </td>
-                                      </tr>
-                                      
-                                      <tr>
-                                          <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                                              <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                                 
-                                              </p>
-                                          </td>
-                                      </tr>
-                              <tr>
-                                  <td align="center" style=" padding: 35px; background-color: #ff7361;" bgcolor="#1b9ba3">
-                                  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                      <tr>
-                                          <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                                              <h5 style="font-size: 18px; font-weight: 600; line-height: 15px; color: #ffffff; margin: 0;">
-                                                 Please, contact support for any other information about any query.
-                                              </h5>
-                                          </td>
-                                      </tr>
-                                      <tr>
-                                          <td align="center" style="padding: 25px 0 15px 0;">
-                                              <table border="0" cellspacing="0" cellpadding="0">
-                                                  <tr>
-                                                      <td align="center" style="border-radius: 5px;" bgcolor="#66b3b7">
-                                                        <a href="https://veeapps.co.in/en/" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #F44336; padding: 15px 30px; border: 1px solid #F44336; display: block;">Contact</a>
-                                                      </td>
-                                                  </tr>
-                                              </table>
-                                          </td>
-                                      </tr>
-                                  </table>
-                                  </td>
-                              </tr>
-                              <tr>
-                                  <td align="center" style="padding: 35px; background-color: #ffffff;" bgcolor="#ffffff">
-                                  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                                      
-                                      <tr>
-                                          <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px; padding: 5px 0 10px 0;">
-                                              <p style="font-size: 14px; font-weight: 600; line-height: 12px; color: #333333;">
-                                                  675 Parko Avenue<br>
-                                                  LA, CA 02232
-                                              </p>
-                                          </td>
-                                      </tr>
-                                      <tr>
-                                          <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
-                                              <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
-                                                  You have received this email because you are a Customer of Rugipo Alumni Finance<br>
-                  This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of Rugipo Alumni Finance. It is confidential, private and intended for the addressee only.
-                                              </p>
-                                          </td>
-                                      </tr>
-                                  </table>
-                                  </td>
-                              </tr>
-                          </table>
-                          </td>
-                      </tr>
-                  </table>
-                      
-                  </body>
-              </html>`,
-          });
-      }
-      main().catch('Message Error', console.error);
-      
+           const mailBody = loginEmail('Mappido', 'Account Security', checkUser.display_name, 'this is to notify you that your support ticket was submitted successfully, we will get in-touch shortly thank you')
+           const TextBody = loginText(checkUser.display_name, 'this is to notify you that your request was submitted successfully, your account PIN been updated.');
+           let Account_mailOptions = {
+               from: '"Mappido " <noreply@rugipoalumni.zictech-ng.com>',
+               to: checkUser.email,
+               subject: 'Account security!',
+               text: TextBody,
+               html: mailBody,
+           }
+             // async..await is not allowed in global scope, must use a wrapper
+             async function main() {
+               const info = await transporter.sendMail(Account_mailOptions);
+               }
+           main().catch('Message Error', console.error);
          }
    
      //res.status(200).send({ msg: "200" });
@@ -1469,7 +1228,6 @@ router.post("/fetch_AccountDetailsMobile", async (req, res) => {
 // submit ticket details from mobile app here..
 router.post("/submit_ticketMobile", isAuth, async (req, res) => {
     //console.log("Backend Data receive ", req.body)
-
    try {
      let checkUser = await User.findOne({ _id:  req.body.createdBy }); // here I am checking if user exist then I will get user details
      if (!checkUser) {
@@ -1511,178 +1269,21 @@ router.post("/submit_ticketMobile", isAuth, async (req, res) => {
      
    // email notification sending
    if(checkUser.receive_email_notification === true){
-        async function main() {
-      // send mail with defined transport object
-       const info = await transporter .sendMail({
-        from: '"Rugipo Alumni Finance" <noreply@rugipoalumni.zictech-ng.com>', // sender address
-        to: checkUser.email, // list of receivers
-        subject: 'Open Ticket for Support',
-        text: `Hello ${checkUser.display_name}, this is to notify you that your was submitted successfully, your account officer will get in-touch thank you.`,
-        html: `<!DOCTYPE html>
-        <html>
-        <head>
-        <title></title>
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-        <style type="text/css">
-        
-        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-        img { -ms-interpolation-mode: bicubic; }
-        
-        img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
-        table { border-collapse: collapse !important; }
-        body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
-        
-        
-        a[x-apple-data-detectors] {
-            color: inherit !important;
-            text-decoration: none !important;
-            font-size: inherit !important;
-            font-family: inherit !important;
-            font-weight: inherit !important;
-            line-height: inherit !important;
+
+    const mailBody = loginEmail('Mappido', 'Open Ticket for Support', checkUser.display_name, 'this is to notify you that your support ticket was submitted successfully, we will get in-touch shortly thank you.')
+    const TextBody = loginText(checkUser.display_name, 'this is to notify you that your was submitted successfully, your account officer will get in-touch thank you.');
+    let tickMailOptions = {
+        from: '"Mappido " <noreply@rugipoalumni.zictech-ng.com>',
+        to: checkUser.email,
+        subject: 'Open Ticket for Support!',
+        text: TextBody,
+        html: mailBody,
+    }
+      // async..await is not allowed in global scope, must use a wrapper
+      async function main() {
+        const info = await transporter.sendMail(tickMailOptions);
         }
-        
-        @media screen and (max-width: 480px) {
-            .mobile-hide {
-                display: none !important;
-            }
-            .mobile-center {
-                text-align: center !important;
-            }
-        }
-        div[style*="margin: 16px 0;"] { margin: 0 !important; }
-        </style>
-        <body style="margin: 0 !important; padding: 0 !important; background-color: #eeeeee;" bgcolor="#eeeeee">
-        
-        
-        <div style="display: none; font-size: 1px; color: #fefefe; line-height: 1px; font-family: Open Sans, Helvetica, Arial, sans-serif; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
-        For what reason would it be advisable for me to think about business content? That might be little bit risky to have crew member like them. 
-        </div>
-        
-        <table border="0" cellpadding="0" cellspacing="0" width="100%">
-            <tr>
-                <td align="center" style="background-color: #eeeeee;" bgcolor="#eeeeee">
-                
-                <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                    <tr>
-                        <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#F44336">
-                       
-                        <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;">
-                            <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                                <tr>
-                                    <td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; line-height: 35px;" class="mobile-center">
-                                        <h3 style="font-size: 25px; font-weight: 700; margin: 0; color: #ffffff;">Rugipo Alumni Finance</h3>
-                                    </td>
-                                </tr>
-                            </table>
-                        </div>
-                        
-                        <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;" class="mobile-hide">
-                            <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                                <tr>
-                                    <td align="right" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 48px; font-weight: 400; line-height: 48px;">
-                                        <table cellspacing="0" cellpadding="0" border="0" align="right">
-                                            <tr>
-                                                <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
-                                                    <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
-                                                    <img src="https://rugipofinance.onrender.com/images/RAF_LOGO.png" width="100" height="100"/> &nbsp;</a></p>
-                                                </td>
-                                                
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                            </table>
-                        </div>
-                      
-                        </td>
-                    </tr>
-                    <tr>
-                        <td align="center" style="padding: 35px 35px 20px 35px; background-color: #ffffff;" bgcolor="#ffffff">
-                        <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                            <tr>
-                                <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                                <img src="https://img.icons8.com/ios/50/null/appointment-reminders--v2.png" style="display: block; border: 0px;" /><br>
-                                    <h2 style="font-size: 20px; font-weight: 600; line-height: 25px; color: #333333; margin: 0;">
-                                    Open Ticket For Support
-                                    </h2>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                                    <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                    Hello ${checkUser.display_name}, this is to notify you that your support ticket was submitted successfully, we will get in-touch shortly thank you.
-                                    </p>
-                                </td>
-                            </tr>
-                            
-                            <tr>
-                                <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                                    <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                                       
-                                    </p>
-                                </td>
-                            </tr>
-                    <tr>
-                        <td align="center" style=" padding: 35px; background-color: #ff7361;" bgcolor="#1b9ba3">
-                        <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                            <tr>
-                                <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                                    <h5 style="font-size: 18px; font-weight: 600; line-height: 15px; color: #ffffff; margin: 0;">
-                                       Please, contact support for any other information about any query.
-                                    </h5>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td align="center" style="padding: 25px 0 15px 0;">
-                                    <table border="0" cellspacing="0" cellpadding="0">
-                                        <tr>
-                                            <td align="center" style="border-radius: 5px;" bgcolor="#66b3b7">
-                                              <a href="https://veeapps.co.in/en/" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #F44336; padding: 15px 30px; border: 1px solid #F44336; display: block;">Contact</a>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                        </table>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td align="center" style="padding: 35px; background-color: #ffffff;" bgcolor="#ffffff">
-                        <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                            
-                            <tr>
-                                <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px; padding: 5px 0 10px 0;">
-                                    <p style="font-size: 14px; font-weight: 600; line-height: 12px; color: #333333;">
-                                        675 Parko Avenue<br>
-                                        LA, CA 02232
-                                    </p>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
-                                    <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
-                                        You have received this email because you are a Customer of Rugipo Alumni Finance<br>
-        This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of Rugipo Alumni Finance. It is confidential, private and intended for the addressee only.
-                                    </p>
-                                </td>
-                            </tr>
-                        </table>
-                        </td>
-                    </tr>
-                </table>
-                </td>
-            </tr>
-        </table>
-            
-        </body>
-        </html>`,
-          });
-      }
-      main().catch('Message Error', console.error);
+    main().catch('Message Error', console.error);
    }
   // async..await is not allowed in global scope, must use a wrapper
   
@@ -1792,37 +1393,37 @@ router.get("/user_finance_chart/:id", async (req, res) => {
         }
   
   //console.log("today Month", month);
-  try {
-    //const notifyDetailsRead = await Notification.find({alert_user_id: myId, alert_status: 1 })
-    const notifyDetailsRead = await Notification.find({alert_user_id: myId, alert_status: 1 })
-    if(notifyDetailsRead){
-      const updateDoc = {
-        $set: {
-          alert_status: 0,
-          },
-      }
-      const updateRead = await Notification.updateMany(filter, updateDoc);
-    }
-    const notifyDetails = await Notification.find({alert_user_id: myId })
-    .sort({alert_date: -1 })
-    .skip(skip)
-    .limit(itemsPerPage);
-    
-    //console.log(" Total Records is: ", countAll);
-    if(!notifyDetails || notifyDetails < 1){
-      return res.json({status: 404, message: 'No more records'})
-    }
-    if(notifyDetails){
-      //console.log("Notification Details ", notifyDetails)
-    //res.status(200).send(notifyDetails);
-      res.send(notifyDetails)
-    }
-    
-  } catch (err) {
-    res.status(500).json(err);
-    console.log(err.message);
-  }
-});
+        try {
+          //const notifyDetailsRead = await Notification.find({alert_user_id: myId, alert_status: 1 })
+          const notifyDetailsRead = await Notification.find({alert_user_id: myId, alert_status: 1 })
+          if(notifyDetailsRead){
+            const updateDoc = {
+              $set: {
+                alert_status: 0,
+                },
+            }
+            const updateRead = await Notification.updateMany(filter, updateDoc);
+          }
+          const notifyDetails = await Notification.find({alert_user_id: myId })
+          .sort({alert_date: -1 })
+          .skip(skip)
+          .limit(itemsPerPage);
+          
+          //console.log(" Total Records is: ", countAll);
+          if(!notifyDetails || notifyDetails < 1){
+            return res.json({status: 404, message: 'No more records'})
+          }
+          if(notifyDetails){
+            //console.log("Notification Details ", notifyDetails)
+          //res.status(200).send(notifyDetails);
+            res.send(notifyDetails)
+          }
+          
+        } catch (err) {
+          res.status(500).json(err);
+          console.log(err.message);
+        }
+    });
 
 // count user notification Message Mobile here here..
 router.get("/user_messageCount/:id", isAuth, async (req, res) => {
@@ -2950,7 +2551,6 @@ router.post("/system_setup", upload.single("file"), async (req, res) => {
     console.log(err.message);
   }
 });
-
 
 
   module.exports = router;
