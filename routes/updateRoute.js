@@ -6,13 +6,6 @@ const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
 
 const User = require('../models/User');
-const TransferFund = require('../models/fundTransfer');
-const Officer = require('../models/accountOfficer');
-const Ticket = require('../models/ticketData');
-const Investment = require('../models/investPlan');
-
-
-
 
 // fetch user details to show in the edit form here..
 router.get("/fetch_edit_user/:id", async (req, res) => {

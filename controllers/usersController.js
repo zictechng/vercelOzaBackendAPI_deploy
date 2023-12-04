@@ -1,5 +1,4 @@
 const User = require('../models/User')
-const Note = require('../models/Note')
 const multer = require("multer");
 
 const asyncHandler = require('express-async-handler')
