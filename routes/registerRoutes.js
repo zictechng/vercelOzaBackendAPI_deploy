@@ -207,7 +207,7 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
     
      // now we can destruction the variable
      const userObject = { display_name, gender, dob, email, phone, state, city, currency_type,
-        acct_type, username, "password": hashedPwd, "password_plain": password, country, address, "reg_otp": randomSixDigitNumber }
+        acct_type, "tag_id": userTagNumber, username, "password": hashedPwd, "password_plain": password, country, address, "reg_otp": randomSixDigitNumber }
         
         //console.log("details to save", dataReceived);
      
