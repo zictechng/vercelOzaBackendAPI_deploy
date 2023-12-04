@@ -45,7 +45,7 @@ const registerEmail = (sendCompanyName, sendTitle, sendReceiverName, otpCode) =>
             
             <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
                 <tr>
-                    <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#F44336">
+                    <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#1D2667">
                 
                     <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;">
                         <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
@@ -118,7 +118,7 @@ const registerEmail = (sendCompanyName, sendTitle, sendReceiverName, otpCode) =>
         </tr>
         
         <tr>
-            <td align="center" style=" padding: 35px; background-color: #ff7361;" bgcolor="#1b9ba3">
+            <td align="center" style=" padding: 35px; background-color: #010A4F;" bgcolor="#1b9ba3">
             <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
                 <tr>
                     <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
@@ -132,7 +132,7 @@ const registerEmail = (sendCompanyName, sendTitle, sendReceiverName, otpCode) =>
                         <table border="0" cellspacing="0" cellpadding="0">
                             <tr>
                                 <td align="center" style="border-radius: 5px;" bgcolor="#66b3b7">
-                                  <a href="https://veeapps.co.in/en/" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #F44336; padding: 15px 30px; border: 1px solid #F44336; display: block;">Contact</a>
+                                  <a href="https://veeapps.co.in/en/" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #1D2667; padding: 15px 30px; border: 1px solid #1D2667; display: block;">Contact</a>
                                 </td>
                             </tr>
                         </table>
@@ -147,16 +147,13 @@ const registerEmail = (sendCompanyName, sendTitle, sendReceiverName, otpCode) =>
                 
                 <tr>
                     <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px; padding: 5px 0 10px 0;">
-                        <p style="font-size: 14px; font-weight: 800; line-height: 18px; color: #333333;">
-                            675 Parko Avenue<br>
-                            LA, CA 02232
-                        </p>
+                        <p style="font-size: 14px; font-weight: 800; line-height: 18px; color: #333333;">&nbsp;</p>
                     </td>
                 </tr>
                 <tr>
                     <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
                         <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
-                            You have received this email because you are a Customer of Rugipo Alumni Finance<br>
+                            You have received this email because you are a Customer of ${sendCompanyName}<br>
 This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of Rugipo Alumni Finance. It is confidential, private and intended for the addressee only.
                         </p>
                     </td>
@@ -175,8 +172,7 @@ const registerEmailText = (sendReceiverName, otpCode) =>
     `Hello ${sendReceiverName}, this is to notify you that your has been opened successfully, your account officer will contact you shortly for further details, thank you. \n
     OTP Code ${otpCode}, Use this code to verify your account before you can be able to login.`
 
-
-    const _2FAEmail = (sendCompanyName, sendTitle, sendReceiverName, msg, otpCode) =>
+    const _2FAEmail = (sendCompanyName, sendTitle, sendReceiverName, otpCode) =>
     `<!DOCTYPE html>
     <html>
     <head>
@@ -222,7 +218,7 @@ const registerEmailText = (sendReceiverName, otpCode) =>
             
             <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
                 <tr>
-                    <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#F44336">
+                    <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#1D2667">
                 
                     <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;">
                         <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
@@ -295,7 +291,7 @@ const registerEmailText = (sendReceiverName, otpCode) =>
         </tr>
         
         <tr>
-            <td align="center" style=" padding: 35px; background-color: #ff7361;" bgcolor="#1b9ba3">
+            <td align="center" style=" padding: 35px; background-color: #010A4F;" bgcolor="#1b9ba3">
             <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
                 <tr>
                     <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
@@ -309,7 +305,7 @@ const registerEmailText = (sendReceiverName, otpCode) =>
                         <table border="0" cellspacing="0" cellpadding="0">
                             <tr>
                                 <td align="center" style="border-radius: 5px;" bgcolor="#66b3b7">
-                                  <a href="https://veeapps.co.in/en/" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #F44336; padding: 15px 30px; border: 1px solid #F44336; display: block;">Contact</a>
+                                  <a href="https://veeapps.co.in/en/" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #1D2667; padding: 15px 30px; border: 1px solid #1D2667; display: block;">Contact</a>
                                 </td>
                             </tr>
                         </table>
@@ -324,16 +320,13 @@ const registerEmailText = (sendReceiverName, otpCode) =>
                 
                 <tr>
                     <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px; padding: 5px 0 10px 0;">
-                        <p style="font-size: 14px; font-weight: 800; line-height: 18px; color: #333333;">
-                            675 Parko Avenue<br>
-                            LA, CA 02232
-                        </p>
+                        <p style="font-size: 14px; font-weight: 800; line-height: 18px; color: #333333;">&nbsp;</p>
                     </td>
                 </tr>
                 <tr>
                     <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
                         <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
-                            You have received this email because you are a Customer of Rugipo Alumni Finance<br>
+                            You have received this email because you are a Customer of ${sendCompanyName}<br>
 This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of Rugipo Alumni Finance. It is confidential, private and intended for the addressee only.
                         </p>
                     </td>
@@ -346,12 +339,11 @@ This email, its attachment and any rights attaching hereto are, unless the conte
 </tr>
 </table>
 </body>
-    </html> `
+    </html>`
 
     const _2FAEmailText = (sendReceiverName, otpCode) =>
     `Hello ${sendReceiverName}, this is to notify you that your 2FA OTP code has be sent thank you. \n
     2FA OTP Code ${otpCode}, Use this code and write in on a white clean paper boldly and take a selfie with it and upload via the mobile app.`
-
 
     const transactEmail = (sendCompanyName, sendTitle, sendReceiverName, sendMsg, amt, tran_id) =>
     `<!DOCTYPE html>
@@ -399,7 +391,7 @@ This email, its attachment and any rights attaching hereto are, unless the conte
             
             <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
                 <tr>
-                    <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#F44336">
+                    <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#1D2667">
                 
                     <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;">
                         <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
@@ -472,7 +464,7 @@ This email, its attachment and any rights attaching hereto are, unless the conte
         </tr>
         
         <tr>
-            <td align="center" style=" padding: 35px; background-color: #ff7361;" bgcolor="#1b9ba3">
+            <td align="center" style=" padding: 35px; background-color: #010A4F;" bgcolor="#1b9ba3">
             <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
                 <tr>
                     <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
@@ -486,7 +478,7 @@ This email, its attachment and any rights attaching hereto are, unless the conte
                         <table border="0" cellspacing="0" cellpadding="0">
                             <tr>
                                 <td align="center" style="border-radius: 5px;" bgcolor="#66b3b7">
-                                  <a href="https://veeapps.co.in/en/" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #F44336; padding: 15px 30px; border: 1px solid #F44336; display: block;">Contact</a>
+                                  <a href="https://veeapps.co.in/en/" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #1D2667; padding: 15px 30px; border: 1px solid #1D2667; display: block;">Contact</a>
                                 </td>
                             </tr>
                         </table>
@@ -501,16 +493,13 @@ This email, its attachment and any rights attaching hereto are, unless the conte
                 
                 <tr>
                     <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px; padding: 5px 0 10px 0;">
-                        <p style="font-size: 14px; font-weight: 800; line-height: 18px; color: #333333;">
-                            675 Parko Avenue<br>
-                            LA, CA 02232
-                        </p>
+                        <p style="font-size: 14px; font-weight: 800; line-height: 18px; color: #333333;">&nbsp;</p>
                     </td>
                 </tr>
                 <tr>
                     <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
                         <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
-                            You have received this email because you are a Customer of Rugipo Alumni Finance<br>
+                            You have received this email because you are a Customer of ${sendCompanyName}<br>
 This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of Rugipo Alumni Finance. It is confidential, private and intended for the addressee only.
                         </p>
                     </td>
@@ -527,6 +516,5 @@ This email, its attachment and any rights attaching hereto are, unless the conte
 
     const transactEmailText = (sendReceiverName, msg, amt, tarnsId) =>
     `Hello ${sendReceiverName}, ${msg} \u20A6${new Intl.NumberFormat().format(amt)}. \n Transaction ID is ${tarnsId}`
-
 
 module.exports = {registerEmail, registerEmailText,_2FAEmail,_2FAEmailText,transactEmail ,transactEmailText}

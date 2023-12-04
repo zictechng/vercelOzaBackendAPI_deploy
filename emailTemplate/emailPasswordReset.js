@@ -50,7 +50,7 @@ For what reason would it be advisable for me to think about business content? Th
     
     <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
         <tr>
-            <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#F44336">
+            <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#1D2667">
            
             <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;">
                 <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
@@ -112,7 +112,7 @@ For what reason would it be advisable for me to think about business content? Th
                     </td>
                 </tr>
         <tr>
-            <td align="center" style=" padding: 35px; background-color: #ff7361;" bgcolor="#1b9ba3">
+            <td align="center" style=" padding: 35px; background-color: #010A4F;" bgcolor="#1b9ba3">
             <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
                 <tr>
                     <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
@@ -126,7 +126,7 @@ For what reason would it be advisable for me to think about business content? Th
                         <table border="0" cellspacing="0" cellpadding="0">
                             <tr>
                                 <td align="center" style="border-radius: 5px;" bgcolor="#66b3b7">
-                                  <a href="https://veeapps.co.in/en/" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #F44336; padding: 15px 30px; border: 1px solid #F44336; display: block;">Contact</a>
+                                  <a href="https://veeapps.co.in/en/" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #1D2667; padding: 15px 30px; border: 1px solid #1D2667; display: block;">Contact</a>
                                 </td>
                             </tr>
                         </table>
@@ -141,16 +141,13 @@ For what reason would it be advisable for me to think about business content? Th
                 
                 <tr>
                     <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px; padding: 5px 0 10px 0;">
-                        <p style="font-size: 14px; font-weight: 600; line-height: 12px; color: #333333;">
-                            675 Parko Avenue<br>
-                            LA, CA 02232
-                        </p>
+                        <p style="font-size: 14px; font-weight: 600; line-height: 12px; color: #333333;">&nbsp;</p>
                     </td>
                 </tr>
                 <tr>
                     <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
                         <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
-                            You have received this email because you are a Customer of Rugipo Alumni Finance<br>
+                            You have received this email because you are a Customer of ${sendCompanyName}<br>
 This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of Rugipo Alumni Finance. It is confidential, private and intended for the addressee only.
                         </p>
                     </td>
@@ -164,9 +161,7 @@ This email, its attachment and any rights attaching hereto are, unless the conte
 </table>
 
 </body>
-</html>
-    
-    `
+</html>`
 
 const passwordResetText = (sendReceiverName, otpCode) =>
     `${sendReceiverName} this is to notify you that your account has been requested to reset password, If this is not your, contact our support immediately.\n
