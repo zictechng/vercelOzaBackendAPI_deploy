@@ -171,15 +171,15 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
             log_status: 'Successful',
             log_nature:'New user registration',
            });
-
+           const userDone = await User.findOne({email: req.body.email})
            // email notification sending
            fetchApp().then((result) =>{
-            appName = result.app_nameconst ;
-            mailBody = registerEmail(appName, 'Account Opening Successfully', userExist.display_name, randomSixDigitNumber)
-            const TextBody = registerEmailText(userExist.display_name, randomSixDigitNumber);
+            appName = result.app_name ;
+            mailBody = registerEmail(appName, 'Account Opening Successfully', userDone.display_name, randomSixDigitNumber)
+            const TextBody = registerEmailText(userDone.display_name, randomSixDigitNumber);
             let register_mailOptions = {
                from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
-               to: userExist.email,
+               to: userDone.email,
                subject: 'Account Opening Successfully!',
                text: TextBody,
                html: mailBody,
@@ -242,14 +242,16 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
             log_nature:'New user added',
            });
 
+           const userDone = await User.findOne({email: req.body.email})
+           //console.log(userDone)
             // email notification sending
             fetchApp().then((result) =>{
             appName = result.app_name
-            const mailBody = registerEmail(appName, 'Account Opening Successfully', userExist.display_name, randomSixDigitNumber)
-            const TextBody = registerEmailText(userExist.display_name, randomSixDigitNumber);
+            const mailBody = registerEmail(appName, 'Account Opening Successfully', userDone.display_name, randomSixDigitNumber)
+            const TextBody = registerEmailText(userDone.display_name, randomSixDigitNumber);
             let register_mailOptions = {
                from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
-               to: userExist.email,
+               to: userDone.email,
                subject: 'Account Opening Successfully!',
                text: TextBody,
                html: mailBody,
