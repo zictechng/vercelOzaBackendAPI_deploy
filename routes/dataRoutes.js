@@ -615,10 +615,10 @@ router.get("/chart_transactions/:id", isAuth, async (req, res) => {
       });
       weeklyAmount = chartWeekly.reduce((sum, transaction) => sum + transaction.amount, 0);
 
-      // console.log("Start Year", startYear)
-      // console.log("End Year ", endYear)
-      // console.log("All Year ", yearTotal)
-      // console.log("Monthly Total ", monthlyTotal)
+      console.log("Weekly", weeklyAmount)
+      console.log("Monthly ", monthlyTotal)
+      console.log("All Year ", yearTotal)
+      console.log("Monthly Total ", monthlyTotal)
 
       res.send({ msg: '201', paypal: payPalChartWallet, 
       payoneer:payoneerChartWallet, 
