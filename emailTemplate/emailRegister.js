@@ -65,7 +65,7 @@ const registerEmail = (sendCompanyName, sendTitle, sendReceiverName, otpCode) =>
                                 <tr>
                                     <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
                                         <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
-                                        <img src="https://rugipofinance.onrender.com/images/RAF_LOGO.png" width="100" height="100"/> &nbsp;</a></p>
+                                        <img src="https://ozawebservice.onrender.com/images/oza_logo.png" width="100" height="100"/> &nbsp;</a></p>
                                     </td>
                                    
                                 </tr>
@@ -238,7 +238,7 @@ const registerEmailText = (sendReceiverName, otpCode) =>
                                 <tr>
                                     <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
                                         <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
-                                        <img src="https://rugipofinance.onrender.com/images/RAF_LOGO.png" width="100" height="100"/> &nbsp;</a></p>
+                                        <img src="https://ozawebservice.onrender.com/images/oza_logo.png" width="100" height="100"/> &nbsp;</a></p>
                                     </td>
                                    
                                 </tr>
@@ -411,7 +411,7 @@ This email, its attachment and any rights attaching hereto are, unless the conte
                                 <tr>
                                     <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
                                         <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
-                                        <img src="https://rugipofinance.onrender.com/images/RAF_LOGO.png" width="100" height="100"/> &nbsp;</a></p>
+                                        <img src="https://ozawebservice.onrender.com/images/oza_logo.png" width="100" height="100"/> &nbsp;</a></p>
                                     </td>
                                    
                                 </tr>
