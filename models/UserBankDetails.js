@@ -11,6 +11,12 @@ const userBankDetailSchema = new mongoose.Schema({
     bank_acct_number:{
         type: Number,
     },
+    paypal_address: String,
+    
+    payoneer_address: String,
+    
+    btc_address: String,
+    
     user_id:{
         type: 'string',
     },

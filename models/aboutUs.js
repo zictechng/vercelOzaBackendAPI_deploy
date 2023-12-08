@@ -9,6 +9,10 @@ const aboutUsSchema = new mongoose.Schema({
     company_title: String,
     company_desc: String,
     company_location: String,
+    company_term_conditions: String,
+    company_term_conditions_title: String,
+    company_privacy_policy: String,
+    company_privacy_policy_title: String,
     user_role:{
         type: String, 
         default: 'User'

@@ -592,6 +592,9 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
                         bank_name: req.body.bank_name,
                         bank_acct_name: req.body.acct_name,
                         bank_acct_number: req.body.acct_number,
+                        paypal_address: req.body.paypal_address,
+                        payoneer_address: req.body.payoneer_address,
+                        btc_address: req.body.btc_address
                         },
                     };
                 const updateUserBank = await User.updateOne(filterUserBank, updateBankDoc);
@@ -603,6 +606,9 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
                         bank_name: req.body.bank_name,
                         bank_acct_name: req.body.acct_name,
                         bank_acct_number: req.body.acct_number,
+                        paypal_address: req.body.paypal_address,
+                        payoneer_address: req.body.payoneer_address,
+                        btc_address: req.body.btc_address,
                         user_id: req.body.userId,
                         bank_action: 'Pending',
                         bank_status: 'Pending',
