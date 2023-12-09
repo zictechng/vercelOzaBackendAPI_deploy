@@ -6,6 +6,8 @@ const allowedOrigins = [
     'https://www.zictech-ng.com',
     'http://localhost',
     'http://localhost:3500',
+    'https://ozawebservice.onrender.com',
+    'http://192.168.1.169:3500',
 
     //'https://www.google.com'
 ]

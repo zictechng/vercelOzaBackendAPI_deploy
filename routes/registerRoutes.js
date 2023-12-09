@@ -315,20 +315,19 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
       
 //   });
 
-  router.post("/user_uploadPhoto", isAuth, upload.single("FileData"), multerErrorHandling, async (req, res) => {
+  router.post("/user_uploadPhoto", isAuth, upload.single("FileData"), async (req, res) => {
     const file = req.FileData;
     //const baseURL = process.env.BASEURL; // this one get url link from .env variable
     const url = req.protocol + '://' + req.get('host') // this will get the host url directly
     const filterUser = { _id: req.body.userId };
     const randomSixDigitNumber = generateRandomNumber();
     console.log("Data submitted ", req.body.userId)
-    // console.log("File name ", req.file.filename);
+    //console.log("File name ", req.file.filename);
     // console.log("File size ", req.file.size);
     // console.log("Image size ", fileSizeBytes);
     // console.log("File Limit ", req.file.fieldSize)
     //console.log("Full URL ", url)
     //console.log("user info ", req.body.userId)
-    
         try {
             const userInfo = await User.findOne({_id:req.body.userId}).lean().exec()
              
@@ -362,7 +361,9 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
                         log_nature:'Photo uploaded',
                         })
                      }
-                 res.status(201).json({ msg: '201'}) // success message
+            const userProfile = await User.findOne({ _id: req.body.userId });
+            const { password, ...others } = userProfile._doc;
+                 res.status(201).json({ msg: '201', userData: others}) // success message
                 }
                     //return res.json({status: 402, message: ' User email already exist'})
         } catch (error) {
@@ -418,7 +419,9 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
                         log_nature:'Document uploaded',
                         })
                      }
-                 res.status(201).json({ msg: '201'}) // success message
+            const userProfile = await User.findOne({ _id: req.body.userId });
+            const { password, ...others } = userProfile._doc;
+                 res.status(201).json({ msg: '201', userData: others}) // success message
                 }
                     //return res.json({status: 402, message: ' User email already exist'})
         } catch (error) {
@@ -478,7 +481,9 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
                         log_nature:'2FA Document uploaded',
                         })
                      }
-                 res.status(201).json({ msg: '201'}) // success message
+                const userProfile = await User.findOne({ _id: req.body.userId });
+                const { password, ...others } = userProfile._doc;
+                 res.status(201).json({ msg: '201', userData: others}) // success message
                 }
                     //return res.json({status: 402, message: ' User email already exist'})
         } catch (error) {
@@ -493,7 +498,7 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
     const url = req.protocol + '://' + req.get('host') // this will get the host url directly
     const filterUser = { _id: req.body.userId };
     const randomSixDigitNumber = generateRandomNumber();
-    //console.log("user info ", req.body)
+    console.log("user info ", req.body)
          try {
             const userInfo = await User.findOne({_id:req.body.userId}).lean().exec()
               if(!userInfo){
@@ -560,7 +565,7 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
     const filterUser = { _id: req.body.userId };
     const filterUserBank = {user_id: req.body.userId };
     const userTagNumber = generateTagID();
-    console.log("user info ", req.body)
+    //console.log("user info ", req.body)
 
          try {
             const userInfo = await User.findOne({_id:req.body.userId}).lean().exec()
@@ -632,8 +637,9 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
                         log_nature:'Profile details updated',
                         })
                      }
-                    
-                res.status(201).json({ msg: '201'}) // success message
+                const userProfile = await User.findOne({ _id: req.body.userId });
+                const { password, ...others } = userProfile._doc;
+                res.status(201).json({ msg: '201', userData: others,}) // success message
             }
                     //return res.json({status: 402, message: ' User email already exist'})
     } catch (error) {

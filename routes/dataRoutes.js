@@ -29,6 +29,7 @@ const Referrals = require('../models/referralUser');
 const moment = require('moment/moment');
 const { getBeginningOfTheWeek } = require('../middleware/getStartDate');
 const { fetchApp } = require('../middleware/appDetails');
+const { loginEmail, loginText } = require('../emailTemplate/emailLogin');
 
 const uploadLocation = "public/images"; // this is the image store location in the project
 const storage = multer.diskStorage({
@@ -125,7 +126,7 @@ router.get("/userProfileMobile/:id", isAuth, async (req, res) => {
     const userDetails = await User.findOne({ _id: userId });
     const getAppSetting = await AppSetting.findOne();
     const { password, ...others } = userDetails._doc; // this will remove password from the details send to server.
-
+    //console.log(userDetails);
     res.send({ msg: '200', userData: others, appData: getAppSetting})
   } catch (err) {
     if(!userDetails(err)) {

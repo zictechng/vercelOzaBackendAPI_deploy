@@ -45,19 +45,19 @@ const userSchema = new mongoose.Schema({
     },
     reg_stage2:{
         type: String,
-        default: 'null',
+        default: '',
     },
     reg_stage3:{
         type: String,
-        default: 'null',
+        default: '',
     },
     reg_stage4:{
         type: String,
-        default: 'null',
+        default: '',
     },
     reg_stage5:{
         type: String,
-        default: 'null',
+        default: '',
     },
     acct_tax_code: String,
     acct_status: {
