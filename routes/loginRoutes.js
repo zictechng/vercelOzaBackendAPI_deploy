@@ -62,15 +62,11 @@ router.post("/login", async (req, res, next) => {
     if(!userExist){
         //console.log('Wrong username entered!');
             return res.json({status: 401, message: ' User not found'})
-            
-        //return res.status(401).json({msg: '401'}) //No user found
-    }
+        }
     if(userExist.acct_status != 'Active' || userExist.acct_status == ''){
         //console.log('Wrong username entered!');
             return res.json({status: 402, message: ' Account not active'})
-            
-        //return res.status(401).json({msg: '401'}) //No user found
-    }
+      }
         
     // compare the password against what was passed from the request body
     bcrypt.compare(req.body.password, userExist.password, function(err, matches) {
@@ -119,7 +115,6 @@ router.post("/login", async (req, res, next) => {
             login_token: token,
             login_status: 1
         });
-
             // send email notification
             fetchApp().then((result) =>{
                 appName = result.app_name
