@@ -377,7 +377,7 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
   router.post("/user_uploadDocument", isAuth, upload.single("documentData"), multerErrorHandling, async (req, res) => {
     const file = req.documentData;
     //const baseURL = process.env.BASEURL; // this one get url link from .env variable
-    const url = req.protocol + '://' + req.get('host') // this will get the host url directly
+    const url = process.env.SERVER_BASEURL; // this will get the host url directly
     const filterUser = { _id: req.body.userId };
     
         try {
@@ -435,7 +435,8 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
   router.post("/user_upload2fa", isAuth, upload.single("document2FA"), multerErrorHandling, async (req, res) => {
     const file = req.documentData;
     //const baseURL = process.env.BASEURL; // this one get url link from .env variable
-    const url = req.protocol + '://' + req.get('host') // this will get the host url directly
+    //const url = req.protocol + '://' + req.get('host') // this will get the host url directly
+    const url = process.env.SERVER_BASEURL;
     const filterUser = { _id: req.body.userId };
 
     console.log("Full URL ", url)
@@ -492,11 +493,11 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
             return res.json({status: 500, message: 'Server error: ' })
         }
   });
-  
 
   // send 2FA OTP code when get started is click route
   router.post("/user_2fa_otpSend", isAuth, async (req, res) => {
-    const url = req.protocol + '://' + req.get('host') // this will get the host url directly
+    //const url = req.protocol + '://' + req.get('host') // this will get the host url directly
+    const url = process.env.SERVER_BASEURL;
     const filterUser = { _id: req.body.userId };
     const randomSixDigitNumber = generateRandomNumber();
     console.log("user info ", req.body)
@@ -562,7 +563,7 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
 
   // Complete user registration routes goes here
   router.post("/complete_registration", isAuth, async (req, res) => {
-    const url = req.protocol + '://' + req.get('host') // this will get the host url directly
+    const url = process.env.SERVER_BASEURL // this will get the host url directly
     const filterUser = { _id: req.body.userId };
     const filterUserBank = {user_id: req.body.userId };
     const userTagNumber = generateTagID();
@@ -649,7 +650,6 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
     }
   });
 
-
   // updated email notification status route when click
   router.post("/user_activate_email", isAuth, async (req, res) => {
     const url = req.protocol + '://' + req.get('host') // this will get the host url directly
@@ -704,10 +704,8 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
             }
             main().catch('Message Error', console.error);
             }).catch(console.error.bind(console))
-
         
-                    
-            res.status(201).json({dataPro: userPro, msg: '201'}) // success message
+        res.status(201).json({dataPro: userPro, msg: '201'}) // success message
         } catch (error) {
         console.error(error);
         return res.json({status: 500, message: 'Server error: ' })
@@ -716,7 +714,7 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
 
   // updated 2FA notification status route when click
   router.post("/user_activate_2fa_notice", isAuth, async (req, res) => {
-    const url = req.protocol + '://' + req.get('host') // this will get the host url directly
+    //const url = req.protocol + '://' + req.get('host') // this will get the host url directly
     const filterUser = { _id: req.body.user_Id };
     const actionStatus = req.body.status_value;
    
@@ -777,7 +775,7 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
 
 // updated email notification status when click route
 router.post("/user_notice_request", isAuth, async (req, res) => {
-    const url = req.protocol + '://' + req.get('host') // this will get the host url directly
+    //const url = req.protocol + '://' + req.get('host') // this will get the host url directly
     const filterUser = { _id: req.body.user_Id };
     const actionStatus = req.body.status_value;
          try {
