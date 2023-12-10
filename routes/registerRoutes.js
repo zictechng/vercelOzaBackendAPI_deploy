@@ -318,7 +318,8 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
   router.post("/user_uploadPhoto", isAuth, upload.single("FileData"), async (req, res) => {
     const file = req.FileData;
     //const baseURL = process.env.BASEURL; // this one get url link from .env variable
-    const url = req.protocol + '://' + req.get('host') // this will get the host url directly
+    //const url = req.protocol + '://' + req.get('host') // this will get the host url directly
+    const url = process.env.SERVER_BASEURL;
     const filterUser = { _id: req.body.userId };
     const randomSixDigitNumber = generateRandomNumber();
     console.log("Data submitted ", req.body.userId)
