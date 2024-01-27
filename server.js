@@ -1,12 +1,16 @@
 require('dotenv').config()
 const paypal = require('paypal-rest-sdk');
 const express = require('express')
+const passport = require('passport');
 
 const registerUser = require("./routes/registerRoutes");
 const loginUser = require("./routes/loginRoutes");
 const userData = require("./routes/dataRoutes");
 const transactionData = require("./routes/transactionRoutes");
 const adminUpdateData = require("./routes/updateRoute");
+const dataAdminRoute = require("./routes/adminDataRoutes")
+const adminTransactionUrlRoute = require("./routes/adminTransactionRoutes");
+const adminLogin = require("./routes/adminLoginRoutes");
 
 const app = express()
 const path = require('path')
@@ -51,7 +55,6 @@ app.use("public/images", express.static("images"));
 // app route goes here
 app.use('/', require('./routes/root'))
 
-
   
 app.use('/api/users', require('./routes/userRoutes'))
 app.use("/api", registerUser)
@@ -59,6 +62,10 @@ app.use("/api", userData)
 app.use("/api", loginUser)
 app.use("/api", transactionData)
 app.use("/api", adminUpdateData)
+app.use("/api", dataAdminRoute)
+app.use("/api", adminTransactionUrlRoute)
+app.use("/api", adminLogin)
+
 //app.use('/notes', require('./routes/noteRoutes'))
 
 // paypal.configure({

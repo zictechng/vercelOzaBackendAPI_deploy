@@ -16,6 +16,8 @@ const userBankDetailSchema = new mongoose.Schema({
     payoneer_address: String,
     
     btc_address: String,
+    user_tag_id: String,
+    user_email: String,
     
     user_id:{
         type: 'string',

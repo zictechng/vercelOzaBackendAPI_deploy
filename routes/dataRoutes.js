@@ -30,7 +30,7 @@ const moment = require('moment/moment');
 const { getBeginningOfTheWeek } = require('../middleware/getStartDate');
 const { fetchApp } = require('../middleware/appDetails');
 const { loginEmail, loginText } = require('../emailTemplate/emailLogin');
-
+const {ObjectId} = require('mongodb');
 const uploadLocation = "public/images"; // this is the image store location in the project
 const storage = multer.diskStorage({
   destination: (req, file, callBack) => {
@@ -69,6 +69,10 @@ function verifyToken(req, res, next) {
 // generate transaction ID Code here
   function generateRandomNumber() {
   return Math.floor(1000000 + Math.random() * 9000000);
+  }
+// generate ticket ID for ticket submission here
+function generateTagID() {
+  return Math.floor(10000000 + Math.random() * 90000000);
   }
 
  var appName = '';
@@ -528,24 +532,6 @@ router.get("/user_Wallet_summary/:id", isAuth, async (req, res) => {
       [{$match: {fund_tag_id: userId, fund_status: 'Approved'}, },
       {$group: {_id: null, totalAmount: { $sum: '$amount' }}}]
       );
-
-      // const weeklyReport = await FundUserAccount.aggregate(
-      //   [{
-      //     $group: {
-      //     _id: {
-      //     $switch: {
-      //     branches: [
-      //     { case: { $eq: [interval, 'weekly'] }, then: { $week: '$createdOn' } },
-      //     { case: { $eq: [interval, 'monthly'] }, then: { $month: '$createdOn' } },
-      //     { case: { $eq: [interval, 'yearly'] }, then: { $year: '$createdOn' } },
-      //     ],
-      //     default: '$fund_status',
-      //     },
-      //     },
-      //     totalAmount: { $sum: '$amount' },
-      //     },
-      //     }],
-      // )
       
         //console.log("wallet weekly ", weeklyReport)
       res.send({ msg: '201', feedback: userWallet})
@@ -560,8 +546,8 @@ router.get("/chart_transactions/:id", isAuth, async (req, res) => {
   let userId = req.params.id;
   //console.log("My ID", userId);
 
-  dateStart = moment().format('YYYY-MM-DD hh:mm:ss');
-  dateLast = moment().add(7,'d').format('YYYY-MM-DD hh:mm:ss');
+  const dateStart = moment().format('YYYY-MM-DD hh:mm:ss');
+  const dateLast = moment().subtract(7,'d').format('YYYY-MM-DD hh:mm:ss');
 
   const startMonth = moment().startOf('month').format('YYYY-MM-DD hh:mm:ss');
   const endMonth = moment().endOf('month').format('YYYY-MM-DD hh:mm:ss');
@@ -571,7 +557,6 @@ router.get("/chart_transactions/:id", isAuth, async (req, res) => {
 
   try {
        //console.log('Balance ', userWalletBalance)
-
        // paypal chart total report
     const payPalChartWallet = await TransferFund.aggregate(
       [{$match: {createdBy: userId, transaction_status: 'Successful', transac_category:'Paypal'} },
@@ -590,37 +575,38 @@ router.get("/chart_transactions/:id", isAuth, async (req, res) => {
           {$group: {_id: null, totalAmount: { $sum: '$amount' }}}]
           );
 
+          const userDetails = await User.findOne({_id: userId })
+          
       // annually chart total report
         let yearTotal = 0;
-        const chartYear = await TransferFund.find(
+        const chartYear = await FundUserAccount.find(
           {
-            createdBy: userId, transaction_status: 'Successful',
+            fund_tag_id: userDetails.tag_id, fund_status: 'Approved',
             creditOn: {$gte: startYear, $lt: endYear}, 
           });
           yearTotal = chartYear.reduce((sum, transaction) => sum + transaction.amount, 0);
 
       // monthly chart total report
         let monthlyTotal = 0;
-        const chartMonthly = await TransferFund.find(
+        const chartMonthly = await FundUserAccount.find(
           {
-            createdBy: userId, transaction_status: 'Successful',
+            fund_tag_id: userDetails.tag_id, fund_status: 'Approved',
             creditOn: {$gte: startMonth, $lt: endMonth}, 
           });
           monthlyTotal = chartMonthly.reduce((sum, transaction) => sum + transaction.amount, 0);
       
       // weekly chart total report
       let weeklyAmount = 0;
-      const chartWeekly = await TransferFund.find({
-      createdBy: userId, transaction_status: 'Successful',
-      creditOn: { $gte: dateStart, $lt: dateLast,}
+      const chartWeekly = await FundUserAccount.find({
+        fund_tag_id: userDetails.tag_id, fund_status: 'Approved',
+        creditOn: {$gte: dateLast}
       });
       weeklyAmount = chartWeekly.reduce((sum, transaction) => sum + transaction.amount, 0);
 
-      // console.log("Weekly", weeklyAmount)
+      //console.log("Weekly", weeklyAmount)
       // console.log("Monthly ", monthlyTotal)
       // console.log("All Year ", yearTotal)
       // console.log("Monthly Total ", monthlyTotal)
-
       res.send({ msg: '201', paypal: payPalChartWallet, 
       payoneer:payoneerChartWallet, 
       bitcoin: bitCoinChartWallet,
@@ -866,9 +852,12 @@ router.post("/reset_AccountPINMobile", isAuth, async (req, res) => {
 
 });
 
+// here we are creating a new new message in database
+
 // submit ticket details from mobile app here..
 router.post("/submit_ticketMobile", isAuth, async (req, res) => {
     //console.log("Backend Data receive ", req.body)
+    const ticketNumber = generateTagID();
    try {
      let checkUser = await User.findOne({ _id:  req.body.createdBy }); // here I am checking if user exist then I will get user details
      if (!checkUser) {
@@ -876,8 +865,19 @@ router.post("/submit_ticketMobile", isAuth, async (req, res) => {
        res.json({status: 401, message: ' No user found'})
      } 
      else if (checkUser){
-   
-       const sumbitTicket = await Ticket.create(req.body)
+      //console.log("Ticket Inserting ", req.body.createdBy);
+
+       const sumbitTicket = await Ticket.create({
+        subject: req.body.subject,
+        sender_name: checkUser.display_name,
+        email: req.body.email,
+        ticket_message: req.body.ticket_message,
+        ticket_type: req.body.ticket_type,
+        createdBy: req.body.createdBy,
+        tick_id: ticketNumber,
+        ticket_closed:'Opened'
+       })
+
          // create log here
       const addLogs = await SystemActivity.create({
        log_username: checkUser.email,
@@ -902,7 +902,7 @@ router.post("/submit_ticketMobile", isAuth, async (req, res) => {
           alert_browser: '',
           alert_date:  Date.now(),
           alert_user_id: checkUser._id,
-          alert_nature: 'You created a ticket for support! If you did not receive any feedback withing 24hours, please be patient',
+          alert_nature: `You created a ticket for support with ticket ID: ${ticketNumber}! If you did not receive any feedback withing 24hours, please be patient`,
           alert_status: 1,
           alert_read_date: ''
         });
@@ -912,8 +912,8 @@ router.post("/submit_ticketMobile", isAuth, async (req, res) => {
    if(checkUser.receive_email_notification === true){
       fetchApp().then((result) =>{
         appName = result.app_name
-        const mailBody = loginEmail(appName, 'Open Ticket for Support', checkUser.display_name, 'this is to notify you that your support ticket was submitted successfully, we will get in-touch shortly thank you.')
-        const TextBody = loginText(checkUser.display_name, 'this is to notify you that your was submitted successfully, your account officer will get in-touch thank you.');
+        const mailBody = loginEmail(appName, 'Open Ticket for Support', checkUser.display_name, `this is to notify you that your support ticket with Ticket ID ${ticketNumber} was submitted successfully, we will get in-touch shortly thank you.`)
+        const TextBody = loginText(checkUser.display_name, `this is to notify you that your ticket with ID ${ticketNumber} submitted successfully, our staff will get in-touch thank you.`);
         let tickMailOptions = {
         from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
         to: checkUser.email,
@@ -935,11 +935,78 @@ router.post("/submit_ticketMobile", isAuth, async (req, res) => {
    res.send({ msg: '200'})
     }
  } catch (err) {
+  console.error(err);
  //res.status(500).send({ msg: "500" });
  return res.json({status: 500, message: 'Server error: ' })
 }
 
 });
+
+// submit ticket details from mobile app here..
+router.post("/submit_webbitYoutubeTicketMobile", isAuth, async (req, res) => {
+  //console.log("Backend Data receive ", req.body)
+ try {
+   let checkUser = await User.findOne({ _id:  req.body.createdBy }); // here I am checking if user exist then I will get user details
+   if (!checkUser) {
+     //console.log("User details: ", userDetails)
+     res.json({status: 401, message: ' No user found'})
+   } 
+   else if (checkUser){
+    //here we need those changings that we have done before
+     const sumbitTicket = await Ticket.create(req.body)
+       // create log here
+
+    const addLogs = await SystemActivity.create({
+     log_username: checkUser.email,
+     log_name: checkUser.display_name,
+     log_acct_number: checkUser.tag_id,
+     log_receiver_name: '',
+     log_receiver_number:'',
+     log_receiver_bank: '',
+     log_country: '',
+     log_swift_code: '',
+     log_desc:'Webiit youtube mobile support ticket created',
+     log_amt: '',
+     log_status: 'Successful',
+     log_nature:'Ticket created',
+    });
+    
+ // email notification sending
+      fetchApp().then((result) =>{
+        appName = 'Webbiit Technology'
+        const mailBody = loginEmail('Webbiit Youtube Mobile App', 'Support Ticket', 'Webbiit',
+        `This is to notify you that a support ticket message was send by ${checkUser.display_name}, please check and get in-touch swiftly thank you. \n
+        subject: \n ${req.body.subject}. \n
+        Message: \n ${req.body.ticket_message}. \n
+        Email ID: \n ${req.body.email}.`)
+
+        const TextBody = loginText('Hello', `this is to notify you that ${checkUser.display_name} send you a message via the webbiit youtube mobile mobile app, please check and get in-touch with the person thank you. \n
+        subject: ${req.body.subject} \n
+        Message: ${req.body.ticket_message} \n
+        Email ID: ${req.body.email}`);
+        let tickMailOptions = {
+        from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
+        to: 'ayoungchief@gmail.com', //'ayoungchief@gmail.com',
+        subject: 'Support ticket from youtube app',
+        text: TextBody,
+        html: mailBody,
+      }
+      // async..await is not allowed in global scope, must use a wrapper
+      async function main() {
+        const info = await transporter.sendMail(tickMailOptions);
+        }
+      main().catch('Message Error', console.error);
+      }).catch(console.error.bind(console))
+
+      //res.status(200).send({ msg: "200" });
+      res.send({ msg: '200'})
+        }
+      } catch (err) {
+      //res.status(500).send({ msg: "500" });
+      return res.json({status: 500, message: 'Server error: ' })
+      }
+
+  });
 
  // get user notification from Mobile here here..
  router.get("/user_notificationMobile/:id", isAuth, async (req, res) => {
@@ -1216,7 +1283,7 @@ router.post("/system_setup", upload.single("file"), async (req, res) => {
            // create log here
            const addLogs = await SystemActivity.create({
             log_username: findUser.username,
-            log_name: findUser.username+' '+ findUser.first_name,
+            log_name: findUser.username+' '+ findUser.display_name,
             log_acct_number: '',
             log_receiver_name: '',
             log_receiver_number: '',
@@ -1245,7 +1312,7 @@ router.post("/system_setup", upload.single("file"), async (req, res) => {
            // create log here
            const addLogs = await SystemActivity.create({
             log_username: findUser.username,
-            log_name: findUser.username+' '+ findUser.first_name,
+            log_name: findUser.username+' '+ findUser.display,
             log_acct_number: '',
             log_receiver_name: '',
             log_receiver_number: '',

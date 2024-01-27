@@ -13,6 +13,7 @@ const transferSchema = new Schema({
         default:0.0
     },
     bank_name: String,
+    tran_service_type: String,
     bank_address: String,
     sender_name: String,
     sender_acct_number: String,
@@ -51,6 +52,7 @@ const transferSchema = new Schema({
         type: String,
     },
     creditOn: {type: Date, default: Date.now},
+    approved_date: {type: Date},
 });
 
 transferSchema.plugin(mongoosePaginate)

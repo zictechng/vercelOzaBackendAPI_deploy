@@ -11,7 +11,6 @@ const UserLogs = require('../models/UserLogs')
 const AppSetting = require('../models/AppSettingDetails')
 
 const nodemailer = require("nodemailer");
-
 const transporter = require('../controllers/mailSender');
 const { isAuth } = require('../middleware/auth');
 const { mailTemplate } = require('../middleware/emailTemplate');
@@ -48,8 +47,8 @@ function verifyToken(req, res, next) {
 router.post("/login", async (req, res, next) => {
     const file = req.file;
     const filter = req.body;
-            //console.log("Login Data ", req.body);
-         //check in input fields is empty
+    console.log("Login Data ", req.body);
+    //check in input fields is empty
     if(filter.username == '' || filter.password == ''){
         return res.json({status: 400, message: ' All fields are required'})
         //return res.status(400).json({msg: '400'}) //Fields required
@@ -84,11 +83,11 @@ router.post("/login", async (req, res, next) => {
             const token = jwt.sign({userId:userExist._id}, process.env.SECRET_LOGIN_KEY,
                 {expiresIn:'1d'});
             // get system settings here
-             const { password, ...others } = userExist._doc; // this will remove password from the details send to server.
+             const { password, password_plain, ...others } = userExist._doc; // this will remove password from the details send to server.
             // create log here
         const addLogs = SystemActivity.create({
             log_username: userExist.email,
-            log_name: userExist.surname+' '+userExist.display_name,
+            log_name: userExist.display_name,
             log_acct_number: userExist.tag_id,
             log_receiver_name: '',
             log_receiver_number: '',
@@ -104,7 +103,7 @@ router.post("/login", async (req, res, next) => {
         // user logs status here.
         const userLogs = UserLogs.create({
             login_username: userExist.email,
-            login_name: userExist.surname + ' ' + userExist.display_name,
+            login_name: userExist.display_name,
             login_user_ip: '',
             login_country: '',
             login_browser: '',
@@ -143,6 +142,30 @@ router.post("/login", async (req, res, next) => {
         res.status(500).send({ msg: "500" });
         }
     });
+
+    // route to login user
+// router.post("/google_login", passport.authenticate('google'), async (req, res, next) => {
+//     const file = req.file;
+//     const filter = req.body;
+//             //console.log("Login Data ", req.body);
+//          //check in input fields is empty
+//     if(filter.username == '' || filter.password == ''){
+//         return res.json({status: 400, message: ' All fields are required'})
+//         //return res.status(400).json({msg: '400'}) //Fields required
+//     } 
+//     try {
+//     // Check if user exist
+//     const userExist = await User.findOne({email: filter.username})
+//     const getAppSetting = await AppSetting.findOne();
+   
+//             res.send({ msg: '200', token: token, userData: others, appData: getAppSetting})
+//         //res.json({msg: 200, token: token, userData: others})
+//         //console.log('Environment data!', process.env.SECRET_KEY);
+//         }
+//          catch (err) {
+//         res.status(500).send({ msg: "500" });
+//         }
+//     });
     
     // route to logout user
 router.get("/user_logout/:id", async (req, res, next) => {
@@ -190,20 +213,7 @@ router.get("/user_logout/:id", async (req, res, next) => {
             res.status(500).json(err);
             console.log(err.message);
         }
-    }); 
-
-    // route to logout user
-router.get("/authenticate_user/:id", isAuth, async (req, res, next) => {
-    let myId = req.params.id;
-    if(myId == '' || myId == null || myId == undefined) {
-        return res.json({status: 401, message: 'Login Required'});
-        }
-        let user = await User.findById({_id: myId})
-            if(!user) {
-                return res.json({status: 401, message: ' Access denied'});
-            }
-        res.send({ msg: '200',})
-    }); 
+    });
     
     // verify user login state if it is valid or not
 // router.get("/verify_login", verifyToken, async (req, res) => {
@@ -304,7 +314,7 @@ router.post("/otp_verify", async (req, res) => {
         // create log here
             const addLogs = SystemActivity.create({
             log_username: userExist.username,
-            log_name: userExist.surname+' '+userExist.first_name,
+            log_name: userExist.first_name,
             log_acct_number: '',
             log_receiver_name: '',
             log_receiver_number: '',
@@ -371,7 +381,7 @@ router.post("/forgetPasswordMobile", async (req, res) => {
             // create log here
                 const addLogs = SystemActivity.create({
                 log_username: userExist.username,
-                log_name: userExist.display_name+' '+userExist.first_name,
+                log_name: userExist.display_name,
                 log_acct_number: '',
                 log_receiver_name: '',
                 log_receiver_number: '',
@@ -497,6 +507,88 @@ router.post("/resetPasswordMobile", async (req, res) => {
         }
     });
 
+// Webbiit youtube app forget password route reset here
+router.post("/forgetPasswordWebbiit", async (req, res) => {
+        //const file = req.file;
+        console.log(req.body);
+        const filter = req.body ;
+        const filterUser = { email: req.body.userEmail };
+         //check in input fields is empty
+if(filter.userEmail == '' || filter.userEmail == null){
+    return res.json({status: 400, message: 'Some fields are missing'})
+    } 
+
+try {
+    // Check if user exist
+    const userExist = await User.findOne({email: filter.userEmail})
+
+    if(!userExist){
+        //console.log("OTP Data from APP", userExist);
+    return res.json({status: 404, message: ' User not found'})
+    }
+    else if(userExist){
+        // just update one row
+    // hash the password here
+    const hashedPwd = await bcrypt.hash(req.body.password, 10) // salt rounds
+    // set information to update table row
+    const updatePassAccount = {
+        $set: {
+            "password": hashedPwd, 
+            "password_plain": req.body.password,
+        },
+    };
+
+    const updateUserNow = await User.updateOne(filterUser, updatePassAccount);
+
+    if(updateUserNow){
+            // create log here
+        const addLogs = SystemActivity.create({
+        log_username: userExist.email,
+        log_name: userExist.display_name,
+        log_acct_number: '',
+        log_receiver_name: '',
+        log_receiver_number: '',
+        log_receiver_bank: '',
+        log_country: '',
+        log_swift_code: '',
+        log_desc:'Webbit youtube app password updated successfully',
+        log_amt: '',
+        log_status: 'Successful',
+        log_nature:'User update password',
+        })
+        // async..await is not allowed in global scope, must use a wrapper
+    
+        // get app details and send mail
+        fetchApp().then((result) =>{
+        appName = 'Webbiit Technology'
+        const mailBody = loginEmail(appName, 'Password reset successfully', userExist.display_name, 'this is to notify you that your account password has been reset, If this is not you, contact our support immediately. \n')
+        const TextBody = loginText(userExist.display_name, 'this is to notify you that your account password has been reset, If this is not you, contact our support immediately');
+        let mailOptions = {
+            from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
+            to: userExist.email,
+            subject: 'Password reset successfully!',
+            text: TextBody,
+            html: mailBody,
+        }
+        async function main() {
+        const info = await transporter.sendMail(mailOptions);
+                }
+            main().catch('Message Error', console.error);
+        }).catch(console.error.bind(console))
+
+            //res.status(200).json({ msg: '200'}) // success message
+                res.send({ msg: '200'}) 
+                }
+            }
+            else{
+                console.log('Password reset : Something went wrong');
+            }
+        } catch (err) {
+            //res.status(500).send({ msg: "500" });
+            console.log('Server error : ', err.message)
+            return res.json({status: 500, message:err.message})
+        }
+ });
 
 
-  module.exports = router;
+module.exports = router;

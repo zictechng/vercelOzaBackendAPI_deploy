@@ -285,6 +285,7 @@ const processPaymentDetails = async(data, paymentId) =>{
               createdBy: data.myId,
               tid: TransID,
               trans_balance: data.total_money,
+              tran_service_type: data.serviceType,
               pay_tran: paymentId,
               tran_rate: data.serviceName == 'PayPal'? getCurrentRate.paypal_selling: data.serviceName == 'Payoneer'? getCurrentRate.payooner_selling: data.serviceName=='Bitcoin'? getCurrentRate.btc_selling: ''
               });
@@ -694,6 +695,7 @@ router.post("/fundPurchase_funding", isAuth, async (req, res) => {
                 createdBy: dataReceive.myId,
                 trans_balance: dataReceive.total_money,
                 tid: TransID,
+                tran_service_type: dataReceive.serviceType,
                 pay_tran: dataReceive.method =='Paystack Checkout'? dataReceive.payId : null,
                 tran_rate: dataReceive.serviceName == 'PayPal'? getCurrentRate.paypal_buying: dataReceive.serviceName == 'Payoneer'? getCurrentRate.payooner_buying: dataReceive.serviceName=='Bitcoin'? getCurrentRate.btc_buying: ''
                 });
@@ -800,6 +802,7 @@ router.post("/fundBuy_funding", isAuth, async (req, res) => {
                 currency_level:'2',
                 createdBy: dataReceive.myId,
                 tid: TransID,
+                tran_service_type: dataReceive.serviceType,
                 trans_balance: dataReceive.total_money,
                 pay_tran: dataReceive.method =='Paystack Checkout'? dataReceive.payId : null,
                 tran_rate: dataReceive.serviceName == 'PayPal'? getCurrentRate.paypal_buying: dataReceive.serviceName == 'Payoneer'? getCurrentRate.payooner_buying: dataReceive.serviceName=='Bitcoin'? getCurrentRate.btc_buying: ''
@@ -868,6 +871,34 @@ router.post("/fundBuy_funding", isAuth, async (req, res) => {
         return res.json({status: 500, message: 'Technical issues occurred' })
      }
   });
+
+  // process user sales/purchase request fund goes here...
+router.post("/fetch_AccountDetailsMobile", async (req, res) => {
+  const dataReceive = req.body;
+  // get the transfer record ID here
+  const filter = { _id: dataReceive.myId };
+      if (dataReceive == "" || dataReceive == null) {
+      return res.json({status: 404, message: 'Invalid data'})
+      }
+      
+  try {
+    let receiverUser = await User.findOne({ tag_id:  req.body.data }); // here I am checking if user exist then I will get user details
+    
+    if (!receiverUser) {
+          //console.log("User details: ", userDetails)
+          return res.json({status: 404, message: 'User not found'})// user not found
+        } 
+        else if (receiverUser){
+          console.log("User details: ", receiverUser.display_name)
+       // success message
+        res.json({msg: '200', userData: receiverUser.display_name})
+        }
+    } catch (err) {
+       // err message
+     console.log(err)
+      return res.json({status: 500, message: 'Technical issues occurred' })
+   }
+});
 
   // process user sales/purchase request fund goes here...
 router.post("/paypal_checkout", isAuth, async (req, res) => {
@@ -975,4 +1006,4 @@ router.post("/paypal_checkout", isAuth, async (req, res) => {
      }
   });
 
-  module.exports = router;
+module.exports = router;

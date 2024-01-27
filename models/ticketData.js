@@ -16,17 +16,25 @@ const ticketSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
-    createdBy: String,
+
+    ticket_closed: {
+        type: String,
+    },
+
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId, // Change the type to ObjectId
+        ref: 'User', // Assuming 'User' is the name of your User model
+        required: true,
+      },
 
     addeby: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Users'
+        ref: 'users'
         // this will get the user ID automatically by mongoose in nodejs
     },
-    
     tick_id: String,
-    tick_date: String,
-    createdOn: {type: Date, default: Date.now},
+    tick_response_date: {type: Date},
+    createdOn: {type: Date},
  })
 
 // export it

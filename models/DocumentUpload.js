@@ -12,6 +12,16 @@ const DocumentUploadSchema = new mongoose.Schema({
         type: 'string',
         },
     user_id:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Users'
+    },
+    owners_name:{
+        type: 'string',
+    },
+    owners_email:{
+        type: 'string',
+    },
+    owners_tag_id:{
         type: 'string',
     },
     document_action:{
@@ -20,7 +30,14 @@ const DocumentUploadSchema = new mongoose.Schema({
     document_status:{
         type: 'string',
     },
+    reject_document_reason:{
+        type: 'string',
+    },
+    track_document:{
+        type: 'string',
+    },
     createdOn: {type: Date, default: Date.now},
+    action_date: {type: Date},
     addeby: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Users'
