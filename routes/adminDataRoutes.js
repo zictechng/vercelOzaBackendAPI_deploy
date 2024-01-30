@@ -2347,7 +2347,6 @@ router.post("/searchTicket_database", isAuth, async (req, res) => {
   }
 });
 
-
 // close user message ticket  here..
 router.post("/closeUserTicket_message", isAuth, async (req, res) => {
   let recordId = req.body.tran_id;
@@ -2473,7 +2472,7 @@ router.get("/fetchAll_log", isAuth, async (req, res) => {
 router.post("/searchLogs_database", isAuth, async (req, res) => {
 
   const searchData = req.body.dataInfo;
-  console.log("data ", req.body.dataInfo)
+  //console.log("data ", req.body.dataInfo)
         if(searchData.searchValue == '' || searchData == null || req.body.dataInfo =='' ) {
           return res.json({status: 404, message: ' Query parameters is empty!'})
         }
@@ -2583,11 +2582,26 @@ router.get("/get_systemLogs_byId/:id", isAuth, async (req, res) => {
 router.post("/search_systemLogs_database", isAuth, async (req, res) => {
 
   const searchData = req.body.dataInfo;
-  console.log("data ", req.body.dataInfo)
+  //console.log("data ", req.body.dataInfo)
+  let pageSearch = parseInt(req.query.pageNumber);
+  let limitSearch = parseInt(req.query.pageLimit);
+  if(!pageSearch) pageSearch = 1;
+  if(!limitSearch) limitSearch = 10;
+
+  const skip = (pageSearch - 1) * limitSearch;
+
         if(searchData.searchValue == '' || searchData == null || req.body.dataInfo =='' ) {
           return res.json({status: 404, message: ' Query parameters is empty!'})
         }
   try {
+    //get all user count details
+    const pageCountSearch = await SystemActivity.find({
+      $or: [{log_username: searchData},
+            {log_nature: searchData}]
+          }).count(); // get total records
+
+    const totalPageNumberSearch = Math.ceil(pageCountSearch / limitSearch); // get the number of pages
+          
     //get search query with multiple condition from database
     const checkData = await SystemActivity.findOne({
         $or: [{log_username: searchData},
@@ -2599,7 +2613,7 @@ router.post("/search_systemLogs_database", isAuth, async (req, res) => {
       const logSystem = await SystemActivity.find({
         $or: [{log_username: searchData},
               {log_nature: searchData}]
-            }).sort({ createdOn: -1 }).limit(100);
+            }).sort({ createdOn: -1 }).skip(skip).limit(limitSearch);
 
       if(!logSystem){
         return res.json({ status: 404, message: ' No results matching your query'})
@@ -2610,7 +2624,7 @@ router.post("/search_systemLogs_database", isAuth, async (req, res) => {
       if(logSystem){
         // get system settings here
       
-        res.send({ msg: '201', feedAll: logSystem})
+        res.send({ msg: '201', feedAll: logSystem, page: pageSearch, limit: limitSearch, totalPage: totalPageNumberSearch, totalRecord: pageCountSearch})
         //console.log("result ", logsUserDoc)
       }
      } catch (err) {
@@ -2618,6 +2632,357 @@ router.post("/search_systemLogs_database", isAuth, async (req, res) => {
     console.log(err.message);
   }
 });
+
+// Search system activities log with pagination details here..
+router.get("/search_systemLogs_pagination", isAuth, async (req, res) => {
+
+  const searchData = req.query.searchData.dataInfo;
+  console.log("data ", req.body)
+  let pageSearch = parseInt(req.query.pageNumber);
+  let limitSearch = parseInt(req.query.pageLimit);
+  if(!pageSearch) pageSearch = 1;
+  if(!limitSearch) limitSearch = 10;
+
+  const skip = (pageSearch - 1) * limitSearch;
+
+        if(searchData.searchValue == '' || searchData == null || req.query.searchData.dataInfo =='' ) {
+          return res.json({status: 404, message: ' Query parameters is empty!'})
+        }
+  try {
+    //get all user count details
+    const pageCountSearch = await SystemActivity.find({
+      $or: [{log_username: searchData},
+            {log_nature: searchData}]
+          }).count(); // get total records
+
+    const totalPageNumberSearch = Math.ceil(pageCountSearch / limitSearch); // get the number of pages
+          
+    //get search query with multiple condition from database
+    const checkData = await SystemActivity.findOne({
+        $or: [{log_username: searchData},
+        {log_nature: searchData}]
+        });
+        if(!checkData){
+        return res.json({ status: 404, message: ' No results matching your query'})
+        }
+      const logSystem = await SystemActivity.find({
+        $or: [{log_username: searchData},
+              {log_nature: searchData}]
+            }).sort({ createdOn: -1 }).skip(skip).limit(limitSearch);
+
+      if(!logSystem){
+        return res.json({ status: 404, message: ' No results matching your query'})
+      }
+      if(logSystem.length < 1){
+        return res.json({ status: 404, message: ' No results matching your query'})
+      }
+      if(logSystem){
+        // get system settings here
+      
+        res.send({ msg: '201', feedAll: logSystem, page: pageSearch, limit: limitSearch, totalPage: totalPageNumberSearch, totalRecord: pageCountSearch})
+        //console.log("result ", logsUserDoc)
+      }
+     } catch (err) {
+    res.status(500).json(err.message);
+    console.log(err.message);
+  }
+});
+
+// get all system referral activities logs details here..
+router.get("/fetchAll_referral", isAuth, async (req, res) => {
+  let page = parseInt(req.query.pageNumber);
+  let limit = parseInt(req.query.pageLimit);
+  if(!page) page = 1;
+  if(!limit) limit = 10;
+
+  const skip = (page - 1) * limit;
+
+  try {
+    //get all user count details
+    const pageCount = await Referrals.find().count(); // get total records
+    const totalPageNumber = Math.ceil(pageCount / limit); // get the number of pages
+
+    //get all user count details
+     const all_systemLogs = await Referrals.find().sort({ createdOn: -1 }).skip(skip).limit(limit);
+      res.send({ msg: '201', 
+      feedAll: all_systemLogs, page: page, limit: limit, totalPage: totalPageNumber, totalRecord: pageCount})
+    } catch (err) {
+    res.status(500).json(err.message);
+    console.log(err.message);
+  }
+});
+
+// get system referral details via ID passed from frontend table here..
+router.get("/get_referral_byId/:id", isAuth, async (req, res) => {
+  let userId = req.params.id;
+  //console.log("ID ", userId);
+  let pageSearch = parseInt(req.query.pageNumber);
+  let limitSearch = parseInt(req.query.pageLimit);
+  if(!pageSearch) pageSearch = 1;
+  if(!limitSearch) limitSearch = 10;
+  const skip = (pageSearch - 1) * limitSearch;
+
+  try {
+    if(userId == '' || userId == null){
+      return res.json({status: 404, message: ' User ID not found'})
+    }
+    //get all user count details
+    
+     const userReferrals = await Referrals.findOne({_id: userId} );
+
+     const pageCountSearch = await Referrals.find({
+      ref_mainEmail: userReferrals.ref_mainEmail }).count(); // get total records
+
+      const allMyReferral = await Referrals.find({
+        ref_mainEmail: userReferrals.ref_mainEmail }).sort({ createdOn: -1 }).skip(skip).limit(limitSearch);
+
+     const totalPageNumberSearch = Math.ceil(pageCountSearch / limitSearch); // get the number of pages
+
+     if(userReferrals){
+      res.send({ msg: '201', feedAll: userReferrals, feedAllData: allMyReferral, page: pageSearch, limit: limitSearch, totalPageSearch: totalPageNumberSearch, totalRecord: pageCountSearch})
+     }
+     else{
+      return res.json({status: 404, message: ' Message not found'})
+     }
+     } catch (err) {
+    res.status(500).json(err.message);
+    console.log(err.message);
+  }
+});
+
+// Search system referral details from database with user email or tag ID here..
+router.post("/search_referral_database", isAuth, async (req, res) => {
+
+  const searchData = req.body.dataInfo;
+  //console.log("data ", req.body.dataInfo)
+  let pageSearch = parseInt(req.query.pageNumber);
+  let limitSearch = parseInt(req.query.pageLimit);
+  if(!pageSearch) pageSearch = 1;
+  if(!limitSearch) limitSearch = 10;
+
+  const skip = (pageSearch - 1) * limitSearch;
+
+        if(searchData.searchValue == '' || searchData == null || req.body.dataInfo =='' ) {
+          return res.json({status: 404, message: ' Query parameters is empty!'})
+        }
+  try {
+    //get all user count details
+    const pageCountSearch = await Referrals.find({
+      $or: [{ref_mainEmail: searchData},
+            {ref_mainTag: searchData}]
+          }).count(); // get total records
+
+    const totalPageNumberSearch = Math.ceil(pageCountSearch / limitSearch); // get the number of pages
+
+    // console.log("Total record count ", pageCountSearch)
+    //get search query with multiple condition from database
+    const searchCheckData = await Referrals.findOne({
+        $or: [{ref_mainEmail: searchData},
+              {ref_mainTag: searchData}]
+            });
+        if(!searchCheckData){
+        return res.json({ status: 404, message: ' No results matching your query'})
+        }
+      const logSystem = await Referrals.find({
+        $or: [{ref_mainEmail: searchData},
+              {ref_mainTag: searchData}]
+            }).sort({ createdOn: -1 }).skip(skip).limit(limitSearch);
+
+      if(!logSystem){
+        return res.json({ status: 404, message: ' No results matching your query'})
+      }
+      if(logSystem.length < 1){
+        return res.json({ status: 404, message: ' No results matching your query'})
+      }
+      if(logSystem){
+        // get system settings here
+      
+        res.send({ msg: '201', feedAllData: logSystem, page: pageSearch, limit: limitSearch, totalPage: totalPageNumberSearch, totalRecord: pageCountSearch})
+        //console.log("result ", logsUserDoc)
+      }
+     } catch (err) {
+    res.status(500).json(err.message);
+    console.log(err.message);
+  }
+});
+
+// Search system referral activities with pagination details here..
+router.get("/search_referral_pagination", isAuth, async (req, res) => {
+
+  const searchData = req.query.searchData.dataInfo;
+  console.log("data ", req.body)
+  let pageSearch = parseInt(req.query.pageNumber);
+  let limitSearch = parseInt(req.query.pageLimit);
+  if(!pageSearch) pageSearch = 1;
+  if(!limitSearch) limitSearch = 10;
+
+  console.log("Data send ", searchData)
+
+  const skip = (pageSearch - 1) * limitSearch;
+
+        if(searchData.searchValue == '' || searchData == null || req.query.searchData.dataInfo =='' ) {
+          return res.json({status: 404, message: ' Query parameters is empty!'})
+        }
+  try {
+    //get all user count details
+    const pageCountSearch = await Referrals.find({
+      $or: [{ref_mainEmail: searchData},
+            {ref_mainTag: searchData}]
+          }).count(); // get total records
+
+    const totalPageNumberSearch = Math.ceil(pageCountSearch / limitSearch); // get the number of pages
+      
+    //get search query with multiple condition from database
+    const checkData = await Referrals.findOne({
+        $or: [{ref_mainEmail: searchData},
+        {ref_mainTag: searchData}]
+        });
+        if(!checkData){
+        return res.json({ status: 404, message: ' No results matching your query'})
+        }
+      const logSystem = await Referrals.find({
+        $or: [{ref_mainEmail: searchData},
+          {ref_mainTag: searchData}]
+            }).sort({ createdOn: -1 }).skip(skip).limit(limitSearch);
+
+      if(!logSystem){
+        return res.json({ status: 404, message: ' No results matching your query'})
+      }
+      if(logSystem.length < 1){
+        return res.json({ status: 404, message: ' No results matching your query'})
+      }
+      if(logSystem){
+        // get system settings here
+      
+        res.send({ msg: '201', feedAllData: logSystem, page: pageSearch, limit: limitSearch, totalPage: totalPageNumberSearch, totalRecord: pageCountSearch})
+        //console.log("result ", logsUserDoc)
+      }
+     } catch (err) {
+    res.status(500).json(err.message);
+    console.log(err.message);
+  }
+});
+
+// approve referral bonus amount and credit user wallet here..
+router.get("/approveReferral_bonus/:id", isAuth, async (req, res) => {
+
+  let recordId = req.params.id;
+  console.log("data ", req.params.id)
+
+  if(recordId == '' || recordId == null){
+    return res.json({status: 404, message: ' Record ID not found'})
+  }
+
+  try {
+
+    //get all user count details
+    const checkReferral = await Referrals.findOne({_id: recordId });
+        if(!checkReferral){
+        return res.json({ status: 404, message: ' No results found, try again'})
+        }
+        //console.log(checkReferral)
+        if(!checkReferral.ref_status == 'Successful' || checkReferral.ref_status == 'Approved'){
+          return res.json({ status: 404, message: ' Referral bonus already added'})
+          }
+      // // get user details
+      const checkUser = await User.findOne({email: checkReferral.ref_mainEmail });
+      //console.log(checkUser)
+      if(!checkUser){
+        return res.json({ status: 404, message: ' User details not found' });
+      }
+      // // get current trade rates
+      const checkTradeRate = await GetRate.findOne();
+      
+      let addAmount = parseInt(10) * parseInt(checkTradeRate.paypal_buying);
+      //console.log(addAmount)
+
+      const currentBal = checkUser.amount+ +addAmount
+
+      if(checkUser){
+        const filterUser = { _id: checkUser._id };
+        const filterReferral = { _id: recordId };
+        
+        const updateReferralStatus = {
+          $set: {
+            ref_status: 'Approved',
+          },
+        };
+
+        const updateUserBalance = {
+          $set: {
+            amount: currentBal,
+          },
+        };
+
+        const updateUserBal = await User.updateOne(filterUser, updateUserBalance);
+        const updateRef = await Referrals.updateOne(filterReferral, updateReferralStatus);
+
+      const addLogs = await SystemActivity.create({
+        log_username: '',
+        log_name: checkUser.display_name,
+        log_acct_number: checkUser.tag_id,
+        log_receiver_name: '',
+        log_receiver_number: '',
+        log_receiver_bank: '',
+        log_country: '',
+        log_swift_code: '',
+        log_desc:'Admin staff approved user referral bonus request',
+        log_amt: '',
+        log_status: 'Successful',
+        log_nature:'Bonus fund Approved',
+       })
+
+       // check if user enabled in-app notifications and send notification
+      if(checkUser.receive_app_message == true) {
+        const userLogs = Notification.create({
+        alert_username: checkUser.display_name,
+        alert_name: checkUser.display_name,
+        alert_user_ip: '',
+        alert_country: '',
+        alert_browser: '',
+        alert_date:  Date.now(),
+        alert_user_id: checkUser._id,
+        alert_nature: `Referral Bonus Approved \n Note: this is to notify you that your referral bonus funds has been approved and your account has be credited with the sum of
+        \u20A6${new Intl.NumberFormat().format(addAmount)} \n\n for your hard work by sharing your referral ID! \n\n Keep referring to keep earning...`,
+        alert_status: 1,
+        alert_read_date: ''
+        })
+      }
+
+      // send email to the account owner
+      fetchApp().then((result) => {
+        appName = result.app_name
+        const mailBody = loginEmail(appName, 'Referral Bonus Approved', checkUser.display_name, `this is to notify you that your referral bonus funds has been approved and your account has be credited with the sum of \n\n
+        <b>\u20A6${new Intl.NumberFormat().format(addAmount)}</b> for your hard work for sharing your referral Tag ID <br>
+        </b><br>  Keep it up and keep referring your friends, loves one to continue earning... <br>
+        Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
+        
+            const mailText = loginText(checkUser.display_name, `this is to notify you that your referral bonus funds has been approved and your account has be credited with the sum of \n\n
+            <b>\u20A6${new Intl.NumberFormat().format(addAmount)}</b> for your hard work for sharing your referral Tag ID <br>
+            </b><br>  Keep it up and keep referring your friends, loves one to continue earning... <br>
+            Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
+            let account_issueEMail = {
+              from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
+              to: checkUser.email,
+              subject: 'Funds Credit Notification!',
+              text: mailText,
+              html: mailBody,
+            }
+            async function main() {
+            const info = await transporter.sendMail(account_issueEMail);
+                }
+            main().catch('Message Error', console.error);
+            }).catch(console.error.bind(console))
+
+      res.send({ msg: '201', feedAll: true })
+      }
+    } catch (err) {
+    res.status(500).json(err.message);
+    console.log(err.message);
+  }
+});
+
+
 
 
 

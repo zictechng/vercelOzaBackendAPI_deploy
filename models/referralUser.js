@@ -10,7 +10,12 @@ const referralUserSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
-    createdBy: String,
+    createdBy:{
+        type: mongoose.Schema.Types.ObjectId, // Change the type to ObjectId
+        ref: 'User', // Assuming 'User' is the name of your User model
+    },
+    
+    ref_approvedDate: {type: Date},
 
     createdOn: {type: Date, default: Date.now},
  })

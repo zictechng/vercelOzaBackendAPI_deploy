@@ -929,7 +929,7 @@ router.post("/submit_ticketMobile", isAuth, async (req, res) => {
       }).catch(console.error.bind(console))
     
    }
-  // async..await is not allowed in global scope, must use a wrapper
+    // async..await is not allowed in global scope, must use a wrapper
   
     //res.status(200).send({ msg: "200" });
    res.send({ msg: '200'})
