@@ -670,7 +670,7 @@ router.post("/userAccount_funding", isAuth, async (req, res) => {
      }
   });
 
-      // user request route to fund account goes here...
+// route to check funding limit before sending it for processing goes here...
 router.post("/check_fundingLimit", isAuth, async (req, res) => {
   const dataReceive = req.body;
   console.log("Tran ID: ", req.body)
@@ -701,7 +701,7 @@ router.post("/check_fundingLimit", isAuth, async (req, res) => {
    }
 });
 
-    // process user sales/purchase request fund goes here...
+// process user sales/purchase request fund goes here...
 router.post("/fundPurchase_funding", isAuth, async (req, res) => {
     const dataReceive = req.body;
     //console.log("My data: ", req.body)
