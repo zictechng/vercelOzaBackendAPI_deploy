@@ -47,7 +47,7 @@ function verifyToken(req, res, next) {
 router.post("/login", async (req, res, next) => {
     const file = req.file;
     const filter = req.body;
-    console.log("Login Data ", req.body);
+    //console.log("Login Data ", req.body);
     //check in input fields is empty
     if(filter.username == '' || filter.password == ''){
         return res.json({status: 400, message: ' All fields are required'})
@@ -215,67 +215,30 @@ router.get("/user_logout/:id", async (req, res, next) => {
         }
     });
     
+
     // verify user login state if it is valid or not
-// router.get("/verify_login", verifyToken, async (req, res) => {
-//     let myToken = req.query.token;
-//     let myId = req.query.user_id;
-       
-//     // console.log("User ID ", myId);
-//     // console.log("User token ", myToken);
+router.get("/authenticate_user/:id", isAuth, async (req, res, next) =>{
 
-//         try {
-//             const userData = await User.find({_id: myId });
-//             const userLogs = await UserLogs.findOne({login_token: myToken });
-//             //console.log("User log Details ", userLogs)
-//         if(userLogs === null){
-//             const addLogs = SystemActivity.create({
-//                         log_username: '',
-//                         log_name: '',
-//                         log_acct_number: '',
-//                         log_receiver_name: '',
-//                         log_receiver_number: '',
-//                         log_receiver_bank: '',
-//                         log_country: '',
-//                         log_swift_code: '',
-//                         log_desc:'User try to bye-past login',
-//                         log_amt: '',
-//                         log_status: 'Failed',
-//                         log_nature:'Login failed',
-//                     });
-//         res.status(404).json({ msg: '404' })
-//         console.log("Result Details", userLogs);
-//         }
-//          else if(!userData || userData === undefined || userData === null) {
-//                 const addLogs = SystemActivity.create({
-//                 log_username: '',
-//                 log_name: '',
-//                 log_acct_number: '',
-//                 log_receiver_name: '',
-//                 log_receiver_number: '',
-//                 log_receiver_bank: '',
-//                 log_country: '',
-//                 log_swift_code: '',
-//                 log_desc:'User try to bye-past login',
-//                 log_amt: '',
-//                 log_status: 'Failed',
-//                 log_nature:'Login failed',
-//             });
-//             res.status(404).json({ msg: '404' })
-//             }
-//             else if(userLogs){
-//             //console.log("Result Details", result);
-//             res.status(200).send({data: userData, msg: '200'});
-//             }
-//         } catch (err) {
-//             res.status(500).json(err);
-//             console.log("Error 500 ", err.message);
-//         }
-//     });
+    const userId = req.params.id
+    console.log(req.params.id);
+    try {
+        // Check if user exist
+        if(userId =='' || userId == null){
+            return res.json({status: 404, message: ' User Account not found'});
+        }
+        else if(userId){
+            res.send({ msg: '200'})
+        }
+    } catch (err) {
+        console.log('Server error : ', err.message)
+        return res.json({status: 500, message:err.message})
+        }
+    
 
-
-
+    })
 
 // route to verify user account (OTP)
+
 router.post("/otp_verify", async (req, res) => {
     //const file = req.file;
     const filter = req.body ;

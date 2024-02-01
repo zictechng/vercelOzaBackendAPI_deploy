@@ -11,7 +11,7 @@ const User = require('../models/User');
 router.get("/fetch_edit_user/:id", async (req, res) => {
     let myId = req.params.id;
     
-    console.log("Update Route Data", req.params.id);
+    //console.log("Update Route Data", req.params.id);
     // Getting full month name (e.g. "June")
     var today = new Date();
     var month = today.toLocaleString('default', { month: 'long' });
