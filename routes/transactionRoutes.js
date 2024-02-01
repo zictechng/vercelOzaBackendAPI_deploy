@@ -551,21 +551,25 @@ const processPaymentDetails = async(data, paymentId) =>{
     // user request route to fund account goes here...
 router.post("/userAccount_funding", isAuth, async (req, res) => {
     const dataReceive = req.body;
-    //console.log("My Blocked ID: ", req.body)
+    //console.log("Tran ID: ", req.body)
     const Trans_ID = transactionID(25)
     // get the transfer record ID here
     const filter = { _id: dataReceive.userId };
         if (dataReceive.userId == "" || dataReceive.userId == null) {
          return res.status(401).send({ message: "Invalid user access" }); // cot code required
         }
-    try {
+
           const fundingLimit = await AppSetting.find();
-          if(dataReceive.amt > fundingLimit.app_maxi_funding ){
-            return res.json({status: 403, message: `Amount funding should not exceed \u20A6${fundingLimit.app_maxi_funding}` })
+          if(dataReceive.amt > fundingLimit[0].app_maxi_funding ){
+            return res.json({status: 403, message: `Amount funding should not exceed \u20A6${new Intl.NumberFormat().format(fundingLimit[0].app_maxi_funding)}` })
           }
-          if(dataReceive.amt < fundingLimit.app_minim_funding ){
-            return res.json({status: 403, message: `Minimum of amount of \u20A6${fundingLimit.app_minim_funding} accepted` })
+          if(dataReceive.amt < fundingLimit[0].app_minim_funding ){
+            return res.json({status: 403, message: `Minimum of amount of \u20A6${new Intl.NumberFormat().format(fundingLimit[0].app_minim_funding)} accepted` })
           }
+
+          //console.log("maxi ", fundingLimit[0].app_maxi_funding)
+    try {
+          
           //console.log("All App ", fundingLimit)
 
           let userFund = await User.findOne({ _id:  dataReceive.userId }); // here I am checking if user exist then I will get user details
@@ -665,6 +669,37 @@ router.post("/userAccount_funding", isAuth, async (req, res) => {
         return res.json({status: 500, message: 'Technical issues occurred' })
      }
   });
+
+      // user request route to fund account goes here...
+router.post("/check_fundingLimit", isAuth, async (req, res) => {
+  const dataReceive = req.body;
+  console.log("Tran ID: ", req.body)
+  const Trans_ID = transactionID(25)
+  // get the transfer record ID here
+  const filter = { _id: dataReceive.userId };
+      if (dataReceive.userId == "" || dataReceive.userId == null) {
+       return res.status(401).send({ message: "Invalid user access" }); // cot code required
+      }
+    try {
+        //console.log("All App ", fundingLimit)
+        const fundingLimit = await AppSetting.find();
+        if(dataReceive.amt > fundingLimit[0].app_maxi_funding ){
+          return res.json({status: 403, message: `Amount funding should not exceed \u20A6${new Intl.NumberFormat().format(fundingLimit[0].app_maxi_funding)}` })
+        }
+        if(dataReceive.amt < fundingLimit[0].app_minim_funding ){
+          return res.json({status: 403, message: `Minimum of amount of \u20A6${new Intl.NumberFormat().format(fundingLimit[0].app_minim_funding)} accepted` })
+        }
+        
+        else{       
+       // success message
+        res.status(200).json({msg: '200'})
+        }
+      } catch (err) {
+       // err message
+     console.log(err)
+      return res.json({status: 500, message: 'Technical issues occurred' })
+   }
+});
 
     // process user sales/purchase request fund goes here...
 router.post("/fundPurchase_funding", isAuth, async (req, res) => {
