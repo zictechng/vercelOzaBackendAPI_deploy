@@ -815,6 +815,18 @@ router.get("/app_setting", isAuth, async (req, res) => {
   }
 });
 
+// get the company bank details from database here..
+router.get("/fetchCompany_bank", isAuth, async (req, res) => {
+  try {
+    const bankDetails = await CompanyBank.find();
+    // console.log('termCondition ', termConditionData)
+      res.send({ msg: '201', feedAll: bankDetails})
+    } catch (err) {
+    res.status(500).json(err.message);
+    console.log(err.message);
+  }
+});
+
 // update the app name and short description in database here..
 router.post("/update_appName", isAuth, async (req, res, next) => {
   try {
@@ -907,6 +919,67 @@ router.post("/update_appStatus", isAuth, async (req, res, next) => {
           },
       }
       const updateRead = await AppSetting.updateOne(updateDoc);
+      if(updateRead.modifiedCount == 1) {
+          res.send({ msg: '201', message: ' Record updated successfully'})
+        }
+        else if(updateRead.modifiedCount < 1) {
+          return res.json({status: 500, message: 'No modifications occurred'})
+        } 
+    }
+    
+    } catch (err) {
+    res.status(500).json(err.message);
+    console.log(err.message);
+  }
+});
+
+// update the company bank details in database here..
+router.post("/update_companyBankStatus", isAuth, async (req, res, next) => {
+  try {
+
+    const checkData = await CompanyBank.find();
+
+        if (checkData.length < 1) {
+        const addNew = await CompanyBank.create({
+        company_bank1: req.body.zenith_bankName,
+        company_acct_number1: req.body.zenith_number,
+        company_acct_name1: req.body.zenith_acctName,
+        company_bank2: req.body.fidelity_bankName,
+        company_acct_number2: req.body.fidelityNumber,
+        company_acct_name2: req.body.fidelityAcctName,
+        company_desc: '',
+        company_btc_address: req.body.bitcoin_address,
+        company_paypal_address: req.body.paypal_address,
+        company_payoneer_address: req.body.payoneer_address,
+        company_momoAccount: req.body.momo_number,
+        //user_policy
+        });
+       
+        //console.log(' res ', addNew)
+        if (addNew?._id) {
+        res.send({ msg: "201", message: " Record created successfully" });
+        } else {
+        return res.json({ status: 500, message: " Failed to create new record" });
+        }
+        }
+    else if(checkData.length > 0){
+     // update the details
+     const updateDoc = {
+      $set: {
+        company_bank1: req.body.zenith_bankName,
+        company_acct_number1: req.body.zenith_number,
+        company_acct_name1: req.body.zenith_acctName,
+        company_bank2: req.body.fidelity_bankName,
+        company_acct_number2: req.body.fidelityNumber,
+        company_acct_name2: req.body.fidelityAcctName,
+        company_desc: '',
+        company_btc_address: req.body.bitcoin_address,
+        company_paypal_address: req.body.paypal_address,
+        company_payoneer_address: req.body.payoneer_address,
+        company_momoAccount: req.body.momo_number,
+          },
+      }
+      const updateRead = await CompanyBank.updateOne(updateDoc);
       if(updateRead.modifiedCount == 1) {
           res.send({ msg: '201', message: ' Record updated successfully'})
         }
