@@ -17,7 +17,7 @@ const referralUserSchema = new mongoose.Schema({
     
     ref_approvedDate: {type: Date},
 
-    createdOn: {type: Date, default: Date.now},
+    createdOn: {type: Date},
  })
 
 // export it

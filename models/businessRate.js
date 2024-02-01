@@ -7,6 +7,10 @@ const DealingRateSchema = new mongoose.Schema({
     paypal_buying: String,
     payoneer_selling: String,
     payoneer_buying: String,
+    bonus_rate: {
+        type: Number,
+        default: 0.0,
+    },
     app_status: {
         type: String,
         default: 'Pending',

@@ -680,12 +680,20 @@ router.post('/updateService_rate', isAuth, async (req, res, next) =>{
         paypal_selling: req.body.paypal_selling,
         payoneer_buying: req.body.payoneer_buying,
         payoneer_selling: req.body.payoneer_selling,
+        bonus_rate: req.body.referral_bonus_amt
 
         },
     }
     const updateRead = await GetRate.updateOne(updateDoc);
+    console.log(updateRead)
+    if(updateRead.modifiedCount > 0) {
+      
+      res.send({ msg: '201'})
+    }
+    else{
+      return res.json({ status: 402, message: " Failed to update record" });
+    }
 
-    res.send({ msg: '201'})
   } catch (error) {
     res.status(500).json(err.message);
     console.log(err.message);
@@ -1827,6 +1835,103 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
       return res.json({status: 404, message: ' Transaction not valid'})
      }
 
+      //process user referral bonus details here
+    const checkReferral = await Referrals.findOne({ref_userEmail: userDetail.email });
+    
+    //check if referral is valid and award the user the credit amount
+    if(checkReferral && checkReferral.ref_status == 'Pending'){
+      // get referral user details
+        const checkUser = await User.findOne({email: checkReferral.ref_mainEmail });
+        if(checkUser){
+          // get exchange rate details
+          const checkTradeRate = await GetRate.findOne();
+
+          let addAmount = parseInt(checkTradeRate.bonus_rate) * parseInt(checkTradeRate.paypal_buying);
+          
+          const InitialBal = checkUser.amount+ +addAmount
+
+          const filterUser = { _id: checkUser._id };
+          const filterReferral = { _id: recordId };
+    
+          const updateReferralStatus = {
+          $set: {
+            ref_status: 'Approved',
+            ref_approvedDate: Date.now()
+            },
+          };
+
+        const updateUserBalance = {
+          $set: {
+            amount: InitialBal,
+          },
+        };
+
+        const updateUserBal = await User.updateOne(filterUser, updateUserBalance);
+        const updateRef = await Referrals.updateOne(filterReferral, updateReferralStatus);
+      
+        // process notifications in different levels
+        const addLogs = await SystemActivity.create({
+          log_username: '',
+          log_name: checkUser.display_name,
+          log_acct_number: checkUser.tag_id,
+          log_receiver_name: '',
+          log_receiver_number: '',
+          log_receiver_bank: '',
+          log_country: '',
+          log_swift_code: '',
+          log_desc:'User referral bonus approved and credited',
+          log_amt: '',
+          log_status: 'Successful',
+          log_nature:'Bonus fund Approved',
+         })
+  
+         // check if user enabled in-app notifications and send notification
+        if(checkUser.receive_app_message == true) {
+          const userLogs = Notification.create({
+          alert_username: checkUser.email,
+          alert_name: checkUser.display_name,
+          alert_user_ip: '',
+          alert_country: '',
+          alert_browser: '',
+          alert_date:  Date.now(),
+          alert_user_id: checkUser._id,
+          alert_nature: `Referral Bonus Approved \n Note: this is to notify you that your referral bonus funds has been approved and your account has been credited with the sum of
+          \u20A6${new Intl.NumberFormat().format(addAmount)} \n\n for your hard work by sharing your referral ID! \n\n Keep referring to keep earning...`,
+          alert_status: 1,
+          alert_read_date: ''
+          })
+        }
+  
+        // send email to the account owner
+        if(checkUser.receive_email_notification == true){
+          fetchApp().then((result) => {
+            appName = result.app_name
+            const mailBody = loginEmail(appName, 'Referral Bonus Approved', checkUser.display_name, `this is to notify you that your referral bonus funds has been approved and your account has be credited with the sum of \n\n
+            <b>\u20A6${new Intl.NumberFormat().format(addAmount)}</b> for your hard work for sharing your referral Tag ID <br>
+            </b><br>  Keep it up and keep referring your friends, loves one to continue earning... <br>
+            Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
+            
+          const mailText = loginText(checkUser.display_name, `this is to notify you that your referral bonus funds has been approved and your account has be credited with the sum of \n\n
+          <b>\u20A6${new Intl.NumberFormat().format(addAmount)}</b> for your hard work for sharing your referral Tag ID <br>
+          </b><br>  Keep it up and keep referring your friends, loves one to continue earning... <br>
+          Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
+          let account_issueEMail = {
+            from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
+            to: checkUser.email,
+            subject: 'Funds Credit Notification!',
+            text: mailText,
+            html: mailBody,
+          }
+          async function main() {
+          const info = await transporter.sendMail(account_issueEMail);
+              }
+          main().catch('Message Error', console.error);
+          }).catch(console.error.bind(console))
+          }
+        
+        }
+      }
+
      const currentBal = userDetail.tran_account+ +allSales.amount
      const totalSales = allSales.amount * allSales.tran_rate
 
@@ -1884,30 +1989,32 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
       }
 
       // send email to the account owner
-      fetchApp().then((result) => {
-        appName = result.app_name
-        const mailBody = loginEmail(appName, 'Fund Approved', userDetail.display_name, `this is to notify you that your ${allSales.transac_category} funds has been approved and your bank account has be credited with the sum of \n\n
-        <b>\u20A6${new Intl.NumberFormat().format(totalSales)}</b> <br>
-          
-        with transaction ID <b>${allSales.tid}</b><br> 
-        thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
-            const mailText = loginText(userDetail.display_name, `this is to notify you that your ${allSales.transac_category} funds sales has been approved and your bank account has be credited with the sum of \n\n
-            <b>\u20A6${new Intl.NumberFormat().format(totalSales)}</b><br>
-             
-            with transaction ID <b>${allSales.tid}</b><br>
-            thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
-            let account_issueEMail = {
-              from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
-              to: userDetail.email,
-              subject: 'Account Funding Notification!',
-              text: mailText,
-              html: mailBody,
-            }
-            async function main() {
-            const info = await transporter.sendMail(account_issueEMail);
-                }
-            main().catch('Message Error', console.error);
-            }).catch(console.error.bind(console))
+      if(userDetail.receive_email_notification == true){
+        fetchApp().then((result) => {
+          appName = result.app_name
+          const mailBody = loginEmail(appName, 'Fund Approved', userDetail.display_name, `this is to notify you that your ${allSales.transac_category} funds has been approved and your bank account has be credited with the sum of \n\n
+          <b>\u20A6${new Intl.NumberFormat().format(totalSales)}</b> <br>
+            
+          with transaction ID <b>${allSales.tid}</b><br> 
+          thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
+              const mailText = loginText(userDetail.display_name, `this is to notify you that your ${allSales.transac_category} funds sales has been approved and your bank account has be credited with the sum of \n\n
+              <b>\u20A6${new Intl.NumberFormat().format(totalSales)}</b><br>
+               
+              with transaction ID <b>${allSales.tid}</b><br>
+              thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
+              let account_issueEMail = {
+                from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
+                to: userDetail.email,
+                subject: 'Account Funding Notification!',
+                text: mailText,
+                html: mailBody,
+              }
+              async function main() {
+              const info = await transporter.sendMail(account_issueEMail);
+                  }
+              main().catch('Message Error', console.error);
+              }).catch(console.error.bind(console))
+          }
 
         res.status(201).json({msg: '201'}) // success message
      }
@@ -2041,7 +2148,6 @@ router.post("/searchFunding_database", isAuth, async (req, res) => {
     console.log(err.message);
   }
 });
-
 
 // Search funding details with transaction ID here..
 router.post("/searchSalesFunding_database", isAuth, async (req, res) => {
@@ -2689,28 +2795,77 @@ router.get("/search_systemLogs_pagination", isAuth, async (req, res) => {
 });
 
 // get all system referral activities logs details here..
+// router.get("/fetchAll_referral", isAuth, async (req, res) => {
+//   let page = parseInt(req.query.pageNumber);
+//   let limit = parseInt(req.query.pageLimit);
+//   if(!page) page = 1;
+//   if(!limit) limit = 10;
+
+//   const skip = (page - 1) * limit;
+
+//   try {
+//     //get all user count details
+//     const pageCount = await Referrals.find().count(); // get total records
+    
+//     const totalPageNumber = Math.ceil(pageCount / limit); // get the number of pages
+
+//     //get all user count details
+//      const all_systemLogs = await Referrals.find().sort({ createdOn: -1 }).skip(skip).limit(limit);
+//       console.log("final Result ", all_systemLogs)
+//      res.send({ msg: '201', 
+//       feedAll: all_systemLogs, page: page, limit: limit, totalPage: totalPageNumber, totalRecord: pageCount})
+//     } catch (err) {
+//     res.status(500).json(err.message);
+//     console.log(err.message);
+//   }
+// });
+
 router.get("/fetchAll_referral", isAuth, async (req, res) => {
   let page = parseInt(req.query.pageNumber);
   let limit = parseInt(req.query.pageLimit);
-  if(!page) page = 1;
-  if(!limit) limit = 10;
-
+  if (!page) page = 1;
+  if (!limit) limit = 10;
+  
   const skip = (page - 1) * limit;
-
+  
   try {
-    //get all user count details
-    const pageCount = await Referrals.find().count(); // get total records
-    const totalPageNumber = Math.ceil(pageCount / limit); // get the number of pages
-
-    //get all user count details
-     const all_systemLogs = await Referrals.find().sort({ createdOn: -1 }).skip(skip).limit(limit);
-      res.send({ msg: '201', 
-      feedAll: all_systemLogs, page: page, limit: limit, totalPage: totalPageNumber, totalRecord: pageCount})
-    } catch (err) {
-    res.status(500).json(err.message);
-    console.log(err.message);
+  // Get distinct email IDs count
+  const distinctCount = (await Referrals.distinct("ref_mainEmail")).length;
+  
+  const totalPageNumber = Math.ceil(distinctCount / limit);
+  
+  const distinctEmails = await Referrals.aggregate([
+  { $group: { _id: "$ref_mainEmail",
+    record_id:{$first: "$_id"},
+    ref_mainEmail: { $first: "$ref_mainEmail" },
+    ref_mainTag: { $first: "$ref_mainTag" },
+    ref_userEmail: { $first: "$ref_userEmail" },
+    ref_userName: { $first: "$ref_userName" },
+    ref_status: { $first: "$ref_status" },
+    active: { $first: "$active" },
+    createdBy: { $first: "$createdBy" },
+    ref_approvedDate: { $first: "$ref_approvedDate" },
+    createdOn: { $first: "$createdOn" }
+    } },
+    { $sort: { createdOn: -1 } },
+    { $skip: skip },
+    { $limit: limit }
+    ]).exec();
+  
+  console.log("Final result", distinctEmails);
+  res.send({
+  msg: '201',
+  feedAll: distinctEmails,
+  page: page,
+  limit: limit,
+  totalPage: totalPageNumber,
+  totalRecord: distinctCount
+  });
+  } catch (err) {
+  res.status(500).json(err.message);
+  console.log(err.message);
   }
-});
+  });
 
 // get system referral details via ID passed from frontend table here..
 router.get("/get_referral_byId/:id", isAuth, async (req, res) => {
@@ -2867,7 +3022,7 @@ router.get("/search_referral_pagination", isAuth, async (req, res) => {
 router.get("/approveReferral_bonus/:id", isAuth, async (req, res) => {
 
   let recordId = req.params.id;
-  console.log("data ", req.params.id)
+  //console.log("data ", req.params.id)
 
   if(recordId == '' || recordId == null){
     return res.json({status: 404, message: ' Record ID not found'})
@@ -2881,7 +3036,7 @@ router.get("/approveReferral_bonus/:id", isAuth, async (req, res) => {
         return res.json({ status: 404, message: ' No results found, try again'})
         }
         //console.log(checkReferral)
-        if(!checkReferral.ref_status == 'Successful' || checkReferral.ref_status == 'Approved'){
+        if(checkReferral.ref_status == 'Successful' || checkReferral.ref_status == 'Approved'){
           return res.json({ status: 404, message: ' Referral bonus already added'})
           }
       // // get user details
@@ -2893,10 +3048,10 @@ router.get("/approveReferral_bonus/:id", isAuth, async (req, res) => {
       // // get current trade rates
       const checkTradeRate = await GetRate.findOne();
       
-      let addAmount = parseInt(10) * parseInt(checkTradeRate.paypal_buying);
+      let addAmount = parseInt(checkTradeRate.bonus_rate) * parseInt(checkTradeRate.paypal_buying);
       //console.log(addAmount)
 
-      const currentBal = checkUser.amount+ +addAmount
+      const NowCurrentBal = checkUser.amount+ +addAmount
 
       if(checkUser){
         const filterUser = { _id: checkUser._id };
@@ -2905,20 +3060,22 @@ router.get("/approveReferral_bonus/:id", isAuth, async (req, res) => {
         const updateReferralStatus = {
           $set: {
             ref_status: 'Approved',
+            ref_approvedDate: Date.now()
           },
         };
 
         const updateUserBalance = {
           $set: {
-            amount: currentBal,
+            amount: NowCurrentBal,
           },
         };
 
         const updateUserBal = await User.updateOne(filterUser, updateUserBalance);
         const updateRef = await Referrals.updateOne(filterReferral, updateReferralStatus);
 
+
       const addLogs = await SystemActivity.create({
-        log_username: '',
+        log_username: checkUser.email,
         log_name: checkUser.display_name,
         log_acct_number: checkUser.tag_id,
         log_receiver_name: '',
@@ -2950,30 +3107,32 @@ router.get("/approveReferral_bonus/:id", isAuth, async (req, res) => {
       }
 
       // send email to the account owner
-      fetchApp().then((result) => {
-        appName = result.app_name
-        const mailBody = loginEmail(appName, 'Referral Bonus Approved', checkUser.display_name, `this is to notify you that your referral bonus funds has been approved and your account has be credited with the sum of \n\n
-        <b>\u20A6${new Intl.NumberFormat().format(addAmount)}</b> for your hard work for sharing your referral Tag ID <br>
-        </b><br>  Keep it up and keep referring your friends, loves one to continue earning... <br>
-        Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
-        
-            const mailText = loginText(checkUser.display_name, `this is to notify you that your referral bonus funds has been approved and your account has be credited with the sum of \n\n
-            <b>\u20A6${new Intl.NumberFormat().format(addAmount)}</b> for your hard work for sharing your referral Tag ID <br>
-            </b><br>  Keep it up and keep referring your friends, loves one to continue earning... <br>
-            Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
-            let account_issueEMail = {
-              from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
-              to: checkUser.email,
-              subject: 'Funds Credit Notification!',
-              text: mailText,
-              html: mailBody,
-            }
-            async function main() {
-            const info = await transporter.sendMail(account_issueEMail);
-                }
-            main().catch('Message Error', console.error);
-            }).catch(console.error.bind(console))
-
+      if(checkUser.receive_email_notification == true){
+        fetchApp().then((result) => {
+          appName = result.app_name
+          const mailBody = loginEmail(appName, 'Referral Bonus Approved', checkUser.display_name, `this is to notify you that your referral bonus funds has been approved and your account has be credited with the sum of \n\n
+          <b>\u20A6${new Intl.NumberFormat().format(addAmount)}</b> for your hard work for sharing your referral Tag ID <br>
+          </b><br>  Keep it up and keep referring your friends, loves one to continue earning... <br>
+          Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
+          
+          const mailText = loginText(checkUser.display_name, `this is to notify you that your referral bonus funds has been approved and your account has be credited with the sum of \n\n
+          <b>\u20A6${new Intl.NumberFormat().format(addAmount)}</b> for your hard work for sharing your referral Tag ID <br>
+          </b><br>  Keep it up and keep referring your friends, loves one to continue earning... <br>
+          Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
+          let account_issueEMail = {
+            from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
+            to: checkUser.email,
+            subject: 'Funds Credit Notification!',
+            text: mailText,
+            html: mailBody,
+          }
+          async function main() {
+          const info = await transporter.sendMail(account_issueEMail);
+              }
+          main().catch('Message Error', console.error);
+          }).catch(console.error.bind(console))
+      }
+      
       res.send({ msg: '201', feedAll: true })
       }
     } catch (err) {
