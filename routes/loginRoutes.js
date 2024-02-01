@@ -220,7 +220,7 @@ router.get("/user_logout/:id", async (req, res, next) => {
 router.get("/authenticate_user/:id", isAuth, async (req, res, next) =>{
 
     const userId = req.params.id
-    console.log(req.params.id);
+    //console.log(req.params.id);
     try {
         // Check if user exist
         if(userId =='' || userId == null){

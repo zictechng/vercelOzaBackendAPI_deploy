@@ -874,11 +874,15 @@ router.post("/update_appStatus", isAuth, async (req, res, next) => {
         app_bitcoin_sale: req.body.bitcoinSale,
         app_payoneer_buy: req.body.payoneerBuy,
         app_paypal_buy: req.body.paypalBuy,
-        app_state: req.body.appStatus
+        app_state: req.body.appStatus,
+        app_baseurl: req.body.baseUrl,
+        app_paypayKey: req.body.payPayToken,
+        app_minim_funding: req.body.mini_funding,
+        app_maxi_funding: req.body.maxi_funding,
         //user_policy
         });
        
-        console.log(' res ', addNew)
+        //console.log(' res ', addNew)
         if (addNew?._id) {
         res.send({ msg: "201", message: " Record created successfully" });
         } else {
@@ -895,7 +899,11 @@ router.post("/update_appStatus", isAuth, async (req, res, next) => {
         app_bitcoin_sale: req.body.bitcoinSale,
         app_payoneer_buy: req.body.payoneerBuy,
         app_paypal_buy: req.body.paypalBuy,
-        app_state: req.body.appStatus
+        app_state: req.body.appStatus,
+        app_baseurl: req.body.baseUrl,
+        app_paypayKey: req.body.payPayToken,
+        app_minim_funding: req.body.mini_funding,
+        app_maxi_funding: req.body.maxi_funding,
           },
       }
       const updateRead = await AppSetting.updateOne(updateDoc);

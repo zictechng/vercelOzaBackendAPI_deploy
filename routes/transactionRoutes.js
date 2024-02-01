@@ -9,6 +9,7 @@ const bcrypt = require('bcrypt')
 
 const User = require('../models/User');
 const TransferFund = require('../models/fundTransfer');
+const AppSetting = require('../models/AppSettingDetails')
 const TransfersHistory = require('../models/fundTransfer')
 const FundUserAccount = require('../models/fundAccount')
 const SystemActivity = require('../models/SystemActivityLogs');
@@ -558,6 +559,15 @@ router.post("/userAccount_funding", isAuth, async (req, res) => {
          return res.status(401).send({ message: "Invalid user access" }); // cot code required
         }
     try {
+          const fundingLimit = await AppSetting.find();
+          if(dataReceive.amt > fundingLimit.app_maxi_funding ){
+            return res.json({status: 403, message: `Amount funding should not exceed \u20A6${fundingLimit.app_maxi_funding}` })
+          }
+          if(dataReceive.amt < fundingLimit.app_minim_funding ){
+            return res.json({status: 403, message: `Minimum of amount of \u20A6${fundingLimit.app_minim_funding} accepted` })
+          }
+          //console.log("All App ", fundingLimit)
+
           let userFund = await User.findOne({ _id:  dataReceive.userId }); // here I am checking if user exist then I will get user details
           if (!userFund) {
             //console.log("User details: ", userDetails)

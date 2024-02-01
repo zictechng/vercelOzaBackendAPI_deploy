@@ -6,6 +6,17 @@ const systemSettingSchema = new mongoose.Schema({
     app_description: String,
     app_logo: String,
     app_version: String,
+    app_baseurl: String,
+    app_paypayKey: String,
+    app_minim_funding:{
+        type: Number,
+        default: 0.0
+    },
+    app_maxi_funding:{
+        type: Number,
+        default: 0.0
+    },
+
     app_paypal_sale:{
         type: Boolean,
         default: false,
