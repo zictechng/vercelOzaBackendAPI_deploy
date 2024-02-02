@@ -8,6 +8,7 @@ const systemSettingSchema = new mongoose.Schema({
     app_version: String,
     app_baseurl: String,
     app_paypayKey: String,
+    app_textEditor_key: String,
     app_minim_funding:{
         type: Number,
         default: 0.0
