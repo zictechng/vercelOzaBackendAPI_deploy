@@ -276,8 +276,8 @@ router.post("/otp_verify", async (req, res) => {
         const updateUserNow = await User.updateOne(filterUser, updateActStatus);
         // create log here
             const addLogs = SystemActivity.create({
-            log_username: userExist.username,
-            log_name: userExist.first_name,
+            log_username: userExist.email,
+            log_name: userExist.display_name,
             log_acct_number: '',
             log_receiver_name: '',
             log_receiver_number: '',

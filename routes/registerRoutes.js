@@ -236,7 +236,7 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
              }
            // create log here
            const addLogs = await SystemActivity.create({
-            log_username: user.username,
+            log_username: user.email,
             log_name: user.display_name,
             log_acct_number: user.tag_id,
             log_receiver_name: '',
