@@ -1,4 +1,6 @@
 const express = require('express')
+const cloudinary = require('cloudinary').v2;
+
 const router = express.Router()
 const jwt = require("jsonwebtoken");
 const fs = require("fs")
@@ -68,28 +70,21 @@ const storage = multer.diskStorage({
 // var dimensions = sizeOf('./sample.jpg');
 // console.log(dimensions.width, dimensions.height);
 
-// this function verify if the token user sent is valid
-function verifyToken(req, res, next) {
-    if (!req.headers.authorization){
-      //return res.status(401).send({msg: '401'})
-      return res.json({status: 401, message: 'Access denied'});
-    }
-    let token = req.headers.authorization.split(' ')[1];
-    if(token === null || token === ''){
-        return res.json({status: 401, message: 'Access denied'});
-        //return res.status(401).send({msg: '401'})
-    }
-    let payload = jwt.verify(token, process.env.SECRET_LOGIN_KEY);
-    if(!payload){
-  
-      console.log('Token Not verify respond ', res);
-      return res.json({status: 401, message: 'Access denied'});
-      //return res.status(401).send({msg: '401'});
-    }
-    req.userId = payload.subject
-    next();
-  }
+// cloudinary uploading configuration
+cloudinary.config({ 
+  cloud_name: process.env.CLOUDINARY_ACCOUNT_NAME, 
+  api_key: process.env.CLOUDINARY_API_KEY, 
+  api_secret: process.env.CLOUDINARY_API_SECRET_KEY 
+});
     
+// Use the uploaded file's name as the asset's public ID and 
+    // allow overwriting the asset with new versions
+    const ImageOptions = {
+      use_filename: true,
+      unique_filename: false,
+      overwrite: true,
+    };
+
 // generate registration OTP Code here
     function generateRandomNumber() {
     return Math.floor(100000 + Math.random() * 900000);
@@ -509,7 +504,7 @@ router.post("/registerWebbiit", upload.single("file"), async (req, res, next) =>
       
 //   });
 
-  router.post("/user_uploadPhoto", isAuth, upload.single("FileData"), async (req, res) => {
+router.post("/user_uploadPhoto", isAuth, upload.single("FileData"), async (req, res) => {
     const file = req.FileData;
     //const url = req.protocol + '://' + req.get('host') // this will get the host url directly
     const url = process.env.SERVER_BASEURL;
@@ -518,16 +513,25 @@ router.post("/registerWebbiit", upload.single("file"), async (req, res, next) =>
     //console.log("Data submitted ", req.body.userId)
        try {
             const userInfo = await User.findOne({_id:req.body.userId}).lean().exec()
-          
+
+            const ImagePath = `public/images/${req.file.filename}`
+
             if(!userInfo){
                 fs.unlinkSync(`public/images/${req.file.filename}`)
                 return res.json({status: 402, message: 'You need to login to do this'})
-            } 
+            }
+            
+            
             if(userInfo){
+              // Upload profile image to cloudinary storage location
+              const result = await cloudinary.uploader.upload(ImagePath, ImageOptions);
+              //console.log(result);
+              const imageUrl = result.secure_url
+
                 const updateDoc = {
                     $set: {
                     reg_stage3:'Yes',
-                    profile_photo: url+'/images/'+req.file.filename, 
+                    profile_photo: imageUrl != null? imageUrl:'', 
                     },
                 };
             const updateUserNow = await User.updateOne(filterUser, updateDoc);
@@ -561,7 +565,7 @@ router.post("/registerWebbiit", upload.single("file"), async (req, res, next) =>
   });
 
   // upload user document verifications route
-  router.post("/user_uploadDocument", isAuth, upload.single("documentData"), multerErrorHandling, async (req, res) => {
+router.post("/user_uploadDocument", isAuth, upload.single("documentData"), multerErrorHandling, async (req, res) => {
     const file = req.documentData;
     //const baseURL = process.env.BASEURL; // this one get url link from .env variable
     const url = process.env.SERVER_BASEURL; // this will get the host url directly
@@ -569,12 +573,19 @@ router.post("/registerWebbiit", upload.single("file"), async (req, res, next) =>
     
         try {
             const userInfo = await User.findOne({_id:req.body.userId}).lean().exec()
-             
-                if(!userInfo){
+            const ImagePath = `public/images/${req.file.filename}`
+                
+            if(!userInfo){
                     fs.unlinkSync(`public/images/${req.file.filename}`)
                     return res.json({status: 402, message: 'You need to login to do this'})
                 } 
                 if(userInfo){
+                  // Upload to cloudinary storage location
+                  const result = await cloudinary.uploader.upload(ImagePath, ImageOptions);
+                  //console.log(result);
+                  // get the uploaded image url location
+                  const imageUrl = result.secure_url
+
                     const updateDoc = {
                         $set: {
                         reg_stage4:'Yes',
@@ -584,7 +595,7 @@ router.post("/registerWebbiit", upload.single("file"), async (req, res, next) =>
                       document_name: req.body.document_name,
                       document_category: 'Document',
                       owners_tag_id: userInfo.tag_id,
-                      document_url: url+'/images/'+req.file.filename,
+                      document_url: imageUrl != null || imageUrl != undefined ? imageUrl : '',
                       user_id: req.body.userId,
                       document_action: "Pending",
                       document_status: "Pending",
@@ -620,7 +631,7 @@ router.post("/registerWebbiit", upload.single("file"), async (req, res, next) =>
   });
 
   // upload user document verifications route
-  router.post("/user_upload2fa", isAuth, upload.single("document2FA"), multerErrorHandling, async (req, res) => {
+router.post("/user_upload2fa", isAuth, upload.single("document2FA"), multerErrorHandling, async (req, res) => {
     const file = req.documentData;
     const TransID = transactionID(25)
     //const baseURL = process.env.BASEURL; // this one get url link from .env variable
@@ -630,12 +641,18 @@ router.post("/registerWebbiit", upload.single("file"), async (req, res, next) =>
 
         try {
             const userInfo = await User.findOne({_id:req.body.userId}).lean().exec()
-             
+            const ImagePath = `public/images/${req.file.filename}`
+
                 if(!userInfo){
                     fs.unlinkSync(`public/images/${req.file.filename}`)
                     return res.json({status: 402, message: 'You need to login to do this'})
                 } 
                 if(userInfo){
+                  // Upload to cloudinary storage location
+                  const result = await cloudinary.uploader.upload(ImagePath, ImageOptions);
+                  // get the uploaded image url location
+                  const imageUrl = result.secure_url
+
                     const updateDoc = {
                         $set: {
                         reg_stage5:'Yes',
@@ -645,7 +662,7 @@ router.post("/registerWebbiit", upload.single("file"), async (req, res, next) =>
                       document_name: '2FA Document',
                       document_category: '2FA OTP Document',
                       owners_tag_id: userInfo.tag_id,
-                      document_url: url+'/images/'+req.file.filename,
+                      document_url: imageUrl != null || imageUrl != undefined ? imageUrl : '',
                       user_id: req.body.userId,
                       owners_name: userInfo.display_name,
                       owners_email: userInfo.email,
@@ -684,7 +701,7 @@ router.post("/registerWebbiit", upload.single("file"), async (req, res, next) =>
   });
 
   // send 2FA OTP code when get started is click route
-  router.post("/user_2fa_otpSend", isAuth, async (req, res) => {
+router.post("/user_2fa_otpSend", isAuth, async (req, res) => {
     //const url = req.protocol + '://' + req.get('host') // this will get the host url directly
     const url = process.env.SERVER_BASEURL;
     const filterUser = { _id: req.body.userId };
@@ -751,7 +768,7 @@ router.post("/registerWebbiit", upload.single("file"), async (req, res, next) =>
   });
 
   // Complete user registration routes goes here
- router.post("/complete_registration", isAuth, async (req, res) => {
+router.post("/complete_registration", isAuth, async (req, res) => {
     const url = process.env.SERVER_BASEURL // this will get the host url directly
     const filterUser = { _id: req.body.userId };
     const filterUserBank = {user_id: req.body.userId };
@@ -842,7 +859,7 @@ router.post("/registerWebbiit", upload.single("file"), async (req, res, next) =>
   });
 
   // updated email notification status route when click
-  router.post("/user_activate_email", isAuth, async (req, res) => {
+router.post("/user_activate_email", isAuth, async (req, res) => {
     const url = req.protocol + '://' + req.get('host') // this will get the host url directly
     const filterUser = { _id: req.body.user_Id };
     const actionStatus = req.body.status_value;
@@ -904,7 +921,7 @@ router.post("/registerWebbiit", upload.single("file"), async (req, res, next) =>
   });
 
   // updated 2FA notification status route when click
-  router.post("/user_activate_2fa_notice", isAuth, async (req, res) => {
+router.post("/user_activate_2fa_notice", isAuth, async (req, res) => {
     //const url = req.protocol + '://' + req.get('host') // this will get the host url directly
     const filterUser = { _id: req.body.user_Id };
     const actionStatus = req.body.status_value;
@@ -1025,6 +1042,7 @@ router.post("/user_notice_request", isAuth, async (req, res) => {
   });
 
   // Update user password via mobile app
+  
 router.post("/updateUser_passwordMobile", isAuth, async (req, res, next) => {
     //console.log("Data see", req.body);
     const filterUser = { _id: req.body.userId };

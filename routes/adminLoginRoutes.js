@@ -134,8 +134,9 @@ const { fetchApp } = require('../middleware/appDetails');
  router.get("/authenticate_user", isAuth, async (req, res, next) => {
     //console.log('My ID ', req.params.id)
     //let myId = req.params.id;
-    console.log("Good news ")
-    res.send({ msg: '200',})
+    
+    //console.log("Good news " )
+    res.send({ msg: '200'})
     }); 
 
    
