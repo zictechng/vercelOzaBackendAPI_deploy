@@ -559,7 +559,7 @@ router.get("/chart_transactions/:id", isAuth, async (req, res) => {
        //console.log('Balance ', userWalletBalance)
        // paypal chart total report
     const payPalChartWallet = await TransferFund.aggregate(
-      [{$match: {createdBy: userId, transaction_status: 'Successful', transac_category:'Paypal'} },
+      [{$match: {createdBy: userId, transaction_status: 'Successful', transac_category:'PayPal'} },
       {$group: {_id: null, totalAmount: { $sum: '$amount' }}}]
       );
 

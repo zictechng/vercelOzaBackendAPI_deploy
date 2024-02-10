@@ -3263,11 +3263,9 @@ router.get("/chart_transactions/:id", isAuth, async (req, res) => {
        //console.log('Balance ', userWalletBalance)
        // paypal chart total report
     const payPalChartWallet = await TransferFund.aggregate(
-      [{$match: {createdBy: userId, transaction_status: 'Successful', transac_category:'PayPal'} },
+      [{$match: {createdBy: userId, transaction_status: 'Successful', transac_category:'Paypal'} },
       {$group: {_id: null, totalAmount: { $sum: '$amount' }}}]
       );
-
-      console.log("Monthly Total ", payPalChartWallet)
 
       // payoneer chart total report
       const payoneerChartWallet = await TransferFund.aggregate(
@@ -3312,7 +3310,7 @@ router.get("/chart_transactions/:id", isAuth, async (req, res) => {
       //console.log("Weekly", weeklyAmount)
       // console.log("Monthly ", monthlyTotal)
       // console.log("All Year ", yearTotal)
-      
+      // console.log("Monthly Total ", monthlyTotal)
       res.send({ msg: '201', paypal: payPalChartWallet, 
       payoneer:payoneerChartWallet, 
       bitcoin: bitCoinChartWallet,
