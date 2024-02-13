@@ -13,6 +13,15 @@ const aboutUsSchema = new mongoose.Schema({
     company_term_conditions_title: String,
     company_privacy_policy: String,
     company_privacy_policy_title: String,
+    policy_status: {
+        type: String,
+        default: 'Pending',
+        },
+    term_status: {
+        type: String,
+        default: 'Pending',
+        },
+
     user_role:{
         type: String, 
         default: 'User'

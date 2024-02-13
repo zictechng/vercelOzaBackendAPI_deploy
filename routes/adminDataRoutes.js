@@ -720,11 +720,11 @@ router.post("/update_termCondition", isAuth, async (req, res, next) => {
  // console.log('data status ', req.body)
   try {
 
-    const checkData = await TermCondition.find();
+    const checkData = await CompanyDetails.find();
 
         if (checkData.length < 1) {
-        const addNew = await TermCondition.create({
-        term_condition: req.body.desc,
+        const addNew = await CompanyDetails.create({
+        company_term_conditions: req.body.desc,
         term_status: req.body.termStatus
         //user_policy
         });
@@ -739,11 +739,11 @@ router.post("/update_termCondition", isAuth, async (req, res, next) => {
      // update the details
      const updateDoc = {
       $set: {
-        term_condition: req.body.desc,
+        company_term_conditions: req.body.desc,
         term_status: req.body.termStatus
           },
       }
-      const updateRead = await TermCondition.updateOne(updateDoc);
+      const updateRead = await CompanyDetails.updateOne(updateDoc);
       if(updateRead.modifiedCount == 1) {
           res.send({ msg: '201', message: ' Record updated successfully'})
         }
@@ -763,16 +763,16 @@ router.post("/update_userPolicy", isAuth, async (req, res, next) => {
   console.log('data status ', req.body)
   try {
 
-    const checkData = await TermCondition.find();
+    const checkData = await CompanyDetails.find();
 
         if (checkData.length < 1) {
-        const addNew = await TermCondition.create({
-        user_policy: req.body.user_policyDesc,
+        const addNew = await CompanyDetails.create({
+        company_privacy_policy: req.body.user_policyDesc,
         policy_status: req.body.policyStatus
         //user_policy
         });
        
-        console.log(' res ', addNew)
+        //console.log(' res ', addNew)
         if (addNew?._id) {
         res.send({ msg: "201", message: " Record created successfully" });
         } else {
@@ -783,11 +783,11 @@ router.post("/update_userPolicy", isAuth, async (req, res, next) => {
      // update the details
      const updateDoc = {
       $set: {
-        user_policy: req.body.user_policyDesc,
+        company_privacy_policy: req.body.user_policyDesc,
         policy_status: req.body.policyStatus
           },
       }
-      const updateRead = await TermCondition.updateOne(updateDoc);
+      const updateRead = await CompanyDetails.updateOne(updateDoc);
       if(updateRead.modifiedCount == 1) {
           res.send({ msg: '201', message: ' Record updated successfully'})
         }
