@@ -373,12 +373,9 @@ router.post("/forgetPasswordMobile", async (req, res) => {
                 }
             main().catch('Message Error', console.error);
             }).catch(console.error.bind(console))
-                // async..await is not allowed in global scope, must use a wrapper
+         //res.status(200).json({ msg: '200'}) // success message
                 
-
-                //res.status(200).json({ msg: '200'}) // success message
-                
-                res.send({ msg: '200', otpPin: otpCode, myEmail:userExist.email })
+            res.send({ msg: '200', otpPin: otpCode, myEmail:userExist.email })
             }
             else{
                 console.log('OTP Operation: Something went wrong');

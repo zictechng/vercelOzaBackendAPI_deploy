@@ -24,8 +24,7 @@ const ticketSchema = new mongoose.Schema({
     createdBy: {
         type: mongoose.Schema.Types.ObjectId, // Change the type to ObjectId
         ref: 'User', // Assuming 'User' is the name of your User model
-        required: true,
-      },
+       },
 
     addeby: {
         type: mongoose.Schema.Types.ObjectId,

@@ -13,6 +13,7 @@ const User = require('../models/User');
 const TransferFund = require('../models/fundTransfer');
 const AppSetting = require('../models/AppSettingDetails')
 const Ticket = require('../models/ticketData');
+const UserNewsLetter = require('../models/newsLetter');
 const UserLog = require('../models/UserLogs')
 const UserSystemLog = require('../models/SystemActivityLogs')
 const SystemActivity = require('../models/SystemActivityLogs');
@@ -938,6 +939,156 @@ router.post("/submit_ticketMobile", isAuth, async (req, res) => {
   console.error(err);
  //res.status(500).send({ msg: "500" });
  return res.json({status: 500, message: 'Server error: ' })
+}
+
+});
+
+// submit newsletter details from website app here..
+router.post("/newsletter_subscriptions", async (req, res) => {
+  //console.log("Backend Data receive ", req.body)
+
+  const checkList = await UserNewsLetter.findOne({user_email:  req.body.userEmail }); 
+  if(checkList){
+    return res.json({status: 403, message: 'this email already subscribed' })
+  }
+  try {
+  if (req.body.userEmail){
+     const newsLetterTicket = await UserNewsLetter.create({
+      user_email: req.body.userEmail,
+      createdOn: new Date(),
+     })
+    // create log here
+    const addLogs = await SystemActivity.create({
+     log_username: req.body.userEmail,
+     log_name: req.body.userEmail,
+     log_receiver_name: '',
+     log_receiver_number:'',
+     log_receiver_bank: '',
+     log_country: '',
+     log_swift_code: '',
+     log_desc:'Subtribe to newsletter mailing service',
+     log_amt: '',
+     log_status: 'Successful',
+     log_nature:'New Mailing created',
+    });
+    
+ // email notification sending
+    if(req.body.userEmail && newsLetterTicket?._id){
+        fetchApp().then((result) =>{
+          appName = result.app_name
+          const mailBody = loginEmail(appName, 'New Mailing Subscriptions', 'dear User', `this is to notify you that your subscription to our mailing list was successfully! <br/> Thank you for joining our mailing list.`)
+          const TextBody = loginText('dear User', `this is to notify you that your mailing request was successfully, you can now receive notifications and update from us.`);
+          let tickMailOptions = {
+          from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
+          to: req.body.userEmail,
+          subject: 'Mailing Notification',
+          text: TextBody,
+          html: mailBody,
+      }
+        // async..await is not allowed in global scope, must use a wrapper
+        async function main() {
+          const info = await transporter.sendMail(tickMailOptions);
+          }
+      main().catch('Message Error', console.error);
+        }).catch(console.error.bind(console))
+      
+    }
+    res.send({ msg: '200'})
+    }
+  } catch (err) {
+console.error(err);
+//res.status(500).send({ msg: "500" });
+return res.json({status: 500, message: 'Server error: ' })
+}
+
+});
+
+// submit ticket details from mobile app here..
+router.post("/submit_ticketWebsite", async (req, res) => {
+  //console.log("Backend Data receive ", req.body)
+  const ticketNumber = generateTagID();
+
+ try {
+   if (req.body){
+    //console.log("Ticket Inserting ", req.body.createdBy);
+
+     const sumbitTicket = await Ticket.create({
+      subject: "Website Contact",
+      sender_name: req.body.customer_name + " "+ req.body.customer_phone,
+      email: req.body.customer_email,
+      ticket_message: req.body.customer_message,
+      ticket_type: 'Business Ticket',
+      tick_id: ticketNumber,
+      ticket_closed:'Opened'
+     })
+
+       // create log here
+    const addLogs = await SystemActivity.create({
+     log_username: req.body.customer_email,
+     log_name: req.body.customer_name,
+     log_acct_number: req.body.customer_phone,
+     log_receiver_name: '',
+     log_receiver_number:'',
+     log_receiver_bank: '',
+     log_country: '',
+     log_swift_code: '',
+     log_desc:'Online Message ticket',
+     log_amt: '',
+     log_status: 'Successful',
+     log_nature:'Ticket created',
+    });
+    
+   
+ // email notification to sender here
+ if(req.body.customer_email){
+    fetchApp().then((result) =>{
+      appName = result.app_name
+      const mailBody = loginEmail(appName, 'Support Contact Message', req.body.customer_name, `this is to notify you that your message with Ticket ID ${ticketNumber} was submitted successfully, we will get in-touch shortly thank you.`)
+      const TextBody = loginText(req.body.customer_name, `this is to notify you that your message with ticket ID ${ticketNumber} was submitted successfully, our staff will get in-touch thank you.`);
+      let tickMailOptions = {
+      from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
+      to: req.body.customer_email,
+      subject: 'Support Contact Message!',
+      text: TextBody,
+      html: mailBody,
+    }
+    // async..await is not allowed in global scope, must use a wrapper
+    async function main() {
+      const info = await transporter.sendMail(tickMailOptions);
+      }
+  main().catch('Message Error', console.error);
+    }).catch(console.error.bind(console))
+  }
+
+  // email notification to admins here
+  fetchApp().then((result) =>{
+    appName = result.app_name
+    const mailBody = loginEmail(appName, 'Online Contact Message', 'Admin', `this is to notify you that ${req.body.customer_name} sent you a message from the website contact us page with Ticket ID ${ticketNumber} kindly review and get in-touch shortly thank you. ,<br/>
+    <b>Customer Email:</b> ${req.body.customer_email} <br/>
+    <b>Customer Phone:</b> ${req.body.customer_phone}<br/>
+    <b>Customer Message </b>  <br/>${req.body.customer_message} <br/>`)
+    const TextBody = loginText('Admin', `this is to notify you that ${req.body.customer_name} sent you a message from the website contact page with ticket ID ${ticketNumber} kindly review and get in-touch thank you.`);
+    let tickMailOptions = {
+    from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
+    to: 'zictechng@gmail.com',
+    subject: 'Online Contact Message!',
+    text: TextBody,
+    html: mailBody,
+  }
+  // async..await is not allowed in global scope, must use a wrapper
+  async function main() {
+    const info = await transporter.sendMail(tickMailOptions);
+    }
+main().catch('Message Error', console.error);
+  }).catch(console.error.bind(console))
+
+  //res.status(200).send({ msg: "200" });
+ res.send({ msg: '200'})
+  }
+} catch (err) {
+console.error(err);
+//res.status(500).send({ msg: "500" });
+return res.json({status: 500, message: 'Server error: ' })
 }
 
 });

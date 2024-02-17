@@ -149,7 +149,7 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
     // Check if phone already exist
     const userPhoneExist = await User.findOne({phone}).lean().exec()
     if(userPhoneExist){
-        return res.json({status: 403, message: ' User email already exist'})
+        return res.json({status: 403, message: ' User phone number already exist'})
         //return res.status(409).json({msg: '409'}) // user already exist
     }
     // if user upload image file run this code
