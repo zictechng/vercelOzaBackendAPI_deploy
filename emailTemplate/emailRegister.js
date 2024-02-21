@@ -1,5 +1,5 @@
 const moment = require('moment');
-const registerEmail = (sendCompanyName, sendTitle, sendReceiverName, otpCode) =>
+const registerEmail = (sendCompanyName, sendTitle, sendReceiverName, otpCode, logo) =>
     `<!DOCTYPE html>
     <html>
     <head>
@@ -65,7 +65,7 @@ const registerEmail = (sendCompanyName, sendTitle, sendReceiverName, otpCode) =>
                                 <tr>
                                     <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
                                         <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
-                                        <img src="https://ozawebservice.onrender.com/images/oza_logo.png" width="100" height="100"/> &nbsp;</a></p>
+                                        ${logo} &nbsp;</a></p>
                                     </td>
                                    
                                 </tr>
@@ -172,7 +172,7 @@ const registerEmailText = (sendReceiverName, otpCode) =>
     `Hello ${sendReceiverName}, this is to notify you that your has been opened successfully, your account officer will contact you shortly for further details, thank you. \n
     OTP Code ${otpCode}, Use this code to verify your account before you can be able to login.`
 
-    const _2FAEmail = (sendCompanyName, sendTitle, sendReceiverName, otpCode) =>
+    const _2FAEmail = (sendCompanyName, sendTitle, sendReceiverName, otpCode, logo) =>
     `<!DOCTYPE html>
     <html>
     <head>
@@ -238,7 +238,7 @@ const registerEmailText = (sendReceiverName, otpCode) =>
                                 <tr>
                                     <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
                                         <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
-                                        <img src="https://ozawebservice.onrender.com/images/oza_logo.png" width="100" height="100"/> &nbsp;</a></p>
+                                        ${logo} &nbsp;</a></p>
                                     </td>
                                    
                                 </tr>
@@ -345,7 +345,7 @@ This email, its attachment and any rights attaching hereto are, unless the conte
     `Hello ${sendReceiverName}, this is to notify you that your 2FA OTP code has be sent thank you. \n
     2FA OTP Code ${otpCode}, Use this code and write in on a white clean paper boldly and take a selfie with it and upload via the mobile app.`
 
-    const transactEmail = (sendCompanyName, sendTitle, sendReceiverName, sendMsg, amt, tran_id) =>
+    const transactEmail = (sendCompanyName, sendTitle, sendReceiverName, sendMsg, amt, tran_id, logo) =>
     `<!DOCTYPE html>
     <html>
     <head>
@@ -411,7 +411,7 @@ This email, its attachment and any rights attaching hereto are, unless the conte
                                 <tr>
                                     <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
                                         <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
-                                        <img src="https://ozawebservice.onrender.com/images/oza_logo.png" width="100" height="100"/> &nbsp;</a></p>
+                                        ${logo} &nbsp;</a></p>
                                     </td>
                                    
                                 </tr>

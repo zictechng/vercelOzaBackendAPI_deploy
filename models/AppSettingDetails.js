@@ -5,6 +5,7 @@ const systemSettingSchema = new mongoose.Schema({
     app_short_name: String,
     app_description: String,
     app_logo: String,
+    app_main_logo: String,
     app_version: String,
     app_baseurl: String,
     app_paypayKey: String,
@@ -17,7 +18,14 @@ const systemSettingSchema = new mongoose.Schema({
         type: Number,
         default: 0.0
     },
-
+    app_paypal_bnt:{
+        type: Boolean,
+        default: false,
+    },
+    app_payStack_btn:{
+        type: Boolean,
+        default: false,
+    },
     app_paypal_sale:{
         type: Boolean,
         default: false,

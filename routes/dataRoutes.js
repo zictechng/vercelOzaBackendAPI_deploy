@@ -181,6 +181,26 @@ router.get("/company_name", async (req, res) => {
   }
 });
 
+
+// payment button status details here..
+router.get("/check_paymentBtn", isAuth, async (req, res) => {
+ 
+  try {
+    const paymentBtn = await AppSetting.findOne();
+    //.sort({field_name: sort order})
+    if(!paymentBtn){
+      res.status(404).send({msg: "Application Error!"})
+    }
+    else if(paymentBtn){
+      res.status(200).send(paymentBtn);
+    }
+     
+  } catch (err) {
+    res.status(500).json(err);
+    console.log(err.message);
+  }
+});
+
 // get company name details here..
 router.get("/fetchAboutCompany", async (req, res) => {
  
@@ -744,7 +764,9 @@ router.post("/block_AccountMobile", isAuth, async (req, res) => {
       // get app detals
       fetchApp().then((result) =>{
         appName = result.app_name
-        const mailBody = loginEmail(appName, 'Account Security', checkUser.display_name, 'this is to notify you that your request to block your account was successful \n Contact admin to unlock the account any time thank you.')
+        appLogo = result.app_logo
+        const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+        const mailBody = loginEmail(appName, 'Account Security', checkUser.display_name, 'this is to notify you that your request to block your account was successful \n Contact admin to unlock the account any time thank you.', logoImage)
         const TextBody = loginText(checkUser.display_name, 'this is to notify you that your request was submitted successfully, your account has been blocked.');
         let mailOptions = {
             from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
@@ -824,7 +846,9 @@ router.post("/reset_AccountPINMobile", isAuth, async (req, res) => {
            // async..await is not allowed in global scope, must use a wrapper
            fetchApp().then((result) =>{
             appName = result.app_name
-            const mailBody = loginEmail(appName, 'Account Security', checkUser.display_name, 'this is to notify you that your support ticket was submitted successfully, we will get in-touch shortly thank you')
+            appLogo = result.app_logo
+            const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+            const mailBody = loginEmail(appName, 'Account Security', checkUser.display_name, 'this is to notify you that your support ticket was submitted successfully, we will get in-touch shortly thank you', logoImage)
             const TextBody = loginText(checkUser.display_name, 'this is to notify you that your request was submitted successfully, your account PIN been updated.');
            let Account_mailOptions = {
                from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
@@ -913,7 +937,9 @@ router.post("/submit_ticketMobile", isAuth, async (req, res) => {
    if(checkUser.receive_email_notification === true){
       fetchApp().then((result) =>{
         appName = result.app_name
-        const mailBody = loginEmail(appName, 'Open Ticket for Support', checkUser.display_name, `this is to notify you that your support ticket with Ticket ID ${ticketNumber} was submitted successfully, we will get in-touch shortly thank you.`)
+        appLogo = result.app_logo
+        const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+        const mailBody = loginEmail(appName, 'Open Ticket for Support', checkUser.display_name, `this is to notify you that your support ticket with Ticket ID ${ticketNumber} was submitted successfully, we will get in-touch shortly thank you.`, logoImage)
         const TextBody = loginText(checkUser.display_name, `this is to notify you that your ticket with ID ${ticketNumber} submitted successfully, our staff will get in-touch thank you.`);
         let tickMailOptions = {
         from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
@@ -976,7 +1002,9 @@ router.post("/newsletter_subscriptions", async (req, res) => {
     if(req.body.userEmail && newsLetterTicket?._id){
         fetchApp().then((result) =>{
           appName = result.app_name
-          const mailBody = loginEmail(appName, 'New Mailing Subscriptions', 'dear User', `this is to notify you that your subscription to our mailing list was successfully! <br/> Thank you for joining our mailing list.`)
+          appLogo = result.app_logo
+          const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+          const mailBody = loginEmail(appName, 'New Mailing Subscriptions', 'dear User', `this is to notify you that your subscription to our mailing list was successfully! <br/> Thank you for joining our mailing list.`, logoImage)
           const TextBody = loginText('dear User', `this is to notify you that your mailing request was successfully, you can now receive notifications and update from us.`);
           let tickMailOptions = {
           from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
@@ -1043,7 +1071,9 @@ router.post("/submit_ticketWebsite", async (req, res) => {
  if(req.body.customer_email){
     fetchApp().then((result) =>{
       appName = result.app_name
-      const mailBody = loginEmail(appName, 'Support Contact Message', req.body.customer_name, `this is to notify you that your message with Ticket ID ${ticketNumber} was submitted successfully, we will get in-touch shortly thank you.`)
+      appLogo = result.app_logo
+      const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+      const mailBody = loginEmail(appName, 'Support Contact Message', req.body.customer_name, `this is to notify you that your message with Ticket ID ${ticketNumber} was submitted successfully, we will get in-touch shortly thank you.`, logoImage)
       const TextBody = loginText(req.body.customer_name, `this is to notify you that your message with ticket ID ${ticketNumber} was submitted successfully, our staff will get in-touch thank you.`);
       let tickMailOptions = {
       from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
@@ -1063,10 +1093,12 @@ router.post("/submit_ticketWebsite", async (req, res) => {
   // email notification to admins here
   fetchApp().then((result) =>{
     appName = result.app_name
+    appLogo = result.app_logo
+    const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
     const mailBody = loginEmail(appName, 'Online Contact Message', 'Admin', `this is to notify you that ${req.body.customer_name} sent you a message from the website contact us page with Ticket ID ${ticketNumber} kindly review and get in-touch shortly thank you. ,<br/>
     <b>Customer Email:</b> ${req.body.customer_email} <br/>
     <b>Customer Phone:</b> ${req.body.customer_phone}<br/>
-    <b>Customer Message </b>  <br/>${req.body.customer_message} <br/>`)
+    <b>Customer Message </b>  <br/>${req.body.customer_message} <br/>`, logoImage)
     const TextBody = loginText('Admin', `this is to notify you that ${req.body.customer_name} sent you a message from the website contact page with ticket ID ${ticketNumber} kindly review and get in-touch thank you.`);
     let tickMailOptions = {
     from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
@@ -1125,11 +1157,14 @@ router.post("/submit_webbitYoutubeTicketMobile", isAuth, async (req, res) => {
  // email notification sending
       fetchApp().then((result) =>{
         appName = 'Webbiit Technology'
+        appLogo = result.app_logo
+        const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+
         const mailBody = loginEmail('Webbiit Youtube Mobile App', 'Support Ticket', 'Webbiit',
         `This is to notify you that a support ticket message was send by ${checkUser.display_name}, please check and get in-touch swiftly thank you. \n
         subject: \n ${req.body.subject}. \n
         Message: \n ${req.body.ticket_message}. \n
-        Email ID: \n ${req.body.email}.`)
+        Email ID: \n ${req.body.email}.`, logoImage)
 
         const TextBody = loginText('Hello', `this is to notify you that ${checkUser.display_name} send you a message via the webbiit youtube mobile mobile app, please check and get in-touch with the person thank you. \n
         subject: ${req.body.subject} \n

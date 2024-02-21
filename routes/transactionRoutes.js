@@ -327,8 +327,10 @@ const processPaymentDetails = async(data, paymentId) =>{
                // send email notification to user
                fetchApp().then((result) =>{
                 appName = result.app_name
+                appLogo = result.app_logo
+                const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
                 const mailBody = loginEmail(appName, 'Payment notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment received. \n Request reference / Transaction ID is ${TransID}, \n 
-                Order ID is ${paymentId} Thank you`)
+                Order ID is ${paymentId} Thank you`, logoImage)
                 const mailText = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n Order ID is ${paymentId}`)
                 let payPal_mailOptions = {
                     from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
@@ -500,7 +502,9 @@ const processPaymentDetails = async(data, paymentId) =>{
                  // send email notification to user
                  fetchApp().then((result) =>{
                     appName = result.app_name
-                    const mailBody = transactEmail(appName, 'Account Debit Notification', userFund.display_name, `this is to notify you that your transfer request was successful and your account has been debited with`, req.body.amt, Trans_ID)
+                    appLogo = result.app_logo
+                    const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                    const mailBody = transactEmail(appName, 'Account Debit Notification', userFund.display_name, `this is to notify you that your transfer request was successful and your account has been debited with`, req.body.amt, Trans_ID, logoImage)
                     const TextBody = transactEmailText(userFund.display_name, `this is to notify you that your transfer request was successful and your account has been debited with`, req.body.amt, Trans_ID );
                     let sendFundMailOptions = {
                     from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
@@ -522,7 +526,9 @@ const processPaymentDetails = async(data, paymentId) =>{
                 // send email notification to user
                 fetchApp().then((result) =>{
                     appName = result.app_name
-                    const mailBody = transactEmail(appName, 'Account Credit Notification', receiverUser.display_name, `this is to notify you that your account was credited with `, req.body.amt, Trans_ID)
+                    appLogo = result.app_logo
+                    const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                    const mailBody = transactEmail(appName, 'Account Credit Notification', receiverUser.display_name, `this is to notify you that your account was credited with `, req.body.amt, Trans_ID, logoImage)
                     const TextBody = transactEmailText(receiverUser.display_name, `this is to notify you that your account was credited with`, req.body.amt, Trans_ID);
                     let getFundMailOptions = {
                     from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
@@ -642,8 +648,10 @@ router.post("/userAccount_funding", isAuth, async (req, res) => {
                  // send email notification to user
                  fetchApp().then((result) =>{
                     appName = result.app_name
+                    appLogo = result.app_logo
+                    const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
                     const mailBody = loginEmail(appName, 'Account Funding Notification', userFund.display_name, `this is to notify you that your account funding request has been logged and we will treat as soon as we confirm your payment status. \n Account funding Transaction ID is ${Trans_ID}, \n 
-                    Transaction Reference ID ${req.body.payId ? req.body.payId: 'None. ' } \n Thank you`)
+                    Transaction Reference ID ${req.body.payId ? req.body.payId: 'None. ' } \n Thank you`, logoImage)
                     const TextBody = loginText(userFund.display_name, `this is to notify you that your account funding request has been logged and we will treat as soon as your payment received. \n Transaction ID is ${Trans_ID} \n
                     Transaction Reference ID ${req.body.payId? req.body.payId: 'None.'}`);
                     let fundAcctMailOptions = {
@@ -673,7 +681,7 @@ router.post("/userAccount_funding", isAuth, async (req, res) => {
 // route to check funding limit before sending it for processing goes here...
 router.post("/check_fundingLimit", isAuth, async (req, res) => {
   const dataReceive = req.body;
-  console.log("Tran ID: ", req.body)
+  //console.log("Tran ID: ", req.body)
   const Trans_ID = transactionID(25)
   // get the transfer record ID here
   const filter = { _id: dataReceive.userId };
@@ -781,7 +789,9 @@ router.post("/fundPurchase_funding", isAuth, async (req, res) => {
                  // send email notification to user
                  fetchApp().then((result) =>{
                     appName = result.app_name
-                    const mailBody = loginEmail(appName, 'Account Funding Notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment received. \n Request reference / Transaction ID is ${TransID}, \nThank you`)
+                    appLogo = result.app_logo
+                    const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                    const mailBody = loginEmail(appName, 'Account Funding Notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment received. \n Request reference / Transaction ID is ${TransID}, \nThank you`, logoImage)
                     const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID}`);
                     let fundAcctMailOptions = {
                     from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
@@ -889,9 +899,11 @@ router.post("/fundBuy_funding", isAuth, async (req, res) => {
                  // send email notification to user
                  fetchApp().then((result) =>{
                     appName = result.app_name
+                    appLogo = result.app_logo
+                    const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
                     const mailBody = loginEmail(appName, 'Account Funding Notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment is received. \n Request reference / Transaction ID is ${TransID}, \n
                     \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId: ''}
-                    \n Thank you`)
+                    \n Thank you`, logoImage)
                     const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId:''}`);
                     let fundAcctMailOptions = {
                     from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
@@ -1024,8 +1036,11 @@ router.post("/paypal_checkout", isAuth, async (req, res) => {
                  // send email notification to user
                  fetchApp().then((result) =>{
                 appName = result.app_name
+                appLogo = result.app_logo
+                const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+
                 const mailBody = loginEmail(appName, 'Account Funding Notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment received. \n Request reference / Transaction ID is ${TransID}, \n 
-                 Order ID is ${dataReceive.orderId} Thank you`)
+                 Order ID is ${dataReceive.orderId} Thank you`, logoImage)
                  const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n Order ID is ${dataReceive.orderId}`);
                  let acctFundMailOptions = {
                  from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,

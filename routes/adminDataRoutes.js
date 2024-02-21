@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router()
 const jwt = require("jsonwebtoken");
-
+const cloudinary = require('cloudinary').v2;
+const fs = require("fs")
 const asyncHandler = require('express-async-handler');
 const bcrypt = require('bcrypt');
 
@@ -45,7 +46,48 @@ const storage = multer.diskStorage({
   },
 });
 
-var upload = multer({ storage: storage });
+//var upload = multer({ storage: storage });
+// this will validate the file before uploading in backend mode
+var upload = multer({
+  storage: storage,
+  limits: {
+    //fileSize: 1000000
+    fileSize: 1024 * 1024 * 5
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype == "image/png" || file.mimetype == "image/jpg" || file.mimetype == "image/jpeg") {
+      cb(null, true);
+    } else {
+      cb(null, false);
+      return cb(new Error('Only .png, .jpg and .jpeg format allowed!'));
+    }
+  }
+});
+
+// middleware function to check image size before uploading
+const multerErrorHandling = (err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+      console.log(err.message);
+      return res.json({status: 400, message: ' File too big, reduce the size'})
+      } else {
+      next();
+  }
+};
+
+// cloudinary uploading configuration
+cloudinary.config({ 
+  cloud_name: process.env.CLOUDINARY_ACCOUNT_NAME, 
+  api_key: process.env.CLOUDINARY_API_KEY, 
+  api_secret: process.env.CLOUDINARY_API_SECRET_KEY 
+});
+    
+// Use the uploaded file's name as the asset's public ID and 
+    // allow overwriting the asset with new versions
+    const ImageOptions = {
+      use_filename: true,
+      unique_filename: false,
+      overwrite: true,
+    };
 
 // this function verify if the token user sent is valid
 function verifyToken(req, res, next) {
@@ -75,6 +117,165 @@ function verifyToken(req, res, next) {
   }
 
  var appName = '';
+
+ 
+  // upload user document verifications route
+router.post("/uploadApp_logo", upload.single("file"), multerErrorHandling, async (req, res) => {
+  const file = req.logoFile;
+  const url = process.env.SERVER_BASEURL; // this will get the host url directly
+  //console.log(" files ", req.file)
+  
+  try {
+    const logoDetails = await AppSetting.find()
+    const ImagePath = `public/images/${req.file.filename}`
+    
+    const oldImage = logoDetails[0].app_logo;
+    // this will separate the full path url
+          if(oldImage){
+            const newImagePath = oldImage.split( '/').slice(7)
+            const path = `public/images/${newImagePath}`;
+
+              if(oldImage && fs.existsSync(path)){
+                fs.unlinkSync(`public/images/${newImagePath}`)
+            } 
+          }
+          // Upload to cloudinary storage location
+          const result = await cloudinary.uploader.upload(ImagePath, ImageOptions);
+          //console.log(result);
+          // get the uploaded image url location
+          const imageUrl = result.secure_url
+          if(logoDetails.length > 0 ){
+            //fs.unlinkSync(`public/images/${req.file.filename}`)
+            const updateDoc = {
+                $set: {
+                  app_logo: imageUrl != null || imageUrl != undefined ? imageUrl : '',
+                },
+              };
+              const updateUserNow = await AppSetting.updateOne(updateDoc);
+              if(updateUserNow.modifiedCount == 1) {
+                const logoImage = await AppSetting.findOne()
+                res.send({ msg: '201', message: ' Record updated successfully', info: logoImage.app_logo, infoData: logoImage,})
+              }
+              else if(updateUserNow.modifiedCount < 1) {
+                return res.json({status: 500, message: 'No modifications occurred'})
+              } 
+            }
+
+          else if(logoDetails.length < 1 ){
+            const logoDocument = await AppSetting.create({
+              app_logo: imageUrl != null || imageUrl != undefined ? imageUrl : '',
+              })
+              if (logoDocument?._id) {
+                const logoImage = await AppSetting.findOne()
+
+                res.send({ msg: "201", info: logoImage.app_logo, infoData: logoImage, message: " Record created successfully" });
+                } else {
+                return res.json({ status: 500, message: " Failed to create new record" });
+                }
+              }
+           
+          // create log here
+              const addLogs = await SystemActivity.create({
+              log_username: '',
+              log_name: '',
+              log_acct_number: '',
+              log_receiver_name: '',
+              log_receiver_number: '',
+              log_receiver_bank: '',
+              log_country: '',
+              log_swift_code: '',
+              log_desc:'Admin User upload logo',
+              log_amt: '',
+              log_status: 'Successful',
+              log_nature:'Logo uploaded',
+              })
+              
+      //return res.json({status: 402, message: ' User email already exist'})
+      } catch (error) {
+          console.error(error);
+          return res.json({status: 500, message: 'Server error: ' })
+      }
+});
+
+ // upload user document verifications route
+ router.post("/uploadMain_logo", upload.single("file"), multerErrorHandling, async (req, res) => {
+  const file = req.logoFile;
+  const url = process.env.SERVER_BASEURL; // this will get the host url directly
+  //console.log(" files ", req.file)
+  const path = '';
+
+  try {
+    const logoDetails = await AppSetting.find()
+    const ImagePath = `public/images/${req.file.filename}`
+    
+    const oldImage = logoDetails[0].app_main_logo;
+    // this will separate the full path url
+    
+    if(oldImage){
+      const newImagePath = oldImage.split( '/').slice(7)
+      const path = `public/images/${newImagePath}`;
+
+        if(oldImage && fs.existsSync(path)){
+          fs.unlinkSync(`public/images/${newImagePath}`)
+      } 
+    }
+      // Upload to cloudinary storage location
+          const result = await cloudinary.uploader.upload(ImagePath, ImageOptions);
+          //console.log(result);
+          // get the uploaded image url location
+          const imageUrl = result.secure_url
+          if(logoDetails.length > 0 ){
+            //fs.unlinkSync(`public/images/${req.file.filename}`)
+            const updateDoc = {
+                $set: {
+                  app_main_logo: imageUrl != null || imageUrl != undefined ? imageUrl : '',
+                },
+              };
+              const updateUserNow = await AppSetting.updateOne(updateDoc);
+              if(updateUserNow.modifiedCount == 1) {
+                const logoImage = await AppSetting.findOne()
+                res.send({ msg: '201', message: ' Record updated successfully', info: logoImage.app_main_logo, infoData: logoImage,})
+              }
+              else if(updateUserNow.modifiedCount < 1) {
+                return res.json({status: 500, message: 'No modifications occurred'})
+              } 
+            }
+
+          else if(logoDetails.length < 1 ){
+            const logoDocument = await AppSetting.create({
+              app_main_logo: imageUrl != null || imageUrl != undefined ? imageUrl : '',
+              })
+              if (logoDocument?._id) {
+                const logoImage = await AppSetting.findOne()
+
+                res.send({ msg: "201", info: logoImage.app_main_logo, infoData: logoImage, message: " Record created successfully" });
+                } else {
+                return res.json({ status: 500, message: " Failed to create new record" });
+                }
+              }
+           
+          // create log here
+              const addLogs = await SystemActivity.create({
+              log_username: '',
+              log_name: '',
+              log_acct_number: '',
+              log_receiver_name: '',
+              log_receiver_number: '',
+              log_receiver_bank: '',
+              log_country: '',
+              log_swift_code: '',
+              log_desc:'Admin User upload logo',
+              log_amt: '',
+              log_status: 'Successful',
+              log_nature:'Logo uploaded',
+              })
+              
+      //return res.json({status: 402, message: ' User email already exist'})
+      } catch (error) {
+          console.error(error);
+          return res.json({status: 500, message: 'Server error: ' })
+      }
+});
 
   // get dashboard first section static here..
 router.get("/dashboard_salesReport", isAuth, async (req, res) => {
@@ -891,6 +1092,8 @@ router.post("/update_appStatus", isAuth, async (req, res, next) => {
         app_paypayKey: req.body.payPayToken,
         app_minim_funding: req.body.mini_funding,
         app_maxi_funding: req.body.maxi_funding,
+        app_payStack_btn: req.body.payStack_btn,
+        app_paypal_bnt: req.body.paypal_btn
         //user_policy
         });
        
@@ -916,6 +1119,8 @@ router.post("/update_appStatus", isAuth, async (req, res, next) => {
         app_paypayKey: req.body.payPayToken,
         app_minim_funding: req.body.mini_funding,
         app_maxi_funding: req.body.maxi_funding,
+        app_payStack_btn: req.body.payStack_btn,
+        app_paypal_bnt: req.body.paypal_btn,
           },
       }
       const updateRead = await AppSetting.updateOne(updateDoc);
@@ -1228,11 +1433,16 @@ router.post("/user_accountAction/", isAuth, async (req, res) => {
             log_nature:'User Account ',
            })
        // send email to the account owner
+       const logoImage = '';
+
        fetchApp().then((result) => {
         appName = result.app_name
+        appLogo = result.app_logo
+        const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+
         const mailBody = loginEmail(appName, actionStatus =='Active' ? 'Congratulations' :'Account Issue', user.display_name, ` ${actionStatus ==`Active` ? `this is to notify you that your account has been activated after been carefully reviewed.
         thank you for choosing ${appName} and we hope you will continue enjoy our services`: `this is to notify you that your account has been flashed with and issue. Kindly contact support for more details and possible resolution.
-        Thank you` }`)
+        Thank you` }, $logoImage`)
             const mailText = loginText(user.display_name, ` ${actionStatus ==`Active` ? `this is to notify you that your account has been activated after been carefully reviewed,
             thank you for choosing ${appName} and we hope you will continue enjoy our services`:`this is to notify you that your account has been flashed with and issue. Kindly contact support for more details and possible resolution.
             Thank you` }`)
@@ -1302,9 +1512,12 @@ router.post("/user_accountStateAction/", isAuth, async (req, res) => {
            // send email to the account owner
            fetchApp().then((result) => {
             appName = result.app_name
+            appLogo = result.app_logo
+            const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+
             const mailBody = loginEmail(appName, actionStatus =='Active' ? 'Congratulations' :'Account Issue', user.display_name, ` ${actionStatus ==`Active` ? `this is to notify you that your account has been activated after been carefully reviewed.
             thank you for choosing ${appName} and we hope you will continue enjoy our services`: `this is to notify you that your account has been flashed with and issue. Kindly contact support for more details and possible resolution.
-            Thank you` }`)
+            Thank you` }, $logoImage`)
                 const mailText = loginText(user.display_name, ` ${actionStatus ==`Active` ? `this is to notify you that your account has been activated after been carefully reviewed,
                 thank you for choosing ${appName} and we hope you will continue enjoy our services`:`this is to notify you that your account has been flashed with and issue. Kindly contact support for more details and possible resolution.
                 Thank you` }`)
@@ -1374,9 +1587,12 @@ router.post("/user_ApproveAccountAction/", isAuth, async (req, res) => {
            // send email to the account owner
            fetchApp().then((result) => {
             appName = result.app_name
+            appLogo = result.app_logo
+            const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+
             const mailBody = loginEmail(appName, actionStatus =='Approved' ? 'Congratulations' :'Account Issue', user.display_name, ` ${actionStatus ==`Approved` ? `this is to notify you that your account has been fully approved after been carefully reviewed your documents,.
             thank you for choosing ${appName} and we hope you will enjoy our services`: `this is to notify you that your account has been flashed with and issue. Kindly contact support for more details and possible resolution.
-            Thank you` }`)
+            Thank you` }, $logoImage`)
                 const mailText = loginText(user.display_name, ` ${actionStatus ==`Approved` ? `this is to notify you that your account has been fully approved after been carefully reviewed your documents,.
                 thank you for choosing ${appName} and we hope you will enjoy our services`:`this is to notify you that your account has been flashed with and issue. Kindly contact support for more details and possible resolution.
                 Thank you` }`)
@@ -1474,9 +1690,12 @@ router.post("/adminApprove_document", isAuth, async (req, res) => {
            // send email to the account owner
            fetchApp().then((result) => {
             appName = result.app_name
+            appLogo = result.app_logo
+            const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+
             const mailBody = loginEmail(appName, actionStatus =='Approved' ? 'Congratulations' :'Document Issue', user.display_name, ` ${actionStatus ==`Approved` ? `this is to notify you that your ${documentName} document has been fully approved after been carefully reviewed the documents,
             thank you for choosing ${appName} and we hope you will enjoy our services`: `this is to notify you that your account document was not approved. Kindly contact support for more details and possible resolution.
-            Thank you` }`)
+            Thank you` }, $logoImage`)
                 const mailText = loginText(user.display_name, ` ${actionStatus ==`Approved` ? `this is to notify you that your ${documentName} document has been fully approved after been carefully reviewed the documents,
                 thank you for choosing ${appName} and we hope you will enjoy our services`:`this is to notify you that your account document was not approved. Kindly contact support for more details and possible resolution.
                 Thank you` }`)
@@ -1574,8 +1793,11 @@ router.post("/adminRejected_documentUpload", isAuth, async (req, res) => {
            // send email to the account owner
            fetchApp().then((result) => {
             appName = result.app_name
+            appLogo = result.app_logo
+            const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+
             const mailBody = loginEmail(appName, 'Document Issue', user.display_name, `this is to notify you that your ${documentName} has been rejected after been carefully reviewed the documents, Reason: ${documentReason} 
-            you can contact support for more details and possible resolution, Thank you`)
+            you can contact support for more details and possible resolution, Thank you`, logoImage)
                 const mailText = loginText(user.display_name, `this is to notify you that your ${documentName} has been rejected after been carefully reviewed the documents, Reason: ${documentReason} 
                 you can contact support for more details and possible resolution, Thank you`)
                 let account_issueEMail = {
@@ -1729,11 +1951,12 @@ router.post("/approveAcctFunding", isAuth, async (req, res) => {
       // send email to the account owner
       fetchApp().then((result) => {
         appName = result.app_name
-        const mailBody = loginEmail(appName, 'Fund Approved', userDetail.display_name, `this is to notify you that your account funding has been approved and your wallet has be credited with the sum of \n\n
+        appLogo = result.app_logo
+        const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+        const mailBody = loginEmail(appName, 'Fund Approved', userDetail.display_name, `this is to notify you that your account funding has been approved and your wallet has be credited with the sum of 
         <b>\u20A6${new Intl.NumberFormat().format(userFund.amount)}</b> <br>
-          
-        with transaction ID <b>${userFund.fund_number}</b><br> 
-        thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
+        with transaction ID <b>${userFund.fund_number}</b><br>
+        thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`, logoImage)
             const mailText = loginText(userDetail.display_name, `this is to notify you that your account funding has been approved and your wallet has be credited with the sum of \n\n
             <b>\u20A6${new Intl.NumberFormat().format(userFund.amount)}</b><br>
              
@@ -1839,11 +2062,14 @@ router.post("/rejectApproveAcctFunding", isAuth, async (req, res) => {
       // send email to the account owner
       fetchApp().then((result) => {
         appName = result.app_name
+        appLogo = result.app_logo
+        const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+
         const mailBody = loginEmail(appName, 'Account Funding Issue', userDetail.display_name, `this is to notify you that your account funding request has been rejected or cancelled after been review your transaction details.
         <br> Amount Funding: <b>\u20A6${new Intl.NumberFormat().format(userFund.amount)}</b> <br>
         With transaction ID <b>${userFund.fund_number}</b><br> 
         We are unable to verify that the transaction was valid and successful! Please you can contact support for more details and possible resolutions.<br><br>
-        Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
+        Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`, logoImage)
 
             const mailText = loginText(userDetail.display_name, `this is to notify you that your account funding request has been rejected or cancelled after been review your transaction details.
             <br> Amount Funding: <b>\u20A6${new Intl.NumberFormat().format(userFund.amount)}</b> <br>
@@ -1923,7 +2149,6 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
     if(checkReferral && checkReferral.ref_status == 'Pending'){
       // get referral user details
         const checkUser = await User.findOne({email: checkReferral.ref_mainEmail });
-        if(checkUser){
           // get exchange rate details
           const checkTradeRate = await GetRate.findOne();
 
@@ -1987,10 +2212,13 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
         if(checkUser.receive_email_notification == true){
           fetchApp().then((result) => {
             appName = result.app_name
-            const mailBody = loginEmail(appName, 'Referral Bonus Approved', checkUser.display_name, `this is to notify you that your referral bonus funds has been approved and your account has be credited with the sum of \n\n
+            appLogo = result.app_logo
+            const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+
+            const mailBody = loginEmail(appName, 'Fund Sales Approved', checkUser.display_name, `this is to notify you that your referral bonus funds has been approved and your account has be credited with the sum of \n\n
             <b>\u20A6${new Intl.NumberFormat().format(addAmount)}</b> for your hard work for sharing your referral Tag ID <br>
             </b><br>  Keep it up and keep referring your friends, loves one to continue earning... <br>
-            Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
+            Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`, logoImage)
             
           const mailText = loginText(checkUser.display_name, `this is to notify you that your referral bonus funds has been approved and your account has be credited with the sum of \n\n
           <b>\u20A6${new Intl.NumberFormat().format(addAmount)}</b> for your hard work for sharing your referral Tag ID <br>
@@ -2010,7 +2238,7 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
           }).catch(console.error.bind(console))
           }
         
-        }
+        
       }
 
      const currentBal = userDetail.tran_account+ +allSales.amount
@@ -2062,7 +2290,7 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
         alert_browser: '',
         alert_date:  Date.now(),
         alert_user_id: userDetail._id,
-        alert_nature: `Sales Approved \n Note: this is to notify you that your ${allSales.transac_category} funds has been approved and your bank account has be credited with the sum of
+        alert_nature: `Funds Sales Approved \n Note: this is to notify you that your ${allSales.transac_category} funds has been approved and your bank account has be credited with the sum of
         \u20A6${new Intl.NumberFormat().format(totalSales)} \n\n with transaction ID ${allSales.tid}`,
         alert_status: 1,
         alert_read_date: ''
@@ -2073,20 +2301,21 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
       if(userDetail.receive_email_notification == true){
         fetchApp().then((result) => {
           appName = result.app_name
-          const mailBody = loginEmail(appName, 'Fund Approved', userDetail.display_name, `this is to notify you that your ${allSales.transac_category} funds has been approved and your bank account has be credited with the sum of \n\n
+          appLogo = result.app_logo
+          const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+
+          const mailBody = loginEmail(appName, 'Fund Sales Approved', userDetail.display_name, `this is to notify you that your ${allSales.transac_category} funds has been approved and your bank account has be credited with the sum of
           <b>\u20A6${new Intl.NumberFormat().format(totalSales)}</b> <br>
-            
-          with transaction ID <b>${allSales.tid}</b><br> 
-          thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
+          with transaction ID <b>${allSales.tid}</b><br>
+          thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`, logoImage)
               const mailText = loginText(userDetail.display_name, `this is to notify you that your ${allSales.transac_category} funds sales has been approved and your bank account has be credited with the sum of \n\n
               <b>\u20A6${new Intl.NumberFormat().format(totalSales)}</b><br>
-               
               with transaction ID <b>${allSales.tid}</b><br>
               thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
               let account_issueEMail = {
                 from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
                 to: userDetail.email,
-                subject: 'Account Funding Notification!',
+                subject: 'Funds Sales Notification!',
                 text: mailText,
                 html: mailBody,
               }
@@ -2173,11 +2402,13 @@ router.post("/rejectSaleFunding", isAuth, async (req, res) => {
       // send email to the account owner
       fetchApp().then((result) => {
         appName = result.app_name
+        appLogo = result.app_logo
+        const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
         const mailBody = loginEmail(appName, 'Funds Sales Issue', userDetail.display_name, `this is to notify you that your recent ${allTranSales.transac_category} funds sales/exchange request was not approved or cancelled after been review your transaction details.
         <br> Amount: <b>\$${new Intl.NumberFormat().format(allTranSales.amount)}</b> <br>
         With transaction ID <b>${allTranSales.tid}</b><br> 
         We are unable to verify that the transaction was valid and successful! Please you can contact support for more details and possible resolutions.<br><br>
-        Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
+        Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`, logoImage)
 
             const mailText = loginText(userDetail.display_name, `this is to notify you that your recent ${allTranSales.transac_category} funds sales/exchange request was not approved or cancelled after been review your transaction details.
             <br> Amount: <b>\$${new Intl.NumberFormat().format(allTranSales.amount)}</b> <br>
@@ -2187,7 +2418,7 @@ router.post("/rejectSaleFunding", isAuth, async (req, res) => {
             let account_issueEMail = {
               from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
               to: userDetail.email,
-              subject: 'Account Funding Notification!',
+              subject: 'Funding Sales Notification!',
               text: mailText,
               html: mailBody,
             }
@@ -2471,13 +2702,15 @@ router.post("/messageFeedback_send", isAuth, async (req, res) => {
       // send email to the account owner
       fetchApp().then((result) => {
         appName = result.app_name
+        appLogo = result.app_logo
+        const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
         const mailBody = loginEmail(appName, 'Ticket Feedback', userDetail.display_name, `${responseMessage}
         <b>Ticket ID: ${ticketMessage?.tick_id}</b> <br><br> 
         thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
             const mailText = loginText(userDetail.display_name, `${responseMessage}
             <b>Ticket ID: ${ticketMessage?.tick_id}</b><br>
       
-            thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
+            thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`, logoImage)
             let account_issueEMail = {
               from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
               to: userDetail.email,
@@ -2600,8 +2833,11 @@ router.post("/closeUserTicket_message", isAuth, async (req, res) => {
       // send email to the account owner
       fetchApp().then((result) => {
         appName = result.app_name
+        appLogo = result.app_logo
+        const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+
         const mailBody = loginEmail(appName, 'Ticket Closed', userDetail.display_name, `This is to notified you that your <b>Ticket ID: ${closeMessage?.tick_id} </b> has been marked completed and closed! If you still have still any issue please, feel free to get back to us. <br><br> 
-        Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
+        Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`, logoImage)
             const mailText = loginText(userDetail.display_name, `This is to notified you that your <b>Ticket ID: ${closeMessage?.tick_id} </b> has been marked completed and closed! If you still have still any issue please, feel free to get back to us. <br><br> 
             Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
             let ticket_issueEMail = {
@@ -3191,10 +3427,13 @@ router.get("/approveReferral_bonus/:id", isAuth, async (req, res) => {
       if(checkUser.receive_email_notification == true){
         fetchApp().then((result) => {
           appName = result.app_name
+          appLogo = result.app_logo
+          const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+
           const mailBody = loginEmail(appName, 'Referral Bonus Approved', checkUser.display_name, `this is to notify you that your referral bonus funds has been approved and your account has be credited with the sum of \n\n
           <b>\u20A6${new Intl.NumberFormat().format(addAmount)}</b> for your hard work for sharing your referral Tag ID <br>
           </b><br>  Keep it up and keep referring your friends, loves one to continue earning... <br>
-          Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
+          Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`, logoImage)
           
           const mailText = loginText(checkUser.display_name, `this is to notify you that your referral bonus funds has been approved and your account has be credited with the sum of \n\n
           <b>\u20A6${new Intl.NumberFormat().format(addAmount)}</b> for your hard work for sharing your referral Tag ID <br>
@@ -3222,13 +3461,6 @@ router.get("/approveReferral_bonus/:id", isAuth, async (req, res) => {
   }
 });
 
-
-
-
-
-
-
-
 router.get("/allPayPal_sales", isAuth, async (req, res) => {
   //console.log("My ID", userId);
   try {
@@ -3243,7 +3475,6 @@ router.get("/allPayPal_sales", isAuth, async (req, res) => {
     console.log(err.message);
   }
 });
-
 
 // get user wallet chat data account here..
 router.get("/chart_transactions/:id", isAuth, async (req, res) => {

@@ -1,6 +1,6 @@
 const newsLetterEmail = (clientName) => `<p>Hi ${clientName}, here you have today news.</p>`
 
-const loginEmail = (sendCompanyName, sendTitle, sendReceiverName, sendMessage) =>
+const loginEmail = (sendCompanyName, sendTitle, sendReceiverName, sendMessage, logo) =>
     `<!DOCTYPE html>
     <html>
     <head>
@@ -63,7 +63,7 @@ const loginEmail = (sendCompanyName, sendTitle, sendReceiverName, sendMessage) =
                                 <tr>
                                     <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
                                         <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
-                                        <img src="https://ozawebservice.onrender.com/images/oza_logo.png" width="100" height="100"/> &nbsp;</a></p>
+                                        ${logo} &nbsp;</a></p>
                                     </td>
                                    
                                 </tr>

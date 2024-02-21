@@ -183,7 +183,10 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
            // email notification sending
            fetchApp().then((result) =>{
             appName = result.app_name ;
-            mailBody = registerEmail(appName, 'Account Opening Successfully', userDone.display_name, randomSixDigitNumber)
+            appLogo = result.app_logo
+            const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+
+            mailBody = registerEmail(appName, 'Account Opening Successfully', userDone.display_name, randomSixDigitNumber, logoImage);
             const TextBody = registerEmailText(userDone.display_name, randomSixDigitNumber);
             let register_mailOptions = {
                from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
@@ -255,7 +258,10 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
             // email notification sending
             fetchApp().then((result) =>{
             appName = result.app_name
-            const mailBody = registerEmail(appName, 'Account Opening Successfully', userDone.display_name, randomSixDigitNumber)
+            appLogo = result.app_logo
+            const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+
+            const mailBody = registerEmail(appName, 'Account Opening Successfully', userDone.display_name, randomSixDigitNumber, logoImage);
             const TextBody = registerEmailText(userDone.display_name, randomSixDigitNumber);
             let register_mailOptions = {
                from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
@@ -742,7 +748,10 @@ router.post("/user_2fa_otpSend", isAuth, async (req, res) => {
         // email notification sending
             fetchApp().then((result) =>{
                 appName = result.app_name
-                const mailBody = _2FAEmail(appName, '2FA OTP Code', userInfo.display_name, randomSixDigitNumber)
+                appLogo = result.app_logo
+                const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+
+                const mailBody = _2FAEmail(appName, '2FA OTP Code', userInfo.display_name, randomSixDigitNumber, logoImage);
                 const TextBody = _2FAEmailText(userInfo.display_name, randomSixDigitNumber);
                 let _2FAMailOptions = {
                 from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
@@ -897,7 +906,10 @@ router.post("/user_activate_email", isAuth, async (req, res) => {
             // send email notification to user
             fetchApp().then((result) =>{
             appName = result.app_name
-            const mailBody = loginEmail(appName, 'Email Notification', userPro.display_name, `this is to notify you that email notification has been ${actionStatus == true? 'Enabled': 'Disabled'} in your account, thank you`)
+            appLogo = result.app_logo
+            const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+
+            const mailBody = loginEmail(appName, 'Email Notification', userPro.display_name, `this is to notify you that email notification has been ${actionStatus == true? 'Enabled': 'Disabled'} in your account, thank you`, logoImage)
             const TextBody = loginText(userPro.display_name, `this is to notify you that email notification has been ${actionStatus == true? 'Enabled': 'Disabled'} in your account, thank you. \n`);
             let _2FAMailOptions = {
             from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
@@ -958,7 +970,10 @@ router.post("/user_activate_2fa_notice", isAuth, async (req, res) => {
         // send email notification to user
         fetchApp().then((result) =>{
             appName = result.app_name
-            const mailBody = loginEmail(appName, '2FA Authentication Notification', userPro.display_name, `this is to notify you that 2FA authentication has been ${actionStatus == true? 'Enabled': 'Disabled'} in your account, thank you`)
+            appLogo = result.app_logo
+            const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+
+            const mailBody = loginEmail(appName, '2FA Authentication Notification', userPro.display_name, `this is to notify you that 2FA authentication has been ${actionStatus == true? 'Enabled': 'Disabled'} in your account, thank you`, logoImage)
             const TextBody = loginText(userPro.display_name, `this is to notify you that 2FA authentication has been ${actionStatus == true? 'Enabled': 'Disabled'} in your account, thank you. \n`);
             let _2FAAuthMailOptions = {
             from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
@@ -1018,7 +1033,10 @@ router.post("/user_notice_request", isAuth, async (req, res) => {
                 // send email notification to user
             fetchApp().then((result) =>{
                 appName = result.app_name
-                const mailBody = loginEmail(appName, 'In-App Notification', userPro.display_name, `this is to notify you that in-app notification has been ${actionStatus == true? 'Enabled': 'Disabled'} in your account, thank you.`)
+                appLogo = result.app_logo
+                const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+
+                const mailBody = loginEmail(appName, 'In-App Notification', userPro.display_name, `this is to notify you that in-app notification has been ${actionStatus == true? 'Enabled': 'Disabled'} in your account, thank you.`, logoImage)
                 const TextBody = loginText(userPro.display_name, `this is to notify you that in-app notification has been ${actionStatus == true? 'Enabled': 'Disabled'} in your account, thank you. \n`);
                 let _2FAAuthMailOptions = {
                 from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,

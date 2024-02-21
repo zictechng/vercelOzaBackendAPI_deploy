@@ -1,5 +1,5 @@
 
-const passwordResetEmail = (sendCompanyName, sendTitle, sendReceiverName, sendMessage, otpCode) =>
+const passwordResetEmail = (sendCompanyName, sendTitle, sendReceiverName, sendMessage, otpCode, logo) =>
     `<!DOCTYPE html>
     <html>
     <head>
@@ -70,7 +70,7 @@ For what reason would it be advisable for me to think about business content? Th
                                 <tr>
                                     <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
                                         <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
-                                        <img src="https://ozawebservice.onrender.com/images/oza_logo.png" width="100" height="100"/> &nbsp;</a></p>
+                                        ${logo} &nbsp;</a></p>
                                     </td>
                                     
                                 </tr>
