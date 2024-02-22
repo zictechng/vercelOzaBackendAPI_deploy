@@ -11,6 +11,10 @@ const DealingRateSchema = new mongoose.Schema({
         type: Number,
         default: 0.0,
     },
+    signup_bonus_rate: {
+        type: Number,
+        default: 0.0,
+    },
     app_status: {
         type: String,
         default: 'Pending',

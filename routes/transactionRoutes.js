@@ -726,7 +726,7 @@ router.post("/fundPurchase_funding", isAuth, async (req, res) => {
             //console.log("User details: ", userDetails)
             return res.json({status: 404, message: 'User not found'})// user not found
           } 
-          else if (userFund){
+        else if (userFund){
         
               // create record for funding purposes
               const createRecord = TransferFund.create({
@@ -750,7 +750,7 @@ router.post("/fundPurchase_funding", isAuth, async (req, res) => {
                 tid: TransID,
                 tran_service_type: dataReceive.serviceType,
                 pay_tran: dataReceive.method =='Paystack Checkout'? dataReceive.payId : null,
-                tran_rate: dataReceive.serviceName == 'PayPal'? getCurrentRate.paypal_buying: dataReceive.serviceName == 'Payoneer'? getCurrentRate.payooner_buying: dataReceive.serviceName=='Bitcoin'? getCurrentRate.btc_buying: ''
+                tran_rate: dataReceive.serviceName == 'PayPal'? getCurrentRate.paypal_buying: dataReceive.serviceName == 'Payoneer'? getCurrentRate.payoneer_buying: dataReceive.serviceName=='Bitcoin'? getCurrentRate.btc_buying: ''
                 });
                 
               // check if user activate in-app notification and send notification
@@ -860,7 +860,7 @@ router.post("/fundBuy_funding", isAuth, async (req, res) => {
                 tran_service_type: dataReceive.serviceType,
                 trans_balance: dataReceive.total_money,
                 pay_tran: dataReceive.method =='Paystack Checkout'? dataReceive.payId : null,
-                tran_rate: dataReceive.serviceName == 'PayPal'? getCurrentRate.paypal_buying: dataReceive.serviceName == 'Payoneer'? getCurrentRate.payooner_buying: dataReceive.serviceName=='Bitcoin'? getCurrentRate.btc_buying: ''
+                tran_rate: dataReceive.serviceName == 'PayPal'? getCurrentRate.paypal_selling: dataReceive.serviceName == 'Payoneer'? getCurrentRate.payoneer_selling: dataReceive.serviceName=='Bitcoin'? getCurrentRate.btc_selling: ''
                 });
                 
               // check if user activate in-app notification and send notification

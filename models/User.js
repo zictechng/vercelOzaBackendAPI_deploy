@@ -85,6 +85,10 @@ const userSchema = new mongoose.Schema({
         type: Number,
         default: 0.0,
     },
+    signup_account: {
+        type: Number,
+        default: 0.0,
+    },
     active: {
         type: Boolean,
         default: true

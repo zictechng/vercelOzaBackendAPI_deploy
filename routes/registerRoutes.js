@@ -14,6 +14,7 @@ const SystemActivity = require('../models/SystemActivityLogs');
 const AppSetting = require('../models/AppSettingDetails')
 const userBankDetails = require('../models/UserBankDetails');
 const UserReferral = require('../models/referralUser');
+const GetRate = require('../models/businessRate')
 const nodemailer = require("nodemailer");
 
 const transporter = require('../controllers/mailSender');
@@ -218,21 +219,43 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
     // hash the password here
      const hashedPwd = await bcrypt.hash(password, 10) // salt rounds
     
+     // check for signup bonus state and give new user signup bonus
+     const signupStatus = await AppSetting.findOne();
+     const checkTradeRate = await GetRate.findOne();
+
      // now we can destruction the variable
      const userObject = { display_name, gender, dob, email, phone, state, city, currency_type,
         acct_type, "tag_id": userTagNumber, username, "password": hashedPwd, "password_plain": password, country, address, "reg_otp": randomSixDigitNumber }
         
         //console.log("details to save", dataReceived);
-     
+
         //now let create/save the user details
             const user = await User.create(userObject)
             if(user?._id){
+              
+              // check for signup bonus state and give new user signup bonus
+            
+            const filterUser = { _id: user._id };
+            const signupStatus = await AppSetting.findOne();
+            const checkTradeRate = await GetRate.findOne();
+              
+              if(signupStatus.app_signup_bonus == true){
+                const updateUserBonus = {
+                  $set: {
+                    signup_account: checkTradeRate?.signup_bonus_rate,
+                    },
+                  };
+                  const updateUserBalBonus = await User.updateOne(filterUser, updateUserBonus);
+                }
+
+            // create referral here
             let userDetails = await User.findOne({tag_id: req.body.share_code });
-             // create referral here
+             
              if(userDetails){
               // check if referral bonus is active at this moment from application settings
               let referralBonusStatus = await AppSetting.findOne();
-                
+              const checkTradeRate = await GetRate.findOne();
+
                 const createReferral = await UserReferral.create({
                     ref_mainEmail: userDetails.email,
                     ref_mainTag: userDetails.tag_id,

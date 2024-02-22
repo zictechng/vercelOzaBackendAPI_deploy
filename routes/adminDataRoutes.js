@@ -878,8 +878,8 @@ router.post('/updateService_rate', isAuth, async (req, res, next) =>{
         paypal_selling: req.body.paypal_selling,
         payoneer_buying: req.body.payoneer_buying,
         payoneer_selling: req.body.payoneer_selling,
-        bonus_rate: req.body.referral_bonus_amt
-
+        bonus_rate: req.body.referral_bonus_amt,
+        signup_bonus_rate: req.body.signup_bonus,
         },
     }
     const updateRead = await GetRate.updateOne(updateDoc);
@@ -896,7 +896,6 @@ router.post('/updateService_rate', isAuth, async (req, res, next) =>{
     res.status(500).json(err.message);
     console.log(err.message);
   }
- 
 
 })
 
@@ -1104,7 +1103,8 @@ router.post("/update_appStatus", isAuth, async (req, res, next) => {
         app_maxi_funding: req.body.maxi_funding,
         app_payStack_btn: req.body.payStack_btn,
         app_paypal_bnt: req.body.paypal_btn,
-        app_referral_bonus: req.body.referral_bonus_status
+        app_referral_bonus: req.body.referral_bonus_status,
+        app_signup_bonus: req.body.signup_bonus_status,
         //user_policy
         });
        
@@ -1133,6 +1133,7 @@ router.post("/update_appStatus", isAuth, async (req, res, next) => {
         app_payStack_btn: req.body.payStack_btn,
         app_paypal_bnt: req.body.paypal_btn,
         app_referral_bonus: req.body.referral_bonus_status,
+        app_signup_bonus: req.body.signup_bonus_status,
           },
       }
       const updateRead = await AppSetting.updateOne(updateDoc);
@@ -2136,9 +2137,12 @@ router.get("/getSales_details/:id", isAuth, async (req, res) => {
   }
 });
 
+var newAmtBonus = null;
 // Approved user sales funds and credit their bank account details here..
 router.post("/approveFundSales", isAuth, async (req, res) => {
   let recordId = req.body.tran_id;
+
+  let bonusMoney // this will make this variable global and accessible anywhere in this block
   //console.log("MY ID ", userId);
   try {
     if(recordId == '' || recordId == null){
@@ -2253,8 +2257,24 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
       }
 
      const currentBal = userDetail.tran_account+ +allSales.amount
-     const totalSales = allSales.amount * allSales.tran_rate
+     // check for user signup bonus amount
+     const filterUser = { _id: userDetail._id };
+     if(userDetail.signup_account > 0){
+      
+      bonusMoney = userDetail.signup_account * allSales.tran_rate;
+      const updateUserBonus = {
+        $set: {
+          signup_account: 0,
+          },
+        };
+        const updateUserBalBonus = await User.updateOne(filterUser, updateUserBonus);
+      }
 
+     const totalSales = allSales.amount * allSales.tran_rate
+    let gTotal = bonusMoney+ + totalSales;
+
+    console.log("Total Sales: " + gTotal);
+    console.log("Total Bonus: " + bonusMoney);
      // credit approval request account here
      if(userDetail){
       const filterUser = { _id: userDetail._id };
@@ -2302,7 +2322,7 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
         alert_browser: '',
         alert_date:  Date.now(),
         alert_user_id: userDetail._id,
-        alert_nature: `Funds Sales Approved \n Note: this is to notify you that your ${allSales.transac_category} funds has been approved and your bank account has be credited with the sum of \u20A6${new Intl.NumberFormat().format(totalSales)}\n with transaction ID: ${allSales.tid}`,
+        alert_nature: `Funds Sales Approved \n Note: this is to notify you that your ${allSales.transac_category} funds has been approved and your bank account has be credited with the sum of \u20A6${new Intl.NumberFormat().format(totalSales)}.${bonusMoney? `\nYou got a signup bonus awarded to you \u20A6${new Intl.NumberFormat().format(bonusMoney)}. \nTotal Sum is \u20A6${new Intl.NumberFormat().format(gTotal)}.\n`: '\n' }With transaction ID: ${allSales.tid}`,
         alert_status: 1,
         alert_read_date: ''
         })
@@ -2316,9 +2336,10 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
           const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
 
           const mailBody = loginEmail(appName, 'Fund Sales Approved', userDetail.display_name, `this is to notify you that your ${allSales.transac_category} funds has been approved and your bank account has be credited with the sum of
-          <b>\u20A6${new Intl.NumberFormat().format(totalSales)}</b> <br>
-          with transaction ID <b>${allSales.tid}</b><br>
-          thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`, logoImage)
+          <b>\u20A6${new Intl.NumberFormat().format(totalSales)}</b>. ${bonusMoney? `<br/> Wow... you got some extra money credited to you as signup bonus! <b>\u20A6${new Intl.NumberFormat().format(bonusMoney)}</b> <br>`: '<br>'}
+          ${bonusMoney? `<b>Total Amount: \u20A6${new Intl.NumberFormat().format(gTotal)}. <br>` :''}</b>
+          With transaction ID <b>${allSales.tid}</b><br>
+          Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`, logoImage)
               const mailText = loginText(userDetail.display_name, `this is to notify you that your ${allSales.transac_category} funds sales has been approved and your bank account has be credited with the sum of \n\n
               <b>\u20A6${new Intl.NumberFormat().format(totalSales)}</b><br>
               with transaction ID <b>${allSales.tid}</b><br>

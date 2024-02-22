@@ -71,6 +71,10 @@ const systemSettingSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+    app_signup_bonus:{
+        type: Boolean,
+        default: false,
+    },
     createdBy: String,
 
     createdOn: {type: Date, default: Date.now},
