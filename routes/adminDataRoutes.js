@@ -1953,10 +1953,9 @@ router.post("/approveAcctFunding", isAuth, async (req, res) => {
         alert_browser: '',
         alert_date:  Date.now(),
         alert_user_id: userDetail._id,
-        alert_nature: `Account Funding \n
-        This is to notify you that your account funding has been approved and your wallet has be credited with the sum of
-        \u20A6${new Intl.NumberFormat().format(userFund.amount)} \n
-        with transaction ID: ${userFund.fund_number}`,
+        alert_nature: `Account Funding\n
+        This is to notify you that your account funding has been approved and your wallet has be credited with the sum of \u20A6${new Intl.NumberFormat().format(userFund.amount)}
+        \n with transaction ID: ${userFund.fund_number}`,
         alert_status: 1,
         alert_read_date: ''
         })
@@ -2054,9 +2053,8 @@ router.post("/rejectApproveAcctFunding", isAuth, async (req, res) => {
         alert_browser: '',
         alert_date:  Date.now(),
         alert_user_id: userDetail._id,
-        alert_nature: `Account Funding Issues \n
-        Reason: We are unable to verify that the transaction with transaction ID: ${userFund.fund_number} was valid or successful! \n
-        Please, you can contact support for more details and possible resolutions` ,
+        alert_nature: `Account Funding Issues\n
+        Reason: We are unable to verify that the transaction with transaction ID: ${userFund.fund_number} was valid or successful!\n Please, you can contact support for more details and possible resolutions` ,
         alert_status: 1,
         alert_read_date: ''
         })
@@ -2217,10 +2215,7 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
           alert_browser: '',
           alert_date:  Date.now(),
           alert_user_id: checkUser._id,
-          alert_nature: `Referral Bonus Approved \n Note: this is to notify you that your referral bonus funds has been approved and your account has been credited with the sum of
-          \u20A6${new Intl.NumberFormat().format(addAmount)} \n
-          for your hard work by sharing your referral ID! \n\n
-          Keep referring to keep earning...`,
+          alert_nature: `Referral Bonus Approved \n Note: this is to notify you that your referral bonus funds has been approved and your account has been credited with the sum of \u20A6${new Intl.NumberFormat().format(addAmount)}\n for your hard work by sharing your referral ID.\n Keep referring to keep earning...`,
           alert_status: 1,
           alert_read_date: ''
           })
@@ -2307,9 +2302,7 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
         alert_browser: '',
         alert_date:  Date.now(),
         alert_user_id: userDetail._id,
-        alert_nature: `Funds Sales Approved \n Note: this is to notify you that your ${allSales.transac_category} funds has been approved and your bank account has be credited with the sum of
-        \u20A6${new Intl.NumberFormat().format(totalSales)} \n
-        with transaction ID: ${allSales.tid}`,
+        alert_nature: `Funds Sales Approved \n Note: this is to notify you that your ${allSales.transac_category} funds has been approved and your bank account has be credited with the sum of \u20A6${new Intl.NumberFormat().format(totalSales)}\n with transaction ID: ${allSales.tid}`,
         alert_status: 1,
         alert_read_date: ''
         })
@@ -2398,7 +2391,7 @@ router.post("/rejectSaleFunding", isAuth, async (req, res) => {
         alert_browser: '',
         alert_date:  Date.now(),
         alert_user_id: userDetail._id,
-        alert_nature: `Account Funding Issues \n Note: We are unable to verify that the transaction with transaction ID ${allTranSales.tid} was valid or successful! Please you can contact support for more details and possible resolutions` ,
+        alert_nature: `Account Funding Issues\n Note: We are unable to verify that the transaction with transaction ID ${allTranSales.tid} was valid or successful!\n Please, you can contact support for more details and possible resolutions` ,
         alert_status: 1,
         alert_read_date: ''
         })
