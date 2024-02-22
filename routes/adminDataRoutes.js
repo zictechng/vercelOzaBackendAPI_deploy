@@ -1013,6 +1013,19 @@ router.get("/app_setting", isAuth, async (req, res) => {
   }
 });
 
+// get the company app setting details from database here..
+router.get("/app_settingPage", async (req, res) => {
+  try {
+    //get all user count details
+     const appDetails = await AppSetting.find();
+    // console.log('termCondition ', termConditionData)
+      res.send({ msg: '201', feedAll: appDetails})
+    } catch (err) {
+    res.status(500).json(err.message);
+    console.log(err.message);
+  }
+});
+
 // get the company bank details from database here..
 router.get("/fetchCompany_bank", isAuth, async (req, res) => {
   try {
