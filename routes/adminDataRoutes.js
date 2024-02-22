@@ -670,7 +670,7 @@ router.get("/userSales_details", isAuth, async (req, res) => {
     const totalPageNumber = Math.ceil(pageCount / limit); // get the number of pages
 
     //get all user count details
-     const allSalesDocument = await TransferFund.find({tran_service_type:'Sales'}).sort({ createdOn: -1 }).skip(skip).limit(limit);
+     const allSalesDocument = await TransferFund.find({tran_service_type:'Sales'}).sort({ creditOn: -1 }).skip(skip).limit(limit);
 
       res.send({ msg: '201', feedAll: allSalesDocument, page: page, limit: limit, totalPage: totalPageNumber, totalRecord: pageCount})
     } catch (err) {
@@ -693,7 +693,7 @@ router.get("/userBuyOrder_details", isAuth, async (req, res) => {
     const totalPageNumber = Math.ceil(pageCount / limit); // get the number of pages
 
     //get all user count details
-     const allBuyDocument = await TransferFund.find({tran_service_type: 'Buy'}).sort({ createdOn: -1 }).skip(skip).limit(limit);
+     const allBuyDocument = await TransferFund.find({tran_service_type: 'Buy'}).sort({ creditOn: -1 }).skip(skip).limit(limit);
       res.send({ msg: '201', feedAll: allBuyDocument, page: page, limit: limit, totalPage: totalPageNumber, totalRecord: pageCount})
     } catch (err) {
     res.status(500).json(err.message);
@@ -776,7 +776,6 @@ router.get("/allUser_transaction", isAuth, async (req, res) => {
 //   }
 //   });
 
-
 router.get('/allUser_messages', isAuth, async (req, res) => {
   try {
   const allTickets = await Ticket.aggregate([
@@ -832,9 +831,7 @@ router.get("/allAbout_us", isAuth, async (req, res) => {
 router.post('/updateAbout_us', isAuth, async (req, res, next) =>{
   //
   try {
-
     console.log(req.body)
-
     // set deactivation status here ...
     const updateDoc = {
       $set: {
@@ -1093,7 +1090,8 @@ router.post("/update_appStatus", isAuth, async (req, res, next) => {
         app_minim_funding: req.body.mini_funding,
         app_maxi_funding: req.body.maxi_funding,
         app_payStack_btn: req.body.payStack_btn,
-        app_paypal_bnt: req.body.paypal_btn
+        app_paypal_bnt: req.body.paypal_btn,
+        app_referral_bonus: req.body.referral_bonus_status
         //user_policy
         });
        
@@ -1121,6 +1119,7 @@ router.post("/update_appStatus", isAuth, async (req, res, next) => {
         app_maxi_funding: req.body.maxi_funding,
         app_payStack_btn: req.body.payStack_btn,
         app_paypal_bnt: req.body.paypal_btn,
+        app_referral_bonus: req.body.referral_bonus_status,
           },
       }
       const updateRead = await AppSetting.updateOne(updateDoc);
@@ -1941,8 +1940,10 @@ router.post("/approveAcctFunding", isAuth, async (req, res) => {
         alert_browser: '',
         alert_date:  Date.now(),
         alert_user_id: userDetail._id,
-        alert_nature: `Account Funding \n Reason: this is to notify you that your account funding has been approved and your wallet has be credited with the sum of
-        \u20A6${new Intl.NumberFormat().format(userFund.amount)} \n\n with transaction ID ${userFund.fund_number}`,
+        alert_nature: `Account Funding \n
+        This is to notify you that your account funding has been approved and your wallet has be credited with the sum of
+        \u20A6${new Intl.NumberFormat().format(userFund.amount)} \n
+        with transaction ID: ${userFund.fund_number}`,
         alert_status: 1,
         alert_read_date: ''
         })
@@ -2040,7 +2041,9 @@ router.post("/rejectApproveAcctFunding", isAuth, async (req, res) => {
         alert_browser: '',
         alert_date:  Date.now(),
         alert_user_id: userDetail._id,
-        alert_nature: `Account Funding Issues \n Reason: We are unable to verify that the transaction with transaction ID ${userFund.fund_number} was valid or successful! Please you can contact support for more details and possible resolutions` ,
+        alert_nature: `Account Funding Issues \n
+        Reason: We are unable to verify that the transaction with transaction ID: ${userFund.fund_number} was valid or successful! \n
+        Please, you can contact support for more details and possible resolutions` ,
         alert_status: 1,
         alert_read_date: ''
         })
@@ -2143,10 +2146,10 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
      }
 
       //process user referral bonus details here
-    const checkReferral = await Referrals.findOne({ref_userEmail: userDetail.email });
+    const checkReferral = await Referrals.findOne({ref_userEmail: userDetail.email, ref_status:'Pending' });
     
     //check if referral is valid and award the user the credit amount
-    if(checkReferral && checkReferral.ref_status == 'Pending'){
+    if(checkReferral && checkReferral.ref_status == 'Pending' && checkReferral.ref_state == true ){
       // get referral user details
         const checkUser = await User.findOne({email: checkReferral.ref_mainEmail });
           // get exchange rate details
@@ -2157,7 +2160,7 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
           const InitialBal = checkUser.amount+ +addAmount
 
           const filterUser = { _id: checkUser._id };
-          const filterReferral = { _id: recordId };
+          const filterReferral = { _id: checkReferral._id };
     
           const updateReferralStatus = {
           $set: {
@@ -2202,7 +2205,9 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
           alert_date:  Date.now(),
           alert_user_id: checkUser._id,
           alert_nature: `Referral Bonus Approved \n Note: this is to notify you that your referral bonus funds has been approved and your account has been credited with the sum of
-          \u20A6${new Intl.NumberFormat().format(addAmount)} \n\n for your hard work by sharing your referral ID! \n\n Keep referring to keep earning...`,
+          \u20A6${new Intl.NumberFormat().format(addAmount)} \n
+          for your hard work by sharing your referral ID! \n\n
+          Keep referring to keep earning...`,
           alert_status: 1,
           alert_read_date: ''
           })
@@ -2218,7 +2223,7 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
             const mailBody = loginEmail(appName, 'Fund Sales Approved', checkUser.display_name, `this is to notify you that your referral bonus funds has been approved and your account has be credited with the sum of \n\n
             <b>\u20A6${new Intl.NumberFormat().format(addAmount)}</b> for your hard work for sharing your referral Tag ID <br>
             </b><br>  Keep it up and keep referring your friends, loves one to continue earning... <br>
-            Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`, logoImage)
+            Thank you for choosing ${appName}, we hope you continue to enjoy our awesome services.`, logoImage)
             
           const mailText = loginText(checkUser.display_name, `this is to notify you that your referral bonus funds has been approved and your account has be credited with the sum of \n\n
           <b>\u20A6${new Intl.NumberFormat().format(addAmount)}</b> for your hard work for sharing your referral Tag ID <br>
@@ -2237,13 +2242,12 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
           main().catch('Message Error', console.error);
           }).catch(console.error.bind(console))
           }
-        
-        
       }
 
      const currentBal = userDetail.tran_account+ +allSales.amount
      const totalSales = allSales.amount * allSales.tran_rate
 
+     // credit approval request account here
      if(userDetail){
       const filterUser = { _id: userDetail._id };
       const filterGeneral = { _id: allSales._id}
@@ -2291,7 +2295,8 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
         alert_date:  Date.now(),
         alert_user_id: userDetail._id,
         alert_nature: `Funds Sales Approved \n Note: this is to notify you that your ${allSales.transac_category} funds has been approved and your bank account has be credited with the sum of
-        \u20A6${new Intl.NumberFormat().format(totalSales)} \n\n with transaction ID ${allSales.tid}`,
+        \u20A6${new Intl.NumberFormat().format(totalSales)} \n
+        with transaction ID: ${allSales.tid}`,
         alert_status: 1,
         alert_read_date: ''
         })

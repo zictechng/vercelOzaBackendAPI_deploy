@@ -11,6 +11,7 @@ const bcrypt = require('bcrypt')
 const multer = require("multer");
 const User = require('../models/User');
 const SystemActivity = require('../models/SystemActivityLogs');
+const AppSetting = require('../models/AppSettingDetails')
 const userBankDetails = require('../models/UserBankDetails');
 const UserReferral = require('../models/referralUser');
 const nodemailer = require("nodemailer");
@@ -164,6 +165,7 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
         //now let create/save the user details
             const user = await User.create(userObject)
             if(user){
+              
                  // create log here
            const addLogs = await SystemActivity.create({
             log_username: user.email,
@@ -224,17 +226,21 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
      
         //now let create/save the user details
             const user = await User.create(userObject)
-            if(user){
+            if(user?._id){
             let userDetails = await User.findOne({tag_id: req.body.share_code });
              // create referral here
              if(userDetails){
+              // check if referral bonus is active at this moment from application settings
+              let referralBonusStatus = await AppSetting.findOne();
+                
                 const createReferral = await UserReferral.create({
                     ref_mainEmail: userDetails.email,
                     ref_mainTag: userDetails.tag_id,
                     ref_userEmail: req.body.email,
                     ref_userName: req.body.display_name,
                     ref_status: 'Pending',
-                    createdBy: userDetails._id
+                    ref_state: referralBonusStatus.app_referral_bonus,
+                    createdBy: userDetails._id,
                    });
              }
            // create log here

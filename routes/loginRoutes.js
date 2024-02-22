@@ -117,12 +117,15 @@ router.post("/login", async (req, res, next) => {
             // send email notification
             fetchApp().then((result) =>{
                 appName = result.app_name
-                const mailBody = loginEmail(appName, 'Login Authentication', userExist.display_name, 'this is to notify you that your account has just been logged into successfully, If this is not you, contact support for immediate intervention, thank you.')
+                appLogo = result.app_logo
+                const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+
+                const mailBody = loginEmail(appName, 'Login Authentication', userExist.display_name, 'this is to notify you that your account has just been logged into successfully, If this is not you, contact support for immediate intervention, thank you.', logoImage);
                 const TextBody = loginText(userExist.display_name,);
                 let mailOptions = {
                     from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
                     to: userExist.email,
-                    subject: 'Login notification!',
+                    subject: 'Account login notification!',
                     text: TextBody,
                     html: mailBody,
                 }
@@ -284,19 +287,22 @@ router.post("/otp_verify", async (req, res) => {
             log_receiver_bank: '',
             log_country: '',
             log_swift_code: '',
-            log_desc:'Account verified successfully',
+            log_desc:'Account activated successfully',
             log_amt: '',
             log_status: 'Successful',
-            log_nature:'User verify account',
+            log_nature:'User activate account',
             })
             fetchApp().then((result) =>{
             appName = result.app_name
-            const mailBody = loginEmail(appName, 'Account Verified', userExist.display_name, 'this is to notify you that your account has been verified successfully, You can now be able to use your account, thank you.')
+            appLogo = result.app_logo
+            const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+
+            const mailBody = loginEmail(appName, 'Account Activated', userExist.display_name, 'this is to notify you that your account has been activated successfully, You can now be able to login use your account, thank you.', logoImage);
             const TextBody = loginText(userExist.display_name,);
             let mailOptions = {
                 from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
                 to: userExist.email,
-                subject: 'Account verified!',
+                subject: 'Oza Account Activation!',
                 text: TextBody,
                 html: mailBody,
             }
@@ -358,7 +364,10 @@ router.post("/forgetPasswordMobile", async (req, res) => {
                 })
                 fetchApp().then((result) =>{
                 appName = result.app_name
-                const mailBody = passwordResetEmail(appName, 'Forget password reset', userExist.display_name, 'this is to notify you that your account has been requested to reset password, If this is not your, contact our support immediately. \n', otpCode)
+                appLogo = result.app_logo
+                const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+
+                const mailBody = passwordResetEmail(appName, 'Forget password reset', userExist.display_name, 'this is to notify you that your account has been requested to reset password, If this is not your, contact our support immediately. \n', otpCode, logoImage)
                 const TextBody = passwordResetText(userExist.display_name, otpCode);
                 let mailOptions = {
                 from: `${appName} <noreply@rugipoalumni.zictech-ng.com>` ,
@@ -438,7 +447,10 @@ router.post("/resetPasswordMobile", async (req, res) => {
                  // get app details and send mail
                  fetchApp().then((result) =>{
                     appName = result.app_name
-                    const mailBody = loginEmail(appName, 'Password reset successfully', userExist.display_name, 'this is to notify you that your account password has been reset, If this is not you, contact our support immediately. \n')
+                    appLogo = result.app_logo
+                    const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+
+                    const mailBody = loginEmail(appName, 'Password reset successfully', userExist.display_name, 'this is to notify you that your account password has been reset, If this is not you, contact our support immediately. \n', logoImage)
                     const TextBody = loginText(userExist.display_name, 'this is to notify you that your account password has been reset, If this is not you, contact our support immediately');
                     let mailOptions = {
                         from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,

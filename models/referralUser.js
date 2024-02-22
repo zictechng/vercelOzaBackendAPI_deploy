@@ -6,7 +6,7 @@ const referralUserSchema = new mongoose.Schema({
     ref_userEmail: String,
     ref_userName: String,
     ref_status: String,
-    active: {
+    ref_state: {
         type: Boolean,
         default: false,
     },

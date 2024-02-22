@@ -67,6 +67,10 @@ const systemSettingSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    app_referral_bonus:{
+        type: Boolean,
+        default: false,
+    },
     createdBy: String,
 
     createdOn: {type: Date, default: Date.now},

@@ -181,7 +181,6 @@ router.get("/company_name", async (req, res) => {
   }
 });
 
-
 // payment button status details here..
 router.get("/check_paymentBtn", isAuth, async (req, res) => {
  
@@ -338,7 +337,6 @@ router.get("/recent_transactions/:id", isAuth, async (req, res) => {
   //   });
 
   // get recent transaction of the user financial details here..
-  
   
 router.get("/all_statementMobile/:id", async (req, res) => {
     const userId = req.params.id;
