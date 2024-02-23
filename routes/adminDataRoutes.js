@@ -1954,9 +1954,7 @@ router.post("/approveAcctFunding", isAuth, async (req, res) => {
         alert_browser: '',
         alert_date:  Date.now(),
         alert_user_id: userDetail._id,
-        alert_nature: `Account Funding\n
-        This is to notify you that your account funding has been approved and your wallet has be credited with the sum of \u20A6${new Intl.NumberFormat().format(userFund.amount)}
-        \n with transaction ID: ${userFund.fund_number}`,
+        alert_nature: `Account Funding\nThis is to notify you that your account funding has been approved and your wallet has be credited with the sum of \u20A6${new Intl.NumberFormat().format(userFund.amount)}.\nWith transaction ID: ${userFund.fund_number}`,
         alert_status: 1,
         alert_read_date: ''
         })
@@ -2054,8 +2052,7 @@ router.post("/rejectApproveAcctFunding", isAuth, async (req, res) => {
         alert_browser: '',
         alert_date:  Date.now(),
         alert_user_id: userDetail._id,
-        alert_nature: `Account Funding Issues\n
-        Reason: We are unable to verify that the transaction with transaction ID: ${userFund.fund_number} was valid or successful!\n Please, you can contact support for more details and possible resolutions` ,
+        alert_nature: `Account Funding Issues\nReason: We are unable to verify that the transaction with transaction ID: ${userFund.fund_number} was valid or successful!\nPlease, you can contact support for more details and possible resolutions` ,
         alert_status: 1,
         alert_read_date: ''
         })
@@ -2322,7 +2319,7 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
         alert_browser: '',
         alert_date:  Date.now(),
         alert_user_id: userDetail._id,
-        alert_nature: `Funds Sales Approved \n Note: this is to notify you that your ${allSales.transac_category} funds has been approved and your bank account has be credited with the sum of \u20A6${new Intl.NumberFormat().format(totalSales)}.${bonusMoney? `\nYou got a signup bonus awarded to you \u20A6${new Intl.NumberFormat().format(bonusMoney)}. \nTotal Sum is \u20A6${new Intl.NumberFormat().format(gTotal)}.\n`: '\n' }With transaction ID: ${allSales.tid}`,
+        alert_nature: `Funds Sales Approved \nNote: this is to notify you that your ${allSales.transac_category} funds has been approved and your bank account has be credited with the sum of \u20A6${new Intl.NumberFormat().format(totalSales)}.${bonusMoney? `\nYou got a signup bonus awarded to you \u20A6${new Intl.NumberFormat().format(bonusMoney)}. \nTotal Sum is \u20A6${new Intl.NumberFormat().format(gTotal)}.\n`: '\n' }With transaction ID: ${allSales.tid}`,
         alert_status: 1,
         alert_read_date: ''
         })
@@ -2412,7 +2409,7 @@ router.post("/rejectSaleFunding", isAuth, async (req, res) => {
         alert_browser: '',
         alert_date:  Date.now(),
         alert_user_id: userDetail._id,
-        alert_nature: `Account Funding Issues\n Note: We are unable to verify that the transaction with transaction ID ${allTranSales.tid} was valid or successful!\n Please, you can contact support for more details and possible resolutions` ,
+        alert_nature: `Account Funding Issues\nNote: We are unable to verify that the transaction with transaction ID ${allTranSales.tid} was valid or successful!\nPlease, you can contact support for more details and possible resolutions` ,
         alert_status: 1,
         alert_read_date: ''
         })
