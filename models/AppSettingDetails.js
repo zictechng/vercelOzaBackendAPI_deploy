@@ -10,6 +10,7 @@ const systemSettingSchema = new mongoose.Schema({
     app_baseurl: String,
     app_paypayKey: String,
     app_textEditor_key: String,
+    app_mode_message: String,
     app_minim_funding:{
         type: Number,
         default: 0.0
@@ -72,6 +73,18 @@ const systemSettingSchema = new mongoose.Schema({
         default: false,
     },
     app_signup_bonus:{
+        type: Boolean,
+        default: false,
+    },
+    app_new_signup_status:{
+        type: Boolean,
+        default: false,
+    },
+    app_stop_login_status:{
+        type: Boolean,
+        default: false,
+    },
+    app_operation_status:{
         type: Boolean,
         default: false,
     },

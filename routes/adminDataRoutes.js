@@ -1105,6 +1105,11 @@ router.post("/update_appStatus", isAuth, async (req, res, next) => {
         app_paypal_bnt: req.body.paypal_btn,
         app_referral_bonus: req.body.referral_bonus_status,
         app_signup_bonus: req.body.signup_bonus_status,
+        app_new_signup_status: req.body.newSignup_status,
+        app_operation_status: req.body.appMode_status,
+        app_stop_login_status: req.body.appLogin_status,
+        app_mode_message: req.body.appMode_message,
+        
         //user_policy
         });
        
@@ -1134,6 +1139,10 @@ router.post("/update_appStatus", isAuth, async (req, res, next) => {
         app_paypal_bnt: req.body.paypal_btn,
         app_referral_bonus: req.body.referral_bonus_status,
         app_signup_bonus: req.body.signup_bonus_status,
+        app_new_signup_status: req.body.newSignup_status,
+        app_operation_status: req.body.appMode_status,
+        app_stop_login_status: req.body.appLogin_status,
+        app_mode_message: req.body.appMode_message,
           },
       }
       const updateRead = await AppSetting.updateOne(updateDoc);
