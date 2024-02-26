@@ -539,6 +539,7 @@ router.post("/registerWebbiit", upload.single("file"), async (req, res, next) =>
       
 //   });
 
+// user profile photo upload here
 router.post("/user_uploadPhoto", isAuth, upload.single("FileData"), async (req, res) => {
     const file = req.FileData;
     //const url = req.protocol + '://' + req.get('host') // this will get the host url directly
@@ -894,6 +895,76 @@ router.post("/complete_registration", isAuth, async (req, res) => {
         console.error(error);
         return res.json({status: 500, message: 'Server error: ' })
     }
+  });
+
+  // upload proof of address here
+  router.post("/user_uploadProof_address", isAuth, upload.single("FileAddress"), multerErrorHandling, async (req, res) => {
+    const file = req.documentData;
+    const TransID = transactionID(25)
+    //const baseURL = process.env.BASEURL; // this one get url link from .env variable
+    //const url = req.protocol + '://' + req.get('host') // this will get the host url directly
+    const url = process.env.SERVER_BASEURL;
+    const filterUser = { _id: req.body.userId };
+
+        try {
+            const userInfo = await User.findOne({_id:req.body.userId}).lean().exec()
+            const ImagePath = `public/images/${req.file.filename}`
+
+                if(!userInfo){
+                    fs.unlinkSync(`public/images/${req.file.filename}`)
+                    return res.json({status: 402, message: 'You need to login to do this'})
+                } 
+                if(userInfo){
+                  // Upload to cloudinary storage location
+                  const result = await cloudinary.uploader.upload(ImagePath, ImageOptions);
+                  // get the uploaded image url location
+                  const imageUrl = result.secure_url
+
+                    const updateDoc = {
+                        $set: {
+                        reg_stage6:'Yes',
+                        },
+                    };
+                    const userDocument = await DocumentUpload.create({
+                      document_name: 'Proof of address',
+                      document_category: 'User Address Document',
+                      owners_tag_id: userInfo.tag_id,
+                      document_url: imageUrl != null || imageUrl != undefined ? imageUrl : '',
+                      user_id: req.body.userId,
+                      owners_name: userInfo.display_name,
+                      owners_email: userInfo.email,
+                      document_action: "Pending",
+                      document_status: "Pending",
+                      track_document: TransID,
+                    })
+                const updateUserNow = await User.updateOne(filterUser, updateDoc);
+                    
+                if(userDocument){
+                    // create log here
+                        const addLogs = await SystemActivity.create({
+                        log_username: userInfo.email,
+                        log_name: userInfo.display_name,
+                        log_acct_number: userInfo?.tag_id,
+                        log_receiver_name: '',
+                        log_receiver_number: '',
+                        log_receiver_bank: '',
+                        log_country: '',
+                        log_swift_code: '',
+                        log_desc:'User upload proof of address document',
+                        log_amt: '',
+                        log_status: 'Successful',
+                        log_nature:'Proof of address Document uploaded',
+                        })
+                     }
+                const userProfile = await User.findOne({ _id: req.body.userId });
+                const { password, ...others } = userProfile._doc;
+                 res.status(201).json({ msg: '201', userData: others}) // success message
+                }
+                    //return res.json({status: 402, message: ' User email already exist'})
+        } catch (error) {
+            console.error(error.message);
+            return res.json({status: 500, message: 'Server error: ' })
+        }
   });
 
   // updated email notification status route when click

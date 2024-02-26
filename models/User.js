@@ -59,6 +59,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: '',
     },
+    reg_stage6:{
+        type: String,
+        default: '',
+    },
     acct_tax_code: String,
     acct_status: {
         type: String,
