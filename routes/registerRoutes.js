@@ -898,7 +898,7 @@ router.post("/complete_registration", isAuth, async (req, res) => {
   });
 
   // upload proof of address here
-  router.post("/user_uploadProof_address", isAuth, upload.single("FileAddress"), multerErrorHandling, async (req, res) => {
+router.post("/user_uploadProof_address", isAuth, upload.single("FileAddress"), multerErrorHandling, async (req, res) => {
     const file = req.documentData;
     const TransID = transactionID(25)
     //const baseURL = process.env.BASEURL; // this one get url link from .env variable

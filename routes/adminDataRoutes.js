@@ -957,7 +957,7 @@ router.post("/update_termCondition", isAuth, async (req, res, next) => {
 
 // get the company user use policy from database here..
 router.post("/update_userPolicy", isAuth, async (req, res, next) => {
-  console.log('data status ', req.body)
+  //console.log('data status ', req.body)
   try {
 
     const checkData = await CompanyDetails.find();
