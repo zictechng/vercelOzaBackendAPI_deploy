@@ -54,7 +54,6 @@ app.use("public/images", express.static("images"));
 
 // app route goes here
 app.use('/', require('./routes/root'))
-
   
 app.use('/api/users', require('./routes/userRoutes'))
 app.use("/api", registerUser)
