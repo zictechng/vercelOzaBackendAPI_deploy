@@ -30,12 +30,9 @@ const { fetchApp } = require('../middleware/appDetails');
  router.post("/loginAdmin", async (req, res, next) => {
     const file = req.file;
     const filter = req.body;
-    //console.log("Login Data ", req.body);
-    //check in input fields is empty
     if(filter.username == '' || filter.password == ''){
         return res.json({status: 400, message: ' All fields are required'})
-        //return res.status(400).json({msg: '400'}) //Fields required
-    } 
+        } 
     try {
     // Check if user exist
     const userExist = await User.findOne({email: filter.username})
@@ -58,14 +55,11 @@ const { fetchApp } = require('../middleware/appDetails');
     bcrypt.compare(req.body.password, userExist.password, function(err, matches) {
         if (err){
         return res.json({status: 403, message: ' Error occured'})
-        //return res.status(403).json({msg: '403'}); // error occurred
         }
             
         if (!matches){
             return res.json({status: 404, message: ' Wrong password entered'})
-            //res.status(404).json({msg: '404'}); // wrong password entered
-            //console.log('The password does NOT match!');
-        }
+            }
         else {
             const token = jwt.sign({userId:userExist._id}, process.env.SECRET_LOGIN_KEY,
                 {expiresIn:'1d'});
@@ -84,7 +78,7 @@ const { fetchApp } = require('../middleware/appDetails');
             log_desc:'Account login successfully',
             log_amt: '',
             log_status: 'Successful',
-            log_nature:'User login',
+            log_nature:'Admin login',
         })
 
         // user logs status here.
@@ -97,7 +91,7 @@ const { fetchApp } = require('../middleware/appDetails');
             login_date:  Date.now(),
             user_log_id: userExist._id,
             logout_date: '',
-            login_nature: 'User logged in',
+            login_nature: 'Admin User logged in',
             login_token: token,
             login_status: 1
         });
@@ -110,7 +104,7 @@ const { fetchApp } = require('../middleware/appDetails');
                 const mailBody = loginEmail(appName, 'Login Authentication', userExist.display_name, 'this is to notify you that your account has just been logged into successfully, If this is not you, contact support for immediate intervention, thank you.', logoImage)
                 const TextBody = loginText(userExist.display_name,);
                 let mailOptions = {
-                    from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
+                    from: `${appName} <noreply@ozaapp.com>`,
                     to: userExist.email,
                     subject: 'Login notification!',
                     text: TextBody,
