@@ -1,7 +1,7 @@
 {
-  "name": "backend_api",
+  "name": "oza_app",
   "version": "1.0.0",
-  "description": "Oza backend web service demo application for mobile applications",
+  "description": "Oza App web service application for mobile applications management.",
   "main": "server.js",
   "dependencies": {
     "-": "^0.0.1",
