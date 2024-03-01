@@ -3,6 +3,8 @@ logs
 .env
 env
 
+"@mongoosejs/double": "^0.3.0",
+
 /public/images
 /images
 # See http://help.github.com/ignore-files/ for more about ignoring files.
