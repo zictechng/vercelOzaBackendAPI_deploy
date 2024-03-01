@@ -123,7 +123,7 @@ router.post("/login", async (req, res, next) => {
                 const mailBody = loginEmail(appName, 'Login Authentication', userExist.display_name, 'this is to notify you that your account has just been logged into successfully, If this is not you, contact support for immediate intervention, thank you.', logoImage);
                 const TextBody = loginText(userExist.display_name,);
                 let mailOptions = {
-                    from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
+                    from: `${appName+' Support'} <noreply@ozaapp.com>`,
                     to: userExist.email,
                     subject: 'Account login notification!',
                     text: TextBody,
@@ -300,7 +300,7 @@ router.post("/otp_verify", async (req, res) => {
             const mailBody = loginEmail(appName, 'Account Activated', userExist.display_name, 'this is to notify you that your account has been activated successfully, You can now be able to login use your account, thank you.', logoImage);
             const TextBody = loginText(userExist.display_name,);
             let mailOptions = {
-                from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
+                from: `${appName +' Support'} <noreply@ozaapp.com>`,
                 to: userExist.email,
                 subject: 'Oza Account Activation!',
                 text: TextBody,
@@ -370,7 +370,7 @@ router.post("/forgetPasswordMobile", async (req, res) => {
                 const mailBody = passwordResetEmail(appName, 'Forget password reset', userExist.display_name, 'this is to notify you that your account has been requested to reset password, If this is not your, contact our support immediately. \n', otpCode, logoImage)
                 const TextBody = passwordResetText(userExist.display_name, otpCode);
                 let mailOptions = {
-                from: `${appName} <noreply@rugipoalumni.zictech-ng.com>` ,
+                from: `${appName +' Support'} <noreply@ozaapp.com>` ,
                 to: userExist.email,
                 subject: 'Forget password reset!',
                 text: TextBody,
@@ -453,7 +453,7 @@ router.post("/resetPasswordMobile", async (req, res) => {
                     const mailBody = loginEmail(appName, 'Password reset successfully', userExist.display_name, 'this is to notify you that your account password has been reset, If this is not you, contact our support immediately. \n', logoImage)
                     const TextBody = loginText(userExist.display_name, 'this is to notify you that your account password has been reset, If this is not you, contact our support immediately');
                     let mailOptions = {
-                        from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
+                        from: `${appName +' Support'} <noreply@ozaapp.com>`,
                         to: userExist.email,
                         subject: 'Password reset successfully!',
                         text: TextBody,
@@ -536,7 +536,7 @@ try {
         const mailBody = loginEmail(appName, 'Password reset successfully', userExist.display_name, 'this is to notify you that your account password has been reset, If this is not you, contact our support immediately. \n')
         const TextBody = loginText(userExist.display_name, 'this is to notify you that your account password has been reset, If this is not you, contact our support immediately');
         let mailOptions = {
-            from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
+            from: `${appName +' Support'} <noreply@ozaapp.com>`,
             to: userExist.email,
             subject: 'Password reset successfully!',
             text: TextBody,

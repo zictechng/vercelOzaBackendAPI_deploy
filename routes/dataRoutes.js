@@ -767,7 +767,7 @@ router.post("/block_AccountMobile", isAuth, async (req, res) => {
         const mailBody = loginEmail(appName, 'Account Security', checkUser.display_name, 'this is to notify you that your request to block your account was successful \n Contact admin to unlock the account any time thank you.', logoImage)
         const TextBody = loginText(checkUser.display_name, 'this is to notify you that your request was submitted successfully, your account has been blocked.');
         let mailOptions = {
-            from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
+            from: `${appName +' Support'} <noreply@ozaapp.com>`,
             to: checkUser.email,
             subject: 'Account security!',
             text: TextBody,
@@ -849,7 +849,7 @@ router.post("/reset_AccountPINMobile", isAuth, async (req, res) => {
             const mailBody = loginEmail(appName, 'Account Security', checkUser.display_name, 'this is to notify you that your support ticket was submitted successfully, we will get in-touch shortly thank you', logoImage)
             const TextBody = loginText(checkUser.display_name, 'this is to notify you that your request was submitted successfully, your account PIN been updated.');
            let Account_mailOptions = {
-               from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
+               from: `${appName +' Support'} <noreply@ozaapp.com>`,
                to: checkUser.email,
                subject: 'Account security!',
                text: TextBody,
@@ -940,7 +940,7 @@ router.post("/submit_ticketMobile", isAuth, async (req, res) => {
         const mailBody = loginEmail(appName, 'Open Ticket for Support', checkUser.display_name, `this is to notify you that your support ticket with Ticket ID ${ticketNumber} was submitted successfully, we will get in-touch shortly thank you.`, logoImage)
         const TextBody = loginText(checkUser.display_name, `this is to notify you that your ticket with ID ${ticketNumber} submitted successfully, our staff will get in-touch thank you.`);
         let tickMailOptions = {
-        from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
+        from: `${appName +' Support'} <noreply@ozaapp.com>`,
         to: checkUser.email,
         subject: 'Open Ticket for Support!',
         text: TextBody,
@@ -1005,7 +1005,7 @@ router.post("/newsletter_subscriptions", async (req, res) => {
           const mailBody = loginEmail(appName, 'New Mailing Subscriptions', 'dear User', `this is to notify you that your subscription to our mailing list was successfully! <br/> Thank you for joining our mailing list.`, logoImage)
           const TextBody = loginText('dear User', `this is to notify you that your mailing request was successfully, you can now receive notifications and update from us.`);
           let tickMailOptions = {
-          from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
+          from: `${appName+' Support'} <noreply@ozaapp.com>`,
           to: req.body.userEmail,
           subject: 'Mailing Notification',
           text: TextBody,
@@ -1099,7 +1099,7 @@ router.post("/submit_ticketWebsite", async (req, res) => {
     <b>Customer Message </b>  <br/>${req.body.customer_message} <br/>`, logoImage)
     const TextBody = loginText('Admin', `this is to notify you that ${req.body.customer_name} sent you a message from the website contact page with ticket ID ${ticketNumber} kindly review and get in-touch thank you.`);
     let tickMailOptions = {
-    from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
+    from: `${appName+' Support'} <noreply@ozaapp.com>`,
     to: 'zictechng@gmail.com',
     subject: 'Online Contact Message!',
     text: TextBody,
