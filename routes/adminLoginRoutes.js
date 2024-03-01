@@ -101,10 +101,10 @@ const { fetchApp } = require('../middleware/appDetails');
                 appLogo = result.app_logo
                 const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
 
-                const mailBody = loginEmail(appName +' Support', 'Login Authentication', userExist.display_name, 'this is to notify you that your account has just been logged into successfully, If this is not you, contact support for immediate intervention, thank you.', logoImage)
+                const mailBody = loginEmail(appName, 'Login Authentication', userExist.display_name, 'this is to notify you that your account has just been logged into successfully, If this is not you, contact support for immediate intervention, thank you.', logoImage)
                 const TextBody = loginText(userExist.display_name,);
                 let mailOptions = {
-                    from: `${appName} <noreply@ozaapp.com>`,
+                    from: `${appName +' Support'} <noreply@ozaapp.com>`,
                     to: userExist.email,
                     subject: 'Login notification!',
                     text: TextBody,
@@ -137,6 +137,4 @@ const { fetchApp } = require('../middleware/appDetails');
     }); 
 
    
-
-
 module.exports = router;
