@@ -141,6 +141,18 @@ router.get("/userProfileMobile/:id", isAuth, async (req, res) => {
 }
 });
 
+// get current bonus rate here..
+router.get("/bonus_rate", async (req, res) => {
+  //console.log(userId);
+  try {
+    const getAppRate = await GetRate.findOne();
+    //console.log(userDetails);
+    res.send({ msg: '200', appDataRate: getAppRate})
+  } catch (err) {
+    res.status(500).json(err.message);
+    throw err;
+}
+});
   // get users bank details via Mobile 
 router.get("/user_bankDetails/:id", isAuth, async (req, res) => {
   let userId = req.params.id;
