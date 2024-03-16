@@ -84,7 +84,7 @@ const { fetchApp } = require('../middleware/appDetails');
         // user logs status here.
         const userLogs = UserLogs.create({
             login_username: userExist.email,
-            login_name: userExist.surname + ' ' + userExist.display_name,
+            login_name: userExist.display_name,
             login_user_ip: '',
             login_country: '',
             login_browser: '',
