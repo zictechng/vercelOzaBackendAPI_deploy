@@ -294,7 +294,7 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
             const TextBody = registerEmailText(userDone.display_name, randomSixDigitNumber);
             let register_mailOptions = {
                from: `${appName +' Support'} <noreply@ozaapp.com>`,
-               to: userDone.email,
+               to: req.body.email,
                subject: 'Account Opening Successfully!',
                text: TextBody,
                html: mailBody,
