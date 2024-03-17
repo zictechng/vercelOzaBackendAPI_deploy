@@ -112,7 +112,7 @@ const { fetchApp } = require('../middleware/appDetails');
                 }
                 async function main() {
                     // send mail with defined transport object
-                const info = await transporter .sendMail(mailOptions);
+                const info = await transporter.sendMail(mailOptions);
                 }
                 main().catch('Email Message Error', console.error);
     

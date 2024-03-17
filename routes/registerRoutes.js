@@ -114,8 +114,7 @@ function generateTagID() {
         //console.log(randomSixDigitNumber);
 
 // route to register user and upload profile image
-router.post("/register", upload.single("file"), async (req, res, next) => {
-    const file = req.file;
+router.post("/register", async (req, res, next) => {
     const imageUrl = '';
     //const url = req.protocol + '://' + req.get('host') // this will get the host url directly
 
@@ -154,75 +153,13 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
         return res.json({status: 403, message: ' User phone number already exist'})
         //return res.status(409).json({msg: '409'}) // user already exist
     }
-    // if user upload image file run this code
-    if(file){
-        const imageUrl = "/images/" + file.filename;
-    // hash the password here
-     const hashedPwd = await bcrypt.hash(password, 10) // salt rounds
-    
-     // now we can destruction the variable
-     const userObject = { display_name, gender, dob, email, phone, state, city, currency_type,
-        acct_type, username, "password": hashedPwd, "password_plain": password, country, address, "image_photo": imageUrl, "reg_otp": randomSixDigitNumber }
-        //now let create/save the user details
-            const user = await User.create(userObject)
-            if(user){
-              
-                 // create log here
-           const addLogs = await SystemActivity.create({
-            log_username: user.email,
-            log_name: user.display_name,
-            log_acct_number: user.tag_id,
-            log_receiver_name: '',
-            log_receiver_number: '',
-            log_receiver_bank: '',
-            log_country: '',
-            log_swift_code: '',
-            log_desc:'New user account added',
-            log_amt: '',
-            log_status: 'Successful',
-            log_nature:'New user registration',
-           });
-           const userDone = await User.findOne({email: req.body.email})
-           // email notification sending
-           fetchApp().then((result) =>{
-            appName = result.app_name ;
-            appLogo = result.app_logo
-            const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-
-            mailBody = registerEmail(appName, 'Account Opening Successfully', userDone.display_name, randomSixDigitNumber, logoImage);
-            const TextBody = registerEmailText(userDone.display_name, randomSixDigitNumber);
-            let register_mailOptions = {
-               from: `${appName +' Support'} <noreply@ozaapp.com>`,
-               to: userDone.email,
-               subject: 'Account Opening Successfully!',
-               text: TextBody,
-               html: mailBody,
-             }
-             // async..await is not allowed in global scope, must use a wrapper
-             async function main() {
-               const info = await transporter.sendMail(register_mailOptions);
-               }
-                main().catch('Message Error', console.error);
-
-            }).catch(console.error.bind(console))
-
-             res.send(201).json({ msg: '201'}) // success message
-            
-              } else{
-            //res.send(401).json({ msg: '401'}) 
-            res.json({status: 401, msg: '401'}) // invalid user details
-            }
-    }
-    // if user did upload image file, run this
-    else if(!file){
+   
+    // if user email and phone number is empty, run this
+  if(!userExist && !userPhoneExist){
        // const imageUrl = "/images/" + file.filename;
     // hash the password here
      const hashedPwd = await bcrypt.hash(password, 10) // salt rounds
     
-     // check for signup bonus state and give new user signup bonus
-     const signupStatus = await AppSetting.findOne();
-     const checkTradeRate = await GetRate.findOne();
-
      // now we can destruction the variable
      const userObject = { display_name, gender, dob, email, phone, state, city, currency_type,
         acct_type, "tag_id": userTagNumber, username, "password": hashedPwd, "password_plain": password, country, address, "reg_otp": randomSixDigitNumber }
@@ -233,7 +170,7 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
             const user = await User.create(userObject)
             if(user?._id){
               
-              // check for signup bonus state and give new user signup bonus
+        // check for signup bonus state and give new user signup bonus
             
             const filterUser = { _id: user._id };
             const signupStatus = await AppSetting.findOne();
