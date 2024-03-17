@@ -347,21 +347,13 @@ router.post("/otpResend", async (req, res) => {
         }
     // compare the the OTP against what was passed from the request body
     const matches = filter.otp_code == userExist.reg_otp;
-    // set information to update table row
-    const updateActStatus = {
-        $set: {
-        acct_status:'Active',
-        },
-        };
-
-        if (userExist.acct_status != 'Pending'){
+    
+    if (userExist.acct_status != 'Pending'){
             //console.log("OTP not matched ");
             return res.json({status: 404, message: ' Sorry, account not required OTP'})
             }
         else if(userExist.acct_status == 'Pending'){
-                // just update one row
-        const updateUserNow = await User.updateOne(filterUser, updateActStatus);
-        // create log here
+            // create log here
             const addLogs = SystemActivity.create({
             log_username: userExist.email,
             log_name: userExist.display_name,
