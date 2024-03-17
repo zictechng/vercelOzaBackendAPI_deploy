@@ -243,7 +243,7 @@ router.post("/register", async (req, res, next) => {
             main().catch('Message Error', console.error);
             }).catch(console.error.bind(console))
         
-            res.status(201).json({ msg: '201'}) // success message
+            res.status(201).json({ msg: '201', userCode: userDone }) // success message
               } else{
             //res.send(401).json({ msg: '401'}) 
             res.json({status: 401, msg: '401'}) // invalid user details
