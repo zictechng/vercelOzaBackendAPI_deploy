@@ -325,6 +325,91 @@ router.post("/otp_verify", async (req, res) => {
     }
     });
 
+// route to resend user (OTP)
+router.post("/otpResend", async (req, res) => {
+    //const file = req.file;
+    const filter = req.body ;
+    const filterUser = { email: req.body.email };
+    //console.log("OTP Data from APP", req.body);
+
+       //check in input fields is empty
+    if(filter.email == ''){
+        return res.json({status: 400, message: 'Email ID missing'})
+        } 
+    
+    try {
+    // Check if user exist
+    const userExist = await User.findOne({email: filter.email})
+    
+    if(!userExist){
+        //console.log("OTP Data from APP", userExist);
+        return res.json({status: 401, message: ' User not found'})
+        }
+    // compare the the OTP against what was passed from the request body
+    const matches = filter.otp_code == userExist.reg_otp;
+    // set information to update table row
+    const updateActStatus = {
+        $set: {
+        acct_status:'Active',
+        },
+        };
+
+        if (userExist.acct_status != 'Pending'){
+            //console.log("OTP not matched ");
+            return res.json({status: 404, message: ' Sorry, account not required OTP'})
+            }
+        else if(userExist.acct_status == 'Pending'){
+                // just update one row
+        const updateUserNow = await User.updateOne(filterUser, updateActStatus);
+        // create log here
+            const addLogs = SystemActivity.create({
+            log_username: userExist.email,
+            log_name: userExist.display_name,
+            log_acct_number: '',
+            log_receiver_name: '',
+            log_receiver_number: '',
+            log_receiver_bank: '',
+            log_country: '',
+            log_swift_code: '',
+            log_desc:'Requested to re-send OTP',
+            log_amt: '',
+            log_status: 'Successful',
+            log_nature:'OTP resend',
+            })
+            fetchApp().then((result) =>{
+            appName = result.app_name
+            appLogo = result.app_logo
+            const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+            
+            const mailBody = registerEmail(appName, 'OTP Code', userExist.display_name, userExist.reg_otp, logoImage);
+            const TextBody = registerEmailText(userExist.display_name, userExist.reg_otp);
+            
+            let mailOptions = {
+                from: `${appName +' Support'} <noreply@ozaapp.com>`,
+                to: userExist.email,
+                subject: 'New OTP Code For Account Activation!',
+                text: TextBody,
+                html: mailBody,
+            }
+                // async..await is not allowed in global scope, must use a wrapper
+                async function main() {
+                const info = await transporter.sendMail(mailOptions);
+                }
+            main().catch('Message Error', console.error);
+
+        }).catch(console.error.bind(console))
+            
+            //res.status(200).json({ msg: '200'}) // success message
+            res.send({ msg: '200'})
+        }
+        else{
+            console.log('OTP Operation: Something went wrong');
+        }
+        } catch (err) {
+    res.status(500).send({ msg: "500" });
+    }
+    });
+
     // forget password route reset here
 router.post("/forgetPasswordMobile", async (req, res) => {
         //const file = req.file;
