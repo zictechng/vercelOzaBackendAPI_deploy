@@ -11,6 +11,7 @@ const UserLogs = require('../models/UserLogs')
 const AppSetting = require('../models/AppSettingDetails')
 
 const nodemailer = require("nodemailer");
+const googleMailer = require('../controllers/gmailMailer');
 const transporter = require('../controllers/mailSender');
 const transporterMailer = require('../controllers/signupMailer');
 const { isAuth } = require('../middleware/auth');
@@ -125,7 +126,7 @@ router.post("/login", async (req, res, next) => {
                 const mailBody = loginEmail(appName, 'Login Authentication', userExist.display_name, 'this is to notify you that your account has just been logged into successfully, If this is not you, contact support for immediate intervention, thank you.', logoImage);
                 const TextBody = loginText(userExist.display_name,);
                 let mailOptions = {
-                    from: `${appName+' Support'} <ozaapp@zictech-ng.com>`,
+                    from: `${appName+' Support'} <ozaappng@gmail.com>`,
                     to: userExist.email,
                     subject: 'Account login notification!',
                     text: TextBody,
@@ -133,7 +134,7 @@ router.post("/login", async (req, res, next) => {
                 }
                 async function main() {
                     // send mail with defined transport object
-                const info = await transporterMailer.sendMail(mailOptions);
+                const info = await googleMailer.sendMail(mailOptions);
                 }
                 main().catch('Email Message Error', console.error);
     
