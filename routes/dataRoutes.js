@@ -1212,7 +1212,7 @@ router.post("/submit_webbitYoutubeTicketMobile", isAuth, async (req, res) => {
   const page = parseInt(req.query.page) || 1; // Get page number from query or default to 1
   const skip = (page - 1) * itemsPerPage;
   const countAll = await Notification.find({alert_user_id: myId }).count();
-  const filter = {alert_user_id: myId, alert_status: 1}
+  const filter = {alert_user_id: myId}
     
     const pageTotal = (Math.ceil(countAll / itemsPerPage));
         if (countAll == 0 || countAll < 1){
@@ -1262,7 +1262,7 @@ router.get("/user_messageCount/:id", isAuth, async (req, res) => {
     .count();
     if(!messageDetailsCount){
       //return res.status(404).send({msg: '404'});
-      return res.json({status: 404, msg: 'No message found'})
+      return res.json({status: 404, msg: '0'})
     }
     else if(messageDetailsCount){
       //console.log("Total Notification Details ", messageDetailsCount)
