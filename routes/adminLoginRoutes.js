@@ -4,14 +4,14 @@ const jwt = require("jsonwebtoken");
 
 const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
-
+const transporter = require('../controllers/signupMailer');
 const User = require('../models/User');
 const SystemActivity = require('../models/SystemActivityLogs');
 const UserLogs = require('../models/UserLogs')
 const AppSetting = require('../models/AppSettingDetails')
 
 const nodemailer = require("nodemailer");
-const transporter = require('../controllers/mailSender');
+//const transporter = require('../controllers/mailSender');
 const { isAuth } = require('../middleware/auth');
 const { mailTemplate } = require('../middleware/emailTemplate');
 const contentMail = require('../middleware/emailTemplate');
@@ -104,7 +104,7 @@ const { fetchApp } = require('../middleware/appDetails');
                 const mailBody = loginEmail(appName, 'Login Authentication', userExist.display_name, 'this is to notify you that your account has just been logged into successfully, If this is not you, contact support for immediate intervention, thank you.', logoImage)
                 const TextBody = loginText(userExist.display_name,);
                 let mailOptions = {
-                    from: `${appName +' Support'} <noreply@ozaapp.com>`,
+                    from: `${appName +' Support'} <ozaapp@zictech-ng.com>`,
                     to: userExist.email,
                     subject: 'Login notification!',
                     text: TextBody,

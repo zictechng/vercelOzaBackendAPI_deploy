@@ -12,6 +12,7 @@ const AppSetting = require('../models/AppSettingDetails')
 
 const nodemailer = require("nodemailer");
 const transporter = require('../controllers/mailSender');
+const transporterMailer = require('../controllers/signupMailer');
 const { isAuth } = require('../middleware/auth');
 const { mailTemplate } = require('../middleware/emailTemplate');
 const contentMail = require('../middleware/emailTemplate');
@@ -124,7 +125,7 @@ router.post("/login", async (req, res, next) => {
                 const mailBody = loginEmail(appName, 'Login Authentication', userExist.display_name, 'this is to notify you that your account has just been logged into successfully, If this is not you, contact support for immediate intervention, thank you.', logoImage);
                 const TextBody = loginText(userExist.display_name,);
                 let mailOptions = {
-                    from: `${appName+' Support'} <noreply@ozaapp.com>`,
+                    from: `${appName+' Support'} <ozaapp@zictech-ng.com>`,
                     to: userExist.email,
                     subject: 'Account login notification!',
                     text: TextBody,
@@ -132,7 +133,7 @@ router.post("/login", async (req, res, next) => {
                 }
                 async function main() {
                     // send mail with defined transport object
-                const info = await transporter .sendMail(mailOptions);
+                const info = await transporterMailer.sendMail(mailOptions);
                 }
                 main().catch('Email Message Error', console.error);
     
@@ -301,7 +302,7 @@ router.post("/otp_verify", async (req, res) => {
             const mailBody = loginEmail(appName, 'Account Activated', userExist.display_name, 'this is to notify you that your account has been activated successfully, You can now be able to login use your account, thank you.', logoImage);
             const TextBody = loginText(userExist.display_name,);
             let mailOptions = {
-                from: `${appName +' Support'} <noreply@ozaapp.com>`,
+                from: `${appName +' Support'} <ozaapp@zictech-ng.com>`,
                 to: userExist.email,
                 subject: 'Oza Account Activation!',
                 text: TextBody,
@@ -309,7 +310,8 @@ router.post("/otp_verify", async (req, res) => {
             }
                 // async..await is not allowed in global scope, must use a wrapper
                 async function main() {
-                const info = await transporter.sendMail(mailOptions);
+                    await delay(1000);
+                const info = await transporterMailer.sendMail(mailOptions);
                 }
             main().catch('Message Error', console.error);
 
@@ -376,7 +378,7 @@ router.post("/otpResend", async (req, res) => {
             const TextBody = registerEmailText(userExist.display_name, userExist.reg_otp);
             
             let resendMailOptions = {
-                from: `${appName +' Support'} <noreply@ozaapp.com>`,
+                from: `${appName +' Support'} <ozaapp@zictech-ng.com>`,
                 to: userExist.email,
                 subject: 'New OTP Code For Account Activation!',
                 text: TextBody,
@@ -385,7 +387,7 @@ router.post("/otpResend", async (req, res) => {
             }
                 // async..await is not allowed in global scope, must use a wrapper
                 async function main() {
-                const info = await transporter.sendMail(resendMailOptions);
+                const info = await transporterMailer.sendMail(resendMailOptions);
                 }
             main().catch('Message Error', console.error);
 
@@ -447,7 +449,7 @@ router.post("/forgetPasswordMobile", async (req, res) => {
                 const mailBody = passwordResetEmail(appName, 'Forget password reset', userExist.display_name, 'this is to notify you that your account has been requested to reset password, If this is not your, contact our support immediately. \n', otpCode, logoImage)
                 const TextBody = passwordResetText(userExist.display_name, otpCode);
                 let mailOptions = {
-                from: `${appName +' Support'} <noreply@ozaapp.com>` ,
+                from: `${appName +' Support'} <ozaapp@zictech-ng.com>` ,
                 to: userExist.email,
                 subject: 'Forget password reset!',
                 text: TextBody,
@@ -455,7 +457,7 @@ router.post("/forgetPasswordMobile", async (req, res) => {
             }
                 // async..await is not allowed in global scope, must use a wrapper
                 async function main() {
-                const info = await transporter.sendMail(mailOptions);
+                const info = await transporterMailer.sendMail(mailOptions);
                 }
             main().catch('Message Error', console.error);
             }).catch(console.error.bind(console))
@@ -530,14 +532,14 @@ router.post("/resetPasswordMobile", async (req, res) => {
                     const mailBody = loginEmail(appName, 'Password reset successfully', userExist.display_name, 'this is to notify you that your account password has been reset, If this is not you, contact our support immediately. \n', logoImage)
                     const TextBody = loginText(userExist.display_name, 'this is to notify you that your account password has been reset, If this is not you, contact our support immediately');
                     let mailOptions = {
-                        from: `${appName +' Support'} <noreply@ozaapp.com>`,
+                        from: `${appName +' Support'} <ozaapp@zictech-ng.com>`,
                         to: userExist.email,
                         subject: 'Password reset successfully!',
                         text: TextBody,
                         html: mailBody,
                     }
                     async function main() {
-                    const info = await transporter.sendMail(mailOptions);
+                    const info = await transporterMailer.sendMail(mailOptions);
                     }
                 main().catch('Message Error', console.error);
             }).catch(console.error.bind(console))

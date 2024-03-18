@@ -6,7 +6,7 @@ const paypal = require('paypal-rest-sdk');
 var fetch = require('node-fetch');
 const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
-
+const transporterMailer = require('../controllers/signupMailer');
 const User = require('../models/User');
 const TransferFund = require('../models/fundTransfer');
 const AppSetting = require('../models/AppSettingDetails')
@@ -65,89 +65,6 @@ function generateRandomNumber() {
     return Math.floor(1000000 + Math.random() * 9000000);
     }
     var appName = '';
-// wire transfer routes goes here...
-router.post("/wire_transfer_funds", verifyToken, async (req, res) => {
-    let fundData = req.body;
-    //console.log("User details",  req.body);
-    
-    const userId = req.body.createdBy;
-    const amt_send = req.body.send_amt;
-    
-    try {
-      // let sendFund;
-      let userDetails = await User.findOne({ _id: userId }); // where I am checking if user exist the I will get user details
-      //  console.log(`${userDetails.name}`); // is showing undefine.
-      let fundsend = new TransferFund({
-        acct_name: req.body.holder_name,
-        acct_number: req.body.acct_number,
-        swift_code: req.body.swift_code,
-        amount: req.body.send_amt,
-        bank_name: req.body.bank_name,
-        bank_address: req.body.address,
-        sender_name: userDetails.surname+' '+userDetails.first_name,
-        tran_type: 'Transfer',
-        transac_nature: 'Debit',
-        tran_desc: 'Wire bank transfer',
-        createdBy: userId,
-        tid: req.body.tid,
-        tr_year: req.body.tr_year,
-        tr_month: req.body.tr_month,
-        sender_currency_type: userDetails.currency_type,
-        sender_acct_number: userDetails.acct_number,
-        colorcode: 'red',
-    });
-      if (!userDetails) {
-        res.status(402).send({ msg: "402" });
-        //console.log("User not fund!"); // user account not found then show error
-      } else if (
-        userDetails.acct_status == "Pending" ||
-        userDetails.acct_status == null
-      ) {
-        res.status(403).send({ msg: "403" });
-        // user account status is not active
-      } else if (userDetails.amount == "" || userDetails.amount < amt_send) {
-        res.status(405).send({ msg: "405" }); // user account balance is low
-      } else if (userDetails) {
-        
-        sendFund = await fundsend.save();
-        // create log here
-       const addLogs = await SystemActivity.create({
-        log_username: userDetails.username,
-        log_name: userDetails.surname+' '+ userDetails.first_name,
-        log_acct_number: userDetails.acct_number,
-        log_receiver_name: req.body.holder_name,
-        log_receiver_number: req.body.acct_number,
-        log_receiver_bank: req.body.bank_name,
-        log_country: '',
-        log_swift_code: req.body.swift_code,
-        log_desc:'Initiated wire fund transfer details',
-        log_amt: req.body.send_amt,
-        log_status: 'Successful',
-        log_nature:'Wire transfer details',
-       });
-
-       // create notification for user 
-       const userLogs = Notification.create({
-        alert_username: userDetails.username,
-        alert_name: userDetails.username+' '+userDetails.first_name,
-        alert_user_ip: '',
-        alert_country: '',
-        alert_browser: '',
-        alert_date:  Date.now(),
-        alert_user_id: userDetails._id,
-        alert_nature: 'Your wire fund transfer initiated! Complete the process for a successful wire fund transfer',
-        alert_status: 1,
-        alert_read_date: ''
-    })
-        res.status(200).send({ msg: "200", sendFund });
-      }
-  
-      //fundsend.createdBy = (User._id); // get current user ID
-    } catch (err) {
-      res.status(500).send({ msg: "500" });
-      console.error("Error occurred", err);
-    }
-  }); 
   
 // paypal checkout routes goes here
 
@@ -333,14 +250,14 @@ const processPaymentDetails = async(data, paymentId) =>{
                 Order ID is ${paymentId} Thank you`, logoImage)
                 const mailText = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n Order ID is ${paymentId}`)
                 let payPal_mailOptions = {
-                    from: `${appName +' Sales'} <noreply@ozaapp.com>`,
+                    from: `${appName +' Sales'} <ozaapp@zictech-ng.com>`,
                     to: userFund.email,
                     subject: 'Payment notification!',
                     text: mailText,
                     html: mailBody,
                 }
                 async function main() {
-                    const info = await transporter.sendMail(payPal_mailOptions);
+                    const info = await transporterMailer.sendMail(payPal_mailOptions);
                     }
                 main().catch('Message Error', console.error);
                 }).catch(console.error.bind(console))
@@ -507,7 +424,7 @@ const processPaymentDetails = async(data, paymentId) =>{
                     const mailBody = transactEmail(appName, 'Account Debit Notification', userFund.display_name, `this is to notify you that your transfer request was successful and your account has been debited with`, req.body.amt, Trans_ID, logoImage)
                     const TextBody = transactEmailText(userFund.display_name, `this is to notify you that your transfer request was successful and your account has been debited with`, req.body.amt, Trans_ID );
                     let sendFundMailOptions = {
-                    from: `${appName +' Sales'} <noreply@ozaapp.com>`,
+                    from: `${appName +' Sales'} <ozaapp@zictech-ng.com>`,
                     to: userFund.email,
                     subject: 'Account Debit Notification!',
                     text: TextBody,
@@ -515,7 +432,7 @@ const processPaymentDetails = async(data, paymentId) =>{
                 }
                 // async..await is not allowed in global scope, must use a wrapper
                 async function main() {
-                    const info = await transporter.sendMail(sendFundMailOptions);
+                    const info = await transporterMailer.sendMail(sendFundMailOptions);
                     }
                  main().catch('Message Error', console.error);
                     }).catch(console.error.bind(console))
@@ -531,7 +448,7 @@ const processPaymentDetails = async(data, paymentId) =>{
                     const mailBody = transactEmail(appName, 'Account Credit Notification', receiverUser.display_name, `this is to notify you that your account was credited with `, req.body.amt, Trans_ID, logoImage)
                     const TextBody = transactEmailText(receiverUser.display_name, `this is to notify you that your account was credited with`, req.body.amt, Trans_ID);
                     let getFundMailOptions = {
-                    from: `${appName +' Sales'} <noreply@ozaapp.com>`,
+                    from: `${appName +' Sales'} <ozaapp@zictech-ng.com>`,
                     to: receiverUser.email,
                     subject: 'Account Credit Notification!',
                     text: TextBody,
@@ -539,7 +456,7 @@ const processPaymentDetails = async(data, paymentId) =>{
                 }
                 // async..await is not allowed in global scope, must use a wrapper
                 async function main() {
-                    const info = await transporter.sendMail(getFundMailOptions);
+                    const info = await transporterMailer.sendMail(getFundMailOptions);
                     }
                  main().catch('Message Error', console.error);
                 }).catch(console.error.bind(console))     
@@ -655,7 +572,7 @@ router.post("/userAccount_funding", isAuth, async (req, res) => {
                     const TextBody = loginText(userFund.display_name, `this is to notify you that your account funding request has been logged and we will treat as soon as your payment received. \n Transaction ID is ${Trans_ID} \n
                     Transaction Reference ID ${req.body.payId? req.body.payId: 'None.'}`);
                     let fundAcctMailOptions = {
-                    from: `${appName +' Sales'} <noreply@ozaapp.com>`,
+                    from: `${appName +' Sales'} <ozaapp@zictech-ng.com>`,
                     to: userFund.email,
                     subject: 'Account Funding Notification!',
                     text: TextBody,
@@ -663,7 +580,7 @@ router.post("/userAccount_funding", isAuth, async (req, res) => {
                    }
                    // async..await is not allowed in global scope, must use a wrapper
                    async function main() {
-                       const info = await transporter.sendMail(fundAcctMailOptions);
+                       const info = await transporterMailer.sendMail(fundAcctMailOptions);
                        }
                     main().catch('Message Error', console.error);
                     }).catch(console.error.bind(console))    
@@ -794,7 +711,7 @@ router.post("/fundPurchase_funding", isAuth, async (req, res) => {
                     const mailBody = loginEmail(appName, 'Account Funding Notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment received. \n Request reference / Transaction ID is ${TransID}, \nThank you`, logoImage)
                     const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID}`);
                     let fundAcctMailOptions = {
-                    from: `${appName +' Sales'} <noreply@ozaapp.com>`,
+                    from: `${appName +' Sales'} <ozaapp@zictech-ng.com>`,
                     to: userFund.email,
                     subject: 'Account Funding Notification!',
                     text: TextBody,
@@ -802,7 +719,7 @@ router.post("/fundPurchase_funding", isAuth, async (req, res) => {
                 }
                 // async..await is not allowed in global scope, must use a wrapper
                 async function main() {
-                    const info = await transporter.sendMail(fundAcctMailOptions);
+                    const info = await transporterMailer.sendMail(fundAcctMailOptions);
                     }
                  main().catch('Message Error', console.error);
                 }).catch(console.error.bind(console))
@@ -906,7 +823,7 @@ router.post("/fundBuy_funding", isAuth, async (req, res) => {
                     \n Thank you`, logoImage)
                     const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId:''}`);
                     let fundAcctMailOptions = {
-                    from: `${appName +' Sales'} <noreply@ozaapp.com>`,
+                    from: `${appName +' Sales'} <ozaapp@zictech-ng.com>`,
                     to: userFund.email,
                     subject: 'Account Funding Notification!',
                     text: TextBody,
@@ -914,7 +831,7 @@ router.post("/fundBuy_funding", isAuth, async (req, res) => {
                 }
                 // async..await is not allowed in global scope, must use a wrapper
                 async function main() {
-                    const info = await transporter.sendMail(fundAcctMailOptions);
+                    const info = await transporterMailer.sendMail(fundAcctMailOptions);
                     }
                  main().catch('Message Error', console.error);
                  }).catch(console.error.bind(console))
@@ -1043,7 +960,7 @@ router.post("/paypal_checkout", isAuth, async (req, res) => {
                  Order ID is ${dataReceive.orderId} Thank you`, logoImage)
                  const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n Order ID is ${dataReceive.orderId}`);
                  let acctFundMailOptions = {
-                 from: `${appName +' Sales'} <noreply@ozaapp.com>`,
+                 from: `${appName +' Sales'} <ozaapp@zictech-ng.com>`,
                  to: userFund.email,
                  subject: 'Account Funding Notification!',
                  text: TextBody,
@@ -1051,7 +968,7 @@ router.post("/paypal_checkout", isAuth, async (req, res) => {
              }
              // async..await is not allowed in global scope, must use a wrapper
              async function main() {
-                 const info = await transporter.sendMail(acctFundMailOptions);
+                 const info = await transporterMailer.sendMail(acctFundMailOptions);
                  }
               main().catch('Message Error', console.error);
                 }).catch(console.error.bind(console))

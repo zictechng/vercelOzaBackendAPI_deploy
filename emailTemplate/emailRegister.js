@@ -51,7 +51,7 @@ const registerEmail = (sendCompanyName, sendTitle, sendReceiverName, otpCode, lo
                         <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
                             <tr>
                                 <td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; line-height: 35px;" class="mobile-center">
-                            <h3 style="font-size: 25px; font-weight: 700; margin: 0; color: #ffffff;">${sendCompanyName + ' App'}</h3>
+                            <h3 style="font-size: 25px; font-weight: 700; margin: 0; color: #ffffff;">${sendCompanyName}</h3>
                         </td>
                     </tr>
                 </table>
@@ -153,8 +153,8 @@ const registerEmail = (sendCompanyName, sendTitle, sendReceiverName, otpCode, lo
                 <tr>
                     <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
                         <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
-                            You have received this email because you are a Customer of ${sendCompanyName + ' App'}<br>
-This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of ${sendCompanyName +  ' App'}. It is confidential, private and intended for the addressee only.
+                            You have received this email because you are a Customer of ${sendCompanyName}<br>
+This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of ${sendCompanyName}. It is confidential, private and intended for the address only.
                         </p>
                     </td>
                 </tr>
@@ -224,7 +224,7 @@ const registerEmailText = (sendReceiverName, otpCode) =>
                         <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
                             <tr>
                                 <td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; line-height: 35px;" class="mobile-center">
-                            <h3 style="font-size: 25px; font-weight: 700; margin: 0; color: #ffffff;">${sendCompanyName + ' App'}</h3>
+                            <h3 style="font-size: 25px; font-weight: 700; margin: 0; color: #ffffff;">${sendCompanyName}</h3>
                         </td>
                     </tr>
                 </table>
@@ -326,8 +326,8 @@ const registerEmailText = (sendReceiverName, otpCode) =>
                 <tr>
                     <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
                         <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
-                            You have received this email because you are a Customer of ${sendCompanyName + ' App'}<br>
-This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of ${sendCompanyName +  ' App'}. It is confidential, private and intended for the addressee only.
+                            You have received this email because you are a Customer of ${sendCompanyName}<br>
+This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of ${sendCompanyName}. It is confidential, private and intended for the address only.
                         </p>
                     </td>
                 </tr>
@@ -397,7 +397,7 @@ This email, its attachment and any rights attaching hereto are, unless the conte
                         <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
                             <tr>
                                 <td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; line-height: 35px;" class="mobile-center">
-                            <h3 style="font-size: 25px; font-weight: 700; margin: 0; color: #ffffff;">${sendCompanyName + ' App'}</h3>
+                            <h3 style="font-size: 25px; font-weight: 700; margin: 0; color: #ffffff;">${sendCompanyName}</h3>
                         </td>
                     </tr>
                 </table>
@@ -499,8 +499,8 @@ This email, its attachment and any rights attaching hereto are, unless the conte
                 <tr>
                     <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
                         <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
-                            You have received this email because you are a Customer of ${sendCompanyName + ' App'}<br>
-This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of ${sendCompanyName +  ' App'}. It is confidential, private and intended for the addressee only.
+                            You have received this email because you are a Customer of ${sendCompanyName}<br>
+This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of ${sendCompanyName}. It is confidential, private and intended for the address only.
                         </p>
                     </td>
                 </tr>

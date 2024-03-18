@@ -147,8 +147,8 @@ For what reason would it be advisable for me to think about business content? Th
                 <tr>
                     <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
                         <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
-                            You have received this email because you are a Customer of ${sendCompanyName + ' App'}<br>
-This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of ${sendCompanyName + ' App'}. It is confidential, private and intended for the addressee only.
+                            You have received this email because you are a Customer of ${sendCompanyName}<br>
+This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of ${sendCompanyName}. It is confidential, private and intended for the address only.
                         </p>
                     </td>
                 </tr>

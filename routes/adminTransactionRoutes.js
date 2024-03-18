@@ -6,7 +6,7 @@ const paypal = require('paypal-rest-sdk');
 var fetch = require('node-fetch');
 const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
-
+const transporter = require('../controllers/signupMailer');
 const User = require('../models/User');
 const TransferFund = require('../models/fundTransfer');
 const TransfersHistory = require('../models/fundTransfer')
@@ -15,7 +15,7 @@ const SystemActivity = require('../models/SystemActivityLogs');
 const Notification = require('../models/NotificationAlert');
 const GetRate = require('../models/businessRate')
 const nodemailer = require("nodemailer");
-const transporter = require('../controllers/mailSender');
+//const transporter = require('../controllers/mailSender');
 const { isAuth } = require('../middleware/auth');
 const moment = require('moment');
 const { transactEmail, transactEmailText } = require('../emailTemplate/emailRegister');
