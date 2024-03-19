@@ -232,7 +232,7 @@ router.post("/register", async (req, res, next) => {
             const mailBody = registerEmail(appName, 'Account Opening Successfully', userDone.display_name, randomSixDigitNumber, logoImage);
             const TextBody = registerEmailText(userDone.display_name, randomSixDigitNumber);
             let sendMailOptions = {
-               from: `${appName +' Support'} <noreply@mailbox.ozaapp.com>`,
+               from: `${appName +' Support'} <ozaappng@gmail.com>`,
                to: req.body.email,
                subject: 'Account Opening Successfully!',
                text: TextBody,
@@ -240,7 +240,7 @@ router.post("/register", async (req, res, next) => {
            }
              // async..await is not allowed in global scope, must use a wrapper
              async function main() {
-               const info = await resendMailerTransport.sendMail(sendMailOptions);
+               const info = await googleMailer.sendMail(sendMailOptions);
                }
             main().catch('Message Error', console.error);
             }).catch(console.error.bind(console))
