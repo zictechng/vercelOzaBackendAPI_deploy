@@ -16,7 +16,7 @@ const SystemActivity = require('../models/SystemActivityLogs');
 const Notification = require('../models/NotificationAlert');
 const GetRate = require('../models/businessRate')
 const nodemailer = require("nodemailer");
-const transporter = require('../controllers/mailSender');
+//const transporter = require('../controllers/mailSender');
 const { isAuth } = require('../middleware/auth');
 const moment = require('moment');
 const { transactEmail, transactEmailText } = require('../emailTemplate/emailRegister');
@@ -250,7 +250,7 @@ const processPaymentDetails = async(data, paymentId) =>{
                 Order ID is ${paymentId} Thank you`, logoImage)
                 const mailText = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n Order ID is ${paymentId}`)
                 let payPal_mailOptions = {
-                    from: `${appName +' Sales'} <ozaapp@zictech-ng.com>`,
+                    from: `${appName +' Sales'} <noreply@ozaapp.com>`,
                     to: userFund.email,
                     subject: 'Payment notification!',
                     text: mailText,
@@ -424,7 +424,7 @@ const processPaymentDetails = async(data, paymentId) =>{
                     const mailBody = transactEmail(appName, 'Account Debit Notification', userFund.display_name, `this is to notify you that your transfer request was successful and your account has been debited with`, req.body.amt, Trans_ID, logoImage)
                     const TextBody = transactEmailText(userFund.display_name, `this is to notify you that your transfer request was successful and your account has been debited with`, req.body.amt, Trans_ID );
                     let sendFundMailOptions = {
-                    from: `${appName +' Sales'} <ozaapp@zictech-ng.com>`,
+                    from: `${appName +' Sales'} <noreply@ozaapp.com>`,
                     to: userFund.email,
                     subject: 'Account Debit Notification!',
                     text: TextBody,
@@ -448,7 +448,7 @@ const processPaymentDetails = async(data, paymentId) =>{
                     const mailBody = transactEmail(appName, 'Account Credit Notification', receiverUser.display_name, `this is to notify you that your account was credited with `, req.body.amt, Trans_ID, logoImage)
                     const TextBody = transactEmailText(receiverUser.display_name, `this is to notify you that your account was credited with`, req.body.amt, Trans_ID);
                     let getFundMailOptions = {
-                    from: `${appName +' Sales'} <ozaapp@zictech-ng.com>`,
+                    from: `${appName +' Sales'} <noreply@ozaapp.com>`,
                     to: receiverUser.email,
                     subject: 'Account Credit Notification!',
                     text: TextBody,
@@ -572,7 +572,7 @@ router.post("/userAccount_funding", isAuth, async (req, res) => {
                     const TextBody = loginText(userFund.display_name, `this is to notify you that your account funding request has been logged and we will treat as soon as your payment received. \n Transaction ID is ${Trans_ID} \n
                     Transaction Reference ID ${req.body.payId? req.body.payId: 'None.'}`);
                     let fundAcctMailOptions = {
-                    from: `${appName +' Sales'} <ozaapp@zictech-ng.com>`,
+                    from: `${appName +' Sales'} <noreply@ozaapp.com>`,
                     to: userFund.email,
                     subject: 'Account Funding Notification!',
                     text: TextBody,
@@ -711,7 +711,7 @@ router.post("/fundPurchase_funding", isAuth, async (req, res) => {
                     const mailBody = loginEmail(appName, 'Account Funding Notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment received. \n Request reference / Transaction ID is ${TransID}, \nThank you`, logoImage)
                     const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID}`);
                     let fundAcctMailOptions = {
-                    from: `${appName +' Sales'} <ozaapp@zictech-ng.com>`,
+                    from: `${appName +' Sales'} <noreply@ozaapp.com>`,
                     to: userFund.email,
                     subject: 'Account Funding Notification!',
                     text: TextBody,
@@ -823,7 +823,7 @@ router.post("/fundBuy_funding", isAuth, async (req, res) => {
                     \n Thank you`, logoImage)
                     const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId:''}`);
                     let fundAcctMailOptions = {
-                    from: `${appName +' Sales'} <ozaapp@zictech-ng.com>`,
+                    from: `${appName +' Sales'} <noreply@ozaapp.com>`,
                     to: userFund.email,
                     subject: 'Account Funding Notification!',
                     text: TextBody,
@@ -960,7 +960,7 @@ router.post("/paypal_checkout", isAuth, async (req, res) => {
                  Order ID is ${dataReceive.orderId} Thank you`, logoImage)
                  const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n Order ID is ${dataReceive.orderId}`);
                  let acctFundMailOptions = {
-                 from: `${appName +' Sales'} <ozaapp@zictech-ng.com>`,
+                 from: `${appName +' Sales'} <noreply@ozaapp.com>`,
                  to: userFund.email,
                  subject: 'Account Funding Notification!',
                  text: TextBody,

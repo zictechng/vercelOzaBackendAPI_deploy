@@ -9,7 +9,7 @@ const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
 const transporter = require('../controllers/signupMailer');
 const googleMailer = require('../controllers/gmailMailer');
-const resendMailerTransport = require('../controllers/resendMailer');
+//const resendMailerTransport = require('../controllers/resendMailer');
 const multer = require("multer");
 const User = require('../models/User');
 const SystemActivity = require('../models/SystemActivityLogs');
@@ -232,7 +232,7 @@ router.post("/register", async (req, res, next) => {
             const mailBody = registerEmail(appName, 'Account Opening Successfully', userDone.display_name, randomSixDigitNumber, logoImage);
             const TextBody = registerEmailText(userDone.display_name, randomSixDigitNumber);
             let sendMailOptions = {
-               from: `${appName +' Support'} <ozaappng@gmail.com>`,
+               from: `${appName +' Support'} <noreply@ozaapp.com>`,
                to: req.body.email,
                subject: 'Account Opening Successfully!',
                text: TextBody,
@@ -723,7 +723,7 @@ router.post("/user_2fa_otpSend", isAuth, async (req, res) => {
                 const mailBody = _2FAEmail(appName, '2FA OTP Code', userInfo.display_name, randomSixDigitNumber, logoImage);
                 const TextBody = _2FAEmailText(userInfo.display_name, randomSixDigitNumber);
                 let _2FAMailOptions = {
-                from: `${appName +' Support'} <ozaappng@gmail.com>`,
+                from: `${appName +' Support'} <noreply@ozaapp.com>`,
                 to: userInfo.email,
                 subject: '2FA OTP Code!',
                 text: TextBody,
@@ -731,7 +731,7 @@ router.post("/user_2fa_otpSend", isAuth, async (req, res) => {
                 }
             // async..await is not allowed in global scope, must use a wrapper
                 async function main() {
-                const info = await googleMailer.sendMail(_2FAMailOptions);
+                const info = await transporter.sendMail(_2FAMailOptions);
                 }
                 main().catch('Message Error', console.error);
             }).catch(console.error.bind(console))
@@ -951,7 +951,7 @@ router.post("/user_activate_email", isAuth, async (req, res) => {
             const mailBody = loginEmail(appName, 'Email Notification', userPro.display_name, `this is to notify you that email notification has been ${actionStatus == true? 'Enabled': 'Disabled'} in your account, thank you`, logoImage)
             const TextBody = loginText(userPro.display_name, `this is to notify you that email notification has been ${actionStatus == true? 'Enabled': 'Disabled'} in your account, thank you. \n`);
             let _2FAMailOptions = {
-            from: `${appName +' Support'} <ozaapp@zictech-ng.com>`,
+            from: `${appName +' Support'} <noreply@ozaapp.com>`,
             to: userPro.email,
             subject: 'Email Notification!',
             text: TextBody,
@@ -1015,7 +1015,7 @@ router.post("/user_activate_2fa_notice", isAuth, async (req, res) => {
             const mailBody = loginEmail(appName, '2FA Authentication Notification', userPro.display_name, `this is to notify you that 2FA authentication has been ${actionStatus == true? 'Enabled': 'Disabled'} in your account, thank you`, logoImage)
             const TextBody = loginText(userPro.display_name, `this is to notify you that 2FA authentication has been ${actionStatus == true? 'Enabled': 'Disabled'} in your account, thank you. \n`);
             let _2FAAuthMailOptions = {
-            from: `${appName +' Support'} <ozaapp@zictech-ng.com>`,
+            from: `${appName +' Support'} <noreply@ozaapp.com>`,
             to: userPro.email,
             subject: '2FA Authentication Notification!',
             text: TextBody,
@@ -1078,7 +1078,7 @@ router.post("/user_notice_request", isAuth, async (req, res) => {
                 const mailBody = loginEmail(appName, 'In-App Notification', userPro.display_name, `this is to notify you that in-app notification has been ${actionStatus == true? 'Enabled': 'Disabled'} in your account, thank you.`, logoImage)
                 const TextBody = loginText(userPro.display_name, `this is to notify you that in-app notification has been ${actionStatus == true? 'Enabled': 'Disabled'} in your account, thank you. \n`);
                 let _2FAAuthMailOptions = {
-                from: `${appName +' Support'} <ozaapp@zictech-ng.com>`,
+                from: `${appName +' Support'} <noreply@ozaapp.com>`,
                 to: userPro.email,
                 subject: 'In-App Notification!',
                 text: TextBody,

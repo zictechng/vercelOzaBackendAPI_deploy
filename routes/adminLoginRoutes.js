@@ -104,7 +104,7 @@ const { fetchApp } = require('../middleware/appDetails');
                 const mailBody = loginEmail(appName, 'Login Authentication', userExist.display_name, 'this is to notify you that your account has just been logged into successfully, If this is not you, contact support for immediate intervention, thank you.', logoImage)
                 const TextBody = loginText(userExist.display_name,);
                 let mailOptions = {
-                    from: `${appName +' Support'} <ozaapp@zictech-ng.com>`,
+                    from: `${appName +' Support'} <noreply@ozaapp.com>`,
                     to: userExist.email,
                     subject: 'Login notification!',
                     text: TextBody,

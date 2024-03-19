@@ -788,7 +788,7 @@ router.post("/block_AccountMobile", isAuth, async (req, res) => {
         }
           // async..await is not allowed in global scope, must use a wrapper
           async function main() {
-            const info = await transporter.sendMail(mailOptions);
+            const info = await transporterMailer.sendMail(mailOptions);
             }
         main().catch('Message Error', console.error);
         //console.log('Data route Name ', result.app_name)
@@ -862,7 +862,7 @@ router.post("/reset_AccountPINMobile", isAuth, async (req, res) => {
             const mailBody = loginEmail(appName, 'Account Security', checkUser.display_name, 'this is to notify you that your support ticket was submitted successfully, we will get in-touch shortly thank you', logoImage)
             const TextBody = loginText(checkUser.display_name, 'this is to notify you that your request was submitted successfully, your account PIN been updated.');
            let Account_mailOptions = {
-               from: `${appName +' Support'} <ozaapp@zictech-ng.com>`,
+               from: `${appName +' Support'} <noreply@ozaapp.com>`,
                to: checkUser.email,
                subject: 'Account security!',
                text: TextBody,
@@ -953,7 +953,7 @@ router.post("/submit_ticketMobile", isAuth, async (req, res) => {
         const mailBody = loginEmail(appName, 'Open Ticket for Support', checkUser.display_name, `this is to notify you that your support ticket with Ticket ID ${ticketNumber} was submitted successfully, we will get in-touch shortly thank you.`, logoImage)
         const TextBody = loginText(checkUser.display_name, `this is to notify you that your ticket with ID ${ticketNumber} submitted successfully, our staff will get in-touch thank you.`);
         let tickMailOptions = {
-        from: `${appName +' Support'} <ozaapp@zictech-ng.com>`,
+        from: `${appName +' Support'} <noreply@ozaapp.com>`,
         to: checkUser.email,
         subject: 'Open Ticket for Support!',
         text: TextBody,
@@ -1018,7 +1018,7 @@ router.post("/newsletter_subscriptions", async (req, res) => {
           const mailBody = loginEmail(appName, 'New Mailing Subscriptions', 'dear User', `this is to notify you that your subscription to our mailing list was successfully! <br/> Thank you for joining our mailing list.`, logoImage)
           const TextBody = loginText('dear User', `this is to notify you that your mailing request was successfully, you can now receive notifications and update from us.`);
           let tickMailOptions = {
-          from: `${appName+' Support'} <ozaappng@gmail.com>`,
+          from: `${appName+' Support'} <noreply@ozaapp.com>`,
           to: req.body.userEmail,
           subject: 'Mailing Notification',
           text: TextBody,
@@ -1026,7 +1026,7 @@ router.post("/newsletter_subscriptions", async (req, res) => {
       }
         // async..await is not allowed in global scope, must use a wrapper
         async function main() {
-          const info = await googleMailer.sendMail(tickMailOptions);
+          const info = await transporterMailer.sendMail(tickMailOptions);
           }
       main().catch('Message Error', console.error);
         }).catch(console.error.bind(console))
@@ -1087,7 +1087,7 @@ router.post("/submit_ticketWebsite", async (req, res) => {
       const mailBody = loginEmail(appName, 'Support Contact Message', req.body.customer_name, `this is to notify you that your message with Ticket ID ${ticketNumber} was submitted successfully, we will get in-touch shortly thank you.`, logoImage)
       const TextBody = loginText(req.body.customer_name, `this is to notify you that your message with ticket ID ${ticketNumber} was submitted successfully, our staff will get in-touch thank you.`);
       let tickMailOptions = {
-      from: `${appName + ' Support'} <ozaapp@zictech-ng.com>`,
+      from: `${appName + ' Support'} <noreply@ozaapp.com>`,
       to: req.body.customer_email,
       subject: 'Support Contact Message!',
       text: TextBody,
@@ -1112,7 +1112,7 @@ router.post("/submit_ticketWebsite", async (req, res) => {
     <b>Customer Message </b>  <br/>${req.body.customer_message} <br/>`, logoImage)
     const TextBody = loginText('Admin', `this is to notify you that ${req.body.customer_name} sent you a message from the website contact page with ticket ID ${ticketNumber} kindly review and get in-touch thank you.`);
     let tickMailOptions = {
-    from: `${appName+' Support'} <ozaapp@zictech-ng.com>`,
+    from: `${appName+' Support'} <noreply@ozaapp.com>`,
     to: 'support@ozaapp.com',
     subject: 'Online Contact Message!',
     text: TextBody,

@@ -25,7 +25,6 @@ router.get("/fetch_edit_user/:id", async (req, res) => {
       //   { $group: { tr_year: "$tr_year" } },
       // ]);
   
-     
       console.log("Chart Details ", userData)
       res.status(200).send(userData);
     } catch (err) {
@@ -33,11 +32,6 @@ router.get("/fetch_edit_user/:id", async (req, res) => {
       console.log(err.message);
     }
   });
-
-
-
-
-
 
   // export the module
 module.exports = router
