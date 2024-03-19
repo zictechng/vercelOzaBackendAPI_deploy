@@ -8,6 +8,7 @@ const fs = require("fs")
 const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
 const transporter = require('../controllers/signupMailer');
+const googleMailer = require('../controllers/gmailMailer');
 const multer = require("multer");
 const User = require('../models/User');
 const SystemActivity = require('../models/SystemActivityLogs');
@@ -230,7 +231,7 @@ router.post("/register", async (req, res, next) => {
             const mailBody = registerEmail(appName, 'Account Opening Successfully', userDone.display_name, randomSixDigitNumber, logoImage);
             const TextBody = registerEmailText(userDone.display_name, randomSixDigitNumber);
             let sendMailOptions = {
-               from: `${appName +' Support'} <ozaapp@zictech-ng.com>`,
+               from: `${appName +' Support'} <ozaappng@gmail.com>`,
                to: req.body.email,
                subject: 'Account Opening Successfully!',
                text: TextBody,
@@ -238,7 +239,7 @@ router.post("/register", async (req, res, next) => {
            }
              // async..await is not allowed in global scope, must use a wrapper
              async function main() {
-               const info = await transporter.sendMail(sendMailOptions);
+               const info = await googleMailer.sendMail(sendMailOptions);
                }
             main().catch('Message Error', console.error);
             }).catch(console.error.bind(console))
@@ -721,7 +722,7 @@ router.post("/user_2fa_otpSend", isAuth, async (req, res) => {
                 const mailBody = _2FAEmail(appName, '2FA OTP Code', userInfo.display_name, randomSixDigitNumber, logoImage);
                 const TextBody = _2FAEmailText(userInfo.display_name, randomSixDigitNumber);
                 let _2FAMailOptions = {
-                from: `${appName +' Support'} <ozaapp@zictech-ng.com>`,
+                from: `${appName +' Support'} <ozaappng@gmail.com>`,
                 to: userInfo.email,
                 subject: '2FA OTP Code!',
                 text: TextBody,
@@ -729,7 +730,7 @@ router.post("/user_2fa_otpSend", isAuth, async (req, res) => {
                 }
             // async..await is not allowed in global scope, must use a wrapper
                 async function main() {
-                const info = await transporter.sendMail(_2FAMailOptions);
+                const info = await googleMailer.sendMail(_2FAMailOptions);
                 }
                 main().catch('Message Error', console.error);
             }).catch(console.error.bind(console))
