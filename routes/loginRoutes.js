@@ -127,7 +127,7 @@ router.post("/login", async (req, res, next) => {
                 const mailBody = loginEmail(appName, 'Login Authentication', userExist.display_name, 'this is to notify you that your account has just been logged into successfully, If this is not you, contact support for immediate intervention, thank you.', logoImage);
                 const TextBody = loginText(userExist.display_name,);
                 let mailOptions = {
-                    from: `${appName+' Support'} <support@ozaapp@zictech-ng.com>`,
+                    from: `${appName+' Support'} <noreply@ozaapp.com>`,
                     to: userExist.email,
                     subject: 'Account login notification!',
                     text: TextBody,
@@ -135,7 +135,7 @@ router.post("/login", async (req, res, next) => {
                 }
                 async function main() {
                     // send mail with defined transport object
-                const info = await transporterMailer.sendMail(mailOptions);
+                const info = await transporter.sendMail(mailOptions);
                 
                 }
                 main().catch('Email Message Error', console.error);
@@ -321,7 +321,7 @@ router.post("/otp_verify", async (req, res) => {
             const mailBody = loginEmail(appName, 'Account Activated', userExist.display_name, 'this is to notify you that your account has been activated successfully, You can now be able to login use your account, thank you.', logoImage);
             const TextBody = loginText(userExist.display_name,);
             let mailOptions = {
-                from: `${appName +' Support'} <support@ozaapp.com>`,
+                from: `${appName +' Support'} <noreply@ozaapp.com>`,
                 to: userExist.email,
                 subject: 'Oza Account Activation!',
                 text: TextBody,
@@ -331,7 +331,7 @@ router.post("/otp_verify", async (req, res) => {
                 async function main() {
                 const info = await transporter.sendMail(mailOptions);
                 }
-            main().catch('Message Error', console.error);
+                main().catch('Message Error', console.error);
 
         }).catch(console.error.bind(console))
             
