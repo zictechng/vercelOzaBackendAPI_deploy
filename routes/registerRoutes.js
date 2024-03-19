@@ -240,7 +240,7 @@ router.post("/register", async (req, res, next) => {
            }
              // async..await is not allowed in global scope, must use a wrapper
              async function main() {
-               const info = await googleMailer.sendMail(sendMailOptions);
+               const info = await transporter.sendMail(sendMailOptions);
                }
             main().catch('Message Error', console.error);
             }).catch(console.error.bind(console))
