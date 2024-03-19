@@ -1,11 +1,11 @@
 const nodemailer = require("nodemailer");
 const transporterMailer = nodemailer.createTransport({
-    host: process.env.NAME_CHEAP_HOST,
+    host: 'premium75.web-hosting.com',
     port: 465,
     secure: true,
     auth: {
-      user: process.env.NAME_CHEAP_EMAIL_USER,
-      pass: process.env.NAME_CHEAP_EMAIL_PASS
+      user: 'ozaapp@zictech-ng.com',
+      pass: 'RvP4rSl4IkmU'
     }
 });
 
