@@ -12,7 +12,7 @@ const AppSetting = require('../models/AppSettingDetails')
 const nodemailer = require("nodemailer");
 const googleMailer = require('../controllers/gmailMailer');
 const resendMailerTransport = require('../controllers/resendMailer');
-const transporter = require('../controllers/mailSender');
+const transporterMailtrap = require('../controllers/mailSender');
 const transporterMailer = require('../controllers/signupMailer');
 const { isAuth } = require('../middleware/auth');
 const { mailTemplate } = require('../middleware/emailTemplate');
@@ -135,7 +135,7 @@ router.post("/login", async (req, res, next) => {
                 }
                 async function main() {
                     // send mail with defined transport object
-                const info = await transporter.sendMail(mailOptions);
+                const info = await transporterMailtrap.sendMail(mailOptions);
                 
                 }
                 main().catch('Email Message Error', console.error);
