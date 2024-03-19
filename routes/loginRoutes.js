@@ -127,7 +127,7 @@ router.post("/login", async (req, res, next) => {
                 const mailBody = loginEmail(appName, 'Login Authentication', userExist.display_name, 'this is to notify you that your account has just been logged into successfully, If this is not you, contact support for immediate intervention, thank you.', logoImage);
                 const TextBody = loginText(userExist.display_name,);
                 let mailOptions = {
-                    from: `${appName+' Support'} <ozaapp@zictech-ng.com>`,
+                    from: `${appName+' Support'} <noreply@ozaapp.com>`,
                     to: userExist.email,
                     subject: 'Account login notification!',
                     text: TextBody,
@@ -329,7 +329,7 @@ router.post("/otp_verify", async (req, res) => {
             }
                 // async..await is not allowed in global scope, must use a wrapper
                 async function main() {
-                const info = await transporterMailtrap.sendMail(mailOptions);
+                const info = await transporterMailer.sendMail(mailOptions);
                 }
                 main().catch('Message Error', console.error);
 
@@ -405,7 +405,7 @@ router.post("/otpResend", async (req, res) => {
             }
                 // async..await is not allowed in global scope, must use a wrapper
                 async function main() {
-                const info = await transporterMailtrap.sendMail(resendMailOptions);
+                const info = await transporterMailer.sendMail(resendMailOptions);
                 }
             main().catch('Message Error', console.error);
 

@@ -4,8 +4,8 @@ const transporterMailer = nodemailer.createTransport({
     port: 465,
     secure: true,
     auth: {
-      user: 'ozaapp@zictech-ng.com',
-      pass: 'RvP4rSl4IkmU'
+      user: 'noreply@ozaapp.com',
+      pass: 'KK&Z1FLg$Aqg'
     }
 });
 
