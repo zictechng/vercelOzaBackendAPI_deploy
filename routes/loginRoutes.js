@@ -3,7 +3,6 @@ const router = express.Router()
 const jwt = require("jsonwebtoken");
 const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
-const { Resend } = require ('resend');
 
 const User = require('../models/User');
 const SystemActivity = require('../models/SystemActivityLogs');
@@ -24,7 +23,6 @@ const { passwordResetEmail, passwordResetText } = require('../emailTemplate/emai
 const { fetchApp } = require('../middleware/appDetails');
 const { registerEmailText, registerEmail } = require('../emailTemplate/emailRegister');
 // this function verify if the token user sent is valid
-const resend = new Resend('re_8qWnAKcM_J9A5Fj8u1sind69PpVtmCefP');
 
 function verifyToken(req, res, next) {
     if (!req.headers.authorization){

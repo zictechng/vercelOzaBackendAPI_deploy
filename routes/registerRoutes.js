@@ -9,6 +9,7 @@ const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
 const transporter = require('../controllers/signupMailer');
 const googleMailer = require('../controllers/gmailMailer');
+const resendMailerTransport = require('../controllers/resendMailer');
 const multer = require("multer");
 const User = require('../models/User');
 const SystemActivity = require('../models/SystemActivityLogs');
@@ -231,7 +232,7 @@ router.post("/register", async (req, res, next) => {
             const mailBody = registerEmail(appName, 'Account Opening Successfully', userDone.display_name, randomSixDigitNumber, logoImage);
             const TextBody = registerEmailText(userDone.display_name, randomSixDigitNumber);
             let sendMailOptions = {
-               from: `${appName +' Support'} <ozaappng@gmail.com>`,
+               from: `${appName +' Support'} <support@mailbox.ozaapp.com>`,
                to: req.body.email,
                subject: 'Account Opening Successfully!',
                text: TextBody,
@@ -239,7 +240,7 @@ router.post("/register", async (req, res, next) => {
            }
              // async..await is not allowed in global scope, must use a wrapper
              async function main() {
-               const info = await googleMailer.sendMail(sendMailOptions);
+               const info = await resendMailerTransport.sendMail(sendMailOptions);
                }
             main().catch('Message Error', console.error);
             }).catch(console.error.bind(console))
