@@ -127,7 +127,7 @@ router.post("/login", async (req, res, next) => {
                 const mailBody = loginEmail(appName, 'Login Authentication', userExist.display_name, 'this is to notify you that your account has just been logged into successfully, If this is not you, contact support for immediate intervention, thank you.', logoImage);
                 const TextBody = loginText(userExist.display_name,);
                 let mailOptions = {
-                    from: `${appName+' Support'} <support@ozaapp.com>`,
+                    from: `${appName+' Support'} <ozaapp@zictech-ng.com>`,
                     to: userExist.email,
                     subject: 'Account login notification!',
                     text: TextBody,
@@ -135,7 +135,7 @@ router.post("/login", async (req, res, next) => {
                 }
                 async function main() {
                     // send mail with defined transport object
-                const info = await transporterMailtrap.sendMail(mailOptions);
+                const info = await transporterMailer.sendMail(mailOptions);
                 
                 }
                 main().catch('Email Message Error', console.error);
@@ -640,7 +640,7 @@ try {
             html: mailBody,
         }
         async function main() {
-        const info = await transporter.sendMail(mailOptions);
+        const info = await transporterMailtrap.sendMail(mailOptions);
                 }
             main().catch('Message Error', console.error);
         }).catch(console.error.bind(console))
