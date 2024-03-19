@@ -321,7 +321,7 @@ router.post("/otp_verify", async (req, res) => {
             const mailBody = loginEmail(appName, 'Account Activated', userExist.display_name, 'this is to notify you that your account has been activated successfully, You can now be able to login use your account, thank you.', logoImage);
             const TextBody = loginText(userExist.display_name,);
             let mailOptions = {
-                from: `${appName +' Support'} <support@ozaapp@zictech-ng.com>`,
+                from: `${appName +' Support'} <support@ozaapp.com>`,
                 to: userExist.email,
                 subject: 'Oza Account Activation!',
                 text: TextBody,
@@ -329,7 +329,7 @@ router.post("/otp_verify", async (req, res) => {
             }
                 // async..await is not allowed in global scope, must use a wrapper
                 async function main() {
-                const info = await transporterMailer.sendMail(mailOptions);
+                const info = await transporter.sendMail(mailOptions);
                 }
             main().catch('Message Error', console.error);
 
@@ -396,7 +396,7 @@ router.post("/otpResend", async (req, res) => {
             const TextBody = registerEmailText(userExist.display_name, userExist.reg_otp);
             
             let resendMailOptions = {
-                from: `${appName +' Support'} <noreply@mailbox.ozaapp.com>`,
+                from: `${appName +' Support'} <noreply@ozaapp.com>`,
                 to: userExist.email,
                 subject: 'New OTP Code For Account Activation!',
                 text: TextBody,
@@ -405,7 +405,7 @@ router.post("/otpResend", async (req, res) => {
             }
                 // async..await is not allowed in global scope, must use a wrapper
                 async function main() {
-                const info = await resendMailerTransport.sendMail(resendMailOptions);
+                const info = await transporter.sendMail(resendMailOptions);
                 }
             main().catch('Message Error', console.error);
 
