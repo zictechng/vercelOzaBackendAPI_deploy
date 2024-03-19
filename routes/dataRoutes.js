@@ -8,6 +8,7 @@ const bcrypt = require('bcrypt');
 const multer = require("multer");
 
 const nodemailer = require("nodemailer");
+const googleMailer = require('../controllers/gmailMailer');
 const transporterMailer = require('../controllers/signupMailer');
 const User = require('../models/User');
 const TransferFund = require('../models/fundTransfer');
@@ -1017,7 +1018,7 @@ router.post("/newsletter_subscriptions", async (req, res) => {
           const mailBody = loginEmail(appName, 'New Mailing Subscriptions', 'dear User', `this is to notify you that your subscription to our mailing list was successfully! <br/> Thank you for joining our mailing list.`, logoImage)
           const TextBody = loginText('dear User', `this is to notify you that your mailing request was successfully, you can now receive notifications and update from us.`);
           let tickMailOptions = {
-          from: `${appName+' Support'} <ozaapp@zictech-ng.com>`,
+          from: `${appName+' Support'} <ozaappng@gmail.com>`,
           to: req.body.userEmail,
           subject: 'Mailing Notification',
           text: TextBody,
@@ -1025,7 +1026,7 @@ router.post("/newsletter_subscriptions", async (req, res) => {
       }
         // async..await is not allowed in global scope, must use a wrapper
         async function main() {
-          const info = await transporterMailer.sendMail(tickMailOptions);
+          const info = await googleMailer.sendMail(tickMailOptions);
           }
       main().catch('Message Error', console.error);
         }).catch(console.error.bind(console))
