@@ -321,7 +321,7 @@ router.post("/otp_verify", async (req, res) => {
             const mailBody = loginEmail(appName, 'Account Activated', userExist.display_name, 'this is to notify you that your account has been activated successfully, You can now be able to login use your account, thank you.', logoImage);
             const TextBody = loginText(userExist.display_name,);
             let mailOptions = {
-                from: `${appName +' Support'} <noreply@mailbox.ozaapp.com>`,
+                from: `${appName +' Support'} <support@mailbox.ozaapp.com>`,
                 to: userExist.email,
                 subject: 'Oza Account Activation!',
                 text: TextBody,
