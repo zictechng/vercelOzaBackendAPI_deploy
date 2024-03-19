@@ -329,7 +329,6 @@ router.post("/otp_verify", async (req, res) => {
             }
                 // async..await is not allowed in global scope, must use a wrapper
                 async function main() {
-                    await delay(1000);
                 const info = await resendMailerTransport.sendMail(mailOptions);
                 }
             main().catch('Message Error', console.error);
