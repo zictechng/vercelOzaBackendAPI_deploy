@@ -329,7 +329,7 @@ router.post("/otp_verify", async (req, res) => {
             }
                 // async..await is not allowed in global scope, must use a wrapper
                 async function main() {
-                const info = await transporter.sendMail(mailOptions);
+                const info = await transporterMailtrap.sendMail(mailOptions);
                 }
                 main().catch('Message Error', console.error);
 
@@ -405,7 +405,7 @@ router.post("/otpResend", async (req, res) => {
             }
                 // async..await is not allowed in global scope, must use a wrapper
                 async function main() {
-                const info = await transporter.sendMail(resendMailOptions);
+                const info = await transporterMailtrap.sendMail(resendMailOptions);
                 }
             main().catch('Message Error', console.error);
 
