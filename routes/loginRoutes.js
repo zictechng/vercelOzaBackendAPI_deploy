@@ -1,9 +1,9 @@
 const express = require('express')
 const router = express.Router()
 const jwt = require("jsonwebtoken");
-
 const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
+const { Resend } = require ('resend');
 
 const User = require('../models/User');
 const SystemActivity = require('../models/SystemActivityLogs');
@@ -12,6 +12,7 @@ const AppSetting = require('../models/AppSettingDetails')
 
 const nodemailer = require("nodemailer");
 const googleMailer = require('../controllers/gmailMailer');
+const resendMailerTransport = require('../controllers/resendMailer');
 const transporter = require('../controllers/mailSender');
 const transporterMailer = require('../controllers/signupMailer');
 const { isAuth } = require('../middleware/auth');
@@ -23,6 +24,8 @@ const { passwordResetEmail, passwordResetText } = require('../emailTemplate/emai
 const { fetchApp } = require('../middleware/appDetails');
 const { registerEmailText, registerEmail } = require('../emailTemplate/emailRegister');
 // this function verify if the token user sent is valid
+const resend = new Resend('re_8qWnAKcM_J9A5Fj8u1sind69PpVtmCefP');
+
 function verifyToken(req, res, next) {
     if (!req.headers.authorization){
       return res.status(401).send({msg: '401'})
@@ -126,7 +129,7 @@ router.post("/login", async (req, res, next) => {
                 const mailBody = loginEmail(appName, 'Login Authentication', userExist.display_name, 'this is to notify you that your account has just been logged into successfully, If this is not you, contact support for immediate intervention, thank you.', logoImage);
                 const TextBody = loginText(userExist.display_name,);
                 let mailOptions = {
-                    from: `${appName+' Support'} <ozaappng@gmail.com>`,
+                    from: `${appName+' Support'} <support@mailbox.ozaapp.com>`,
                     to: userExist.email,
                     subject: 'Account login notification!',
                     text: TextBody,
@@ -134,11 +137,28 @@ router.post("/login", async (req, res, next) => {
                 }
                 async function main() {
                     // send mail with defined transport object
-                const info = await googleMailer.sendMail(mailOptions);
+                const info = await resendMailerTransport.sendMail(mailOptions);
+                
                 }
                 main().catch('Email Message Error', console.error);
     
                }).catch(console.error.bind(console))
+
+            //    async function() {
+            //     try {
+            //       const data = await resend.emails.send({
+            //         from: 'Acme <onboarding@resend.dev>',
+            //         to: userExist.email,
+            //         subject: 'Hello Login',
+            //         html: '<strong>You just logged to your account!</strong>'
+            //       });
+              
+            //       console.log(data);
+            //     } catch (error) {
+            //       console.error(error);
+            //     }
+            //   };
+
             res.send({ msg: '200', token: token, userData: others, appData: getAppSetting})
         //res.json({msg: 200, token: token, userData: others})
         //console.log('Environment data!', process.env.SECRET_KEY);
@@ -303,7 +323,7 @@ router.post("/otp_verify", async (req, res) => {
             const mailBody = loginEmail(appName, 'Account Activated', userExist.display_name, 'this is to notify you that your account has been activated successfully, You can now be able to login use your account, thank you.', logoImage);
             const TextBody = loginText(userExist.display_name,);
             let mailOptions = {
-                from: `${appName +' Support'} <ozaappng@gmail.com>`,
+                from: `${appName +' Support'} <noreply@mailbox.ozaapp.com>`,
                 to: userExist.email,
                 subject: 'Oza Account Activation!',
                 text: TextBody,
@@ -312,7 +332,7 @@ router.post("/otp_verify", async (req, res) => {
                 // async..await is not allowed in global scope, must use a wrapper
                 async function main() {
                     await delay(1000);
-                const info = await googleMailer.sendMail(mailOptions);
+                const info = await resendMailerTransport.sendMail(mailOptions);
                 }
             main().catch('Message Error', console.error);
 
@@ -379,7 +399,7 @@ router.post("/otpResend", async (req, res) => {
             const TextBody = registerEmailText(userExist.display_name, userExist.reg_otp);
             
             let resendMailOptions = {
-                from: `${appName +' Support'} <ozaappng@gmail.com>`,
+                from: `${appName +' Support'} <noreply@mailbox.ozaapp.com>`,
                 to: userExist.email,
                 subject: 'New OTP Code For Account Activation!',
                 text: TextBody,
@@ -388,7 +408,7 @@ router.post("/otpResend", async (req, res) => {
             }
                 // async..await is not allowed in global scope, must use a wrapper
                 async function main() {
-                const info = await googleMailer.sendMail(resendMailOptions);
+                const info = await resendMailerTransport.sendMail(resendMailOptions);
                 }
             main().catch('Message Error', console.error);
 
