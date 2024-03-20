@@ -9,6 +9,7 @@ const bcrypt = require('bcrypt');
 const multer = require("multer");
 const transporterMailer = require('../controllers/signupMailer');
 const nodemailer = require("nodemailer");
+const googleMailer = require('../controllers/gmailMailer');
 
 const User = require('../models/User');
 const TransferFund = require('../models/fundTransfer');
@@ -1984,14 +1985,14 @@ router.post("/approveAcctFunding", isAuth, async (req, res) => {
             with transaction ID <b>${userFund.fund_number}</b><br>
             thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
             let account_issueEMail = {
-              from: `${appName +' Sales'} <noreply@ozaapp.com>`,
+              from: `${appName +' Sales'} <ozaappng@gmail.com>`,
               to: userDetail.email,
               subject: 'Account Funding Notification!',
               text: mailText,
               html: mailBody,
             }
             async function main() {
-            const info = await transporterMailer.sendMail(account_issueEMail);
+            const info = await googleMailer.sendMail(account_issueEMail);
                 }
             main().catch('Message Error', console.error);
             }).catch(console.error.bind(console))
