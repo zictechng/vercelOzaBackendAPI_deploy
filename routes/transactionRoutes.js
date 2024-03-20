@@ -1,6 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
 const currencyFormatter = require('currency-formatter');
 const paypal = require('paypal-rest-sdk');
 var fetch = require('node-fetch');
@@ -15,7 +16,7 @@ const FundUserAccount = require('../models/fundAccount')
 const SystemActivity = require('../models/SystemActivityLogs');
 const Notification = require('../models/NotificationAlert');
 const GetRate = require('../models/businessRate')
-const nodemailer = require("nodemailer");
+
 //const transporter = require('../controllers/mailSender');
 const { isAuth } = require('../middleware/auth');
 const moment = require('moment');
@@ -262,8 +263,28 @@ const processPaymentDetails = async(data, paymentId) =>{
                 main().catch('Message Error', console.error);
                 }).catch(console.error.bind(console))
                
-            }       
-       // success message
+            }  
+            // send email notification to admin
+            fetchApp().then((result) =>{
+              appName = result.app_name
+              appLogo = result.app_logo
+              const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+              const mailBody = loginEmail(appName, 'Paypal Fund notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} as requested for fund exchanging. \n Request reference / Transaction ID is ${TransID}, \n 
+              Order ID is ${paymentId} Thank you`, logoImage)
+              const mailText = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n Order ID is ${paymentId}`)
+              let payPal_mailOptions = {
+                  from: `${appName +' Sales'} <noreply@ozaapp.com>`,
+                  to: 'hello@ozaapp.com',
+                  subject: 'Payment notification!',
+                  text: mailText,
+                  html: mailBody,
+              }
+              async function main() {
+                  const info = await transporterMailer.sendMail(payPal_mailOptions);
+                  }
+              main().catch('Message Error', console.error);
+              }).catch(console.error.bind(console))     
+            // success message
             }
         } catch (err) {
         // err message
@@ -492,7 +513,6 @@ router.post("/userAccount_funding", isAuth, async (req, res) => {
 
           //console.log("maxi ", fundingLimit[0].app_maxi_funding)
     try {
-          
           //console.log("All App ", fundingLimit)
 
           let userFund = await User.findOne({ _id:  dataReceive.userId }); // here I am checking if user exist then I will get user details
@@ -584,7 +604,29 @@ router.post("/userAccount_funding", isAuth, async (req, res) => {
                        }
                     main().catch('Message Error', console.error);
                     }).catch(console.error.bind(console))    
-              }       
+              }   
+              // send email notification to admin
+              fetchApp().then((result) =>{
+                appName = result.app_name
+                appLogo = result.app_logo
+                const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                const mailBody = loginEmail(appName, 'Account Funding Notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} has made account funding request and it has been logged! kindly treat as soon as possible. \n Account funding Transaction ID is ${Trans_ID}, \n 
+                Transaction Reference ID ${req.body.payId ? req.body.payId: 'None. ' } \n Thank you`, logoImage)
+                const TextBody = loginText(userFund.display_name, `this is to notify you that your account funding request has been logged and we will treat as soon as your payment received. \n Transaction ID is ${Trans_ID} \n
+                Transaction Reference ID ${req.body.payId? req.body.payId: 'None.'}`);
+                let fundAcctMailOptions = {
+                from: `${appName +' Sales'} <noreply@ozaapp.com>`,
+                to: 'hello@ozaapp.com',
+                subject: 'Account Funding Notification!',
+                text: TextBody,
+                html: mailBody,
+              }
+              // async..await is not allowed in global scope, must use a wrapper
+              async function main() {
+                  const info = await transporterMailer.sendMail(fundAcctMailOptions);
+                  }
+                main().catch('Message Error', console.error);
+                }).catch(console.error.bind(console))        
          // success message
           res.status(200).json({msg: '200'})
           }
@@ -724,7 +766,27 @@ router.post("/fundPurchase_funding", isAuth, async (req, res) => {
                  main().catch('Message Error', console.error);
                 }).catch(console.error.bind(console))
                  
-              }       
+              } 
+            // send email notification to admin
+            fetchApp().then((result) =>{
+              appName = result.app_name
+              appLogo = result.app_logo
+              const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+              const mailBody = loginEmail(appName, 'Account Funding Notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} made fund exchange request and it has been logged, kindly treat as soon as possible. \n Request reference / Transaction ID is ${TransID}, \nThank you`, logoImage)
+              const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID}`);
+              let fundAcctMailOptions = {
+              from: `${appName +' Sales'} <noreply@ozaapp.com>`,
+              to: 'hello@ozaapp.com',
+              subject: 'Account Funding Notification!',
+              text: TextBody,
+              html: mailBody,
+          }
+          // async..await is not allowed in global scope, must use a wrapper
+          async function main() {
+              const info = await transporterMailer.sendMail(fundAcctMailOptions);
+              }
+           main().catch('Message Error', console.error);
+          }).catch(console.error.bind(console))
          // success message
           res.status(201).json({msg: '200', feedback: TransID})
           }
@@ -835,7 +897,31 @@ router.post("/fundBuy_funding", isAuth, async (req, res) => {
                     }
                  main().catch('Message Error', console.error);
                  }).catch(console.error.bind(console))
-               }       
+               } 
+               
+            // send email notification to admin
+              fetchApp().then((result) =>{
+                appName = result.app_name
+                appLogo = result.app_logo
+                const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                const mailBody = loginEmail(appName, 'Account Funding Notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} made fund exchange request and it has been logged, kindly treat as soon as possible. \n Request reference / Transaction ID is ${TransID}, \n
+                \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId: ''}
+                \n Thank you`, logoImage)
+                const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId:''}`);
+                let fundAcctMailOptions = {
+                from: `${appName +' Sales'} <noreply@ozaapp.com>`,
+                to: 'hello@ozaapp.com',
+                subject: 'Account Funding Notification!',
+                text: TextBody,
+                html: mailBody,
+            }
+            // async..await is not allowed in global scope, must use a wrapper
+            async function main() {
+                const info = await transporterMailer.sendMail(fundAcctMailOptions);
+                }
+            main().catch('Message Error', console.error);
+            }).catch(console.error.bind(console))
+            
          // success message
           res.status(201).json({msg: '200', feedback: TransID})
           }
@@ -972,7 +1058,29 @@ router.post("/paypal_checkout", isAuth, async (req, res) => {
                  }
               main().catch('Message Error', console.error);
                 }).catch(console.error.bind(console))
-             }       
+             } 
+            // send email notification to admin
+             fetchApp().then((result) =>{
+              appName = result.app_name
+              appLogo = result.app_logo
+              const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+
+              const mailBody = loginEmail(appName, 'Account Funding Notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} made fund exchange request and it has been logged, kindly treat as soon as possible. \n Request reference / Transaction ID is ${TransID}, \n 
+               Order ID is ${dataReceive.orderId} Thank you`, logoImage)
+               const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n Order ID is ${dataReceive.orderId}`);
+               let acctFundMailOptions = {
+               from: `${appName +' Sales'} <noreply@ozaapp.com>`,
+               to: 'hello@ozaapp.com',
+               subject: 'Account Funding Notification!',
+               text: TextBody,
+               html: mailBody,
+           }
+           // async..await is not allowed in global scope, must use a wrapper
+           async function main() {
+               const info = await transporterMailer.sendMail(acctFundMailOptions);
+               }
+            main().catch('Message Error', console.error);
+              }).catch(console.error.bind(console))     
          // success message
           res.status(201).json({msg: '200'})
           }

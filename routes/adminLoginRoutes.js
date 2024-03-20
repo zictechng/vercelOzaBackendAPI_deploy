@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 
 const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
-const transporter = require('../controllers/signupMailer');
+const transporterMailer = require('../controllers/signupMailer');
 const User = require('../models/User');
 const SystemActivity = require('../models/SystemActivityLogs');
 const UserLogs = require('../models/UserLogs')
@@ -112,7 +112,7 @@ const { fetchApp } = require('../middleware/appDetails');
                 }
                 async function main() {
                     // send mail with defined transport object
-                const info = await transporter.sendMail(mailOptions);
+                const info = await transporterMailer.sendMail(mailOptions);
                 }
                 main().catch('Email Message Error', console.error);
     

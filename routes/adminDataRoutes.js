@@ -7,7 +7,7 @@ const asyncHandler = require('express-async-handler');
 const bcrypt = require('bcrypt');
 
 const multer = require("multer");
-const transporter = require('../controllers/signupMailer');
+const transporterMailer = require('../controllers/signupMailer');
 const nodemailer = require("nodemailer");
 
 const User = require('../models/User');
@@ -300,6 +300,7 @@ router.get("/dashboard_salesReport", isAuth, async (req, res) => {
       const todaySales = await TransferFund.find(
         {
           transaction_status: 'Successful',
+          currency_level:'2',
           creditOn: {$gte: todayTime}, 
         });
         
@@ -1475,7 +1476,7 @@ router.post("/user_accountAction/", isAuth, async (req, res) => {
               html: mailBody,
             }
             async function main() {
-            const info = await transporter.sendMail(account_issueEMail);
+            const info = await transporterMailer.sendMail(account_issueEMail);
                 }
             main().catch('Message Error', console.error);
             }).catch(console.error.bind(console))
@@ -1550,7 +1551,7 @@ router.post("/user_accountStateAction/", isAuth, async (req, res) => {
                   html: mailBody,
                 }
                 async function main() {
-                const info = await transporter.sendMail(account_issueEMail);
+                const info = await transporterMailer.sendMail(account_issueEMail);
                     }
                 main().catch('Message Error', console.error);
                 }).catch(console.error.bind(console))
@@ -1625,7 +1626,7 @@ router.post("/user_ApproveAccountAction/", isAuth, async (req, res) => {
                   html: mailBody,
                 }
                 async function main() {
-                const info = await transporter.sendMail(account_issueEMail);
+                const info = await transporterMailer.sendMail(account_issueEMail);
                     }
                 main().catch('Message Error', console.error);
                 }).catch(console.error.bind(console))
@@ -1728,7 +1729,7 @@ router.post("/adminApprove_document", isAuth, async (req, res) => {
                   html: mailBody,
                 }
                 async function main() {
-                const info = await transporter.sendMail(account_issueEMail);
+                const info = await transporterMailer.sendMail(account_issueEMail);
                     }
                 main().catch('Message Error', console.error);
                 }).catch(console.error.bind(console))
@@ -1829,7 +1830,7 @@ router.post("/adminRejected_documentUpload", isAuth, async (req, res) => {
                   html: mailBody,
                 }
                 async function main() {
-                const info = await transporter.sendMail(account_issueEMail);
+                const info = await transporterMailer.sendMail(account_issueEMail);
                     }
                 main().catch('Message Error', console.error);
                 }).catch(console.error.bind(console))
@@ -1990,7 +1991,7 @@ router.post("/approveAcctFunding", isAuth, async (req, res) => {
               html: mailBody,
             }
             async function main() {
-            const info = await transporter.sendMail(account_issueEMail);
+            const info = await transporterMailer.sendMail(account_issueEMail);
                 }
             main().catch('Message Error', console.error);
             }).catch(console.error.bind(console))
@@ -2104,7 +2105,7 @@ router.post("/rejectApproveAcctFunding", isAuth, async (req, res) => {
               html: mailBody,
             }
             async function main() {
-            const info = await transporter.sendMail(account_issueEMail);
+            const info = await transporterMailer.sendMail(account_issueEMail);
                 }
             main().catch('Message Error', console.error);
             }).catch(console.error.bind(console))
@@ -2254,7 +2255,7 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
             html: mailBody,
           }
           async function main() {
-          const info = await transporter.sendMail(account_issueEMail);
+          const info = await transporterMailer.sendMail(account_issueEMail);
               }
           main().catch('Message Error', console.error);
           }).catch(console.error.bind(console))
@@ -2357,7 +2358,7 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
                 html: mailBody,
               }
               async function main() {
-              const info = await transporter.sendMail(account_issueEMail);
+              const info = await transporterMailer.sendMail(account_issueEMail);
                   }
               main().catch('Message Error', console.error);
               }).catch(console.error.bind(console))
@@ -2460,7 +2461,7 @@ router.post("/rejectSaleFunding", isAuth, async (req, res) => {
               html: mailBody,
             }
             async function main() {
-            const info = await transporter.sendMail(account_issueEMail);
+            const info = await transporterMailer.sendMail(account_issueEMail);
                 }
             main().catch('Message Error', console.error);
             }).catch(console.error.bind(console))
@@ -2756,7 +2757,7 @@ router.post("/messageFeedback_send", isAuth, async (req, res) => {
               html: mailBody,
             }
             async function main() {
-            const info = await transporter.sendMail(account_issueEMail);
+            const info = await transporterMailer.sendMail(account_issueEMail);
                 }
             main().catch('Message Error', console.error);
             }).catch(console.error.bind(console))
@@ -2885,7 +2886,7 @@ router.post("/closeUserTicket_message", isAuth, async (req, res) => {
               html: mailBody,
             }
             async function main() {
-            const info = await transporter.sendMail(ticket_issueEMail);
+            const info = await transporterMailer.sendMail(ticket_issueEMail);
                 }
             main().catch('Message Error', console.error);
             }).catch(console.error.bind(console))
@@ -3484,7 +3485,7 @@ router.get("/approveReferral_bonus/:id", isAuth, async (req, res) => {
             html: mailBody,
           }
           async function main() {
-          const info = await transporter.sendMail(account_issueEMail);
+          const info = await transporterMailer.sendMail(account_issueEMail);
               }
           main().catch('Message Error', console.error);
           }).catch(console.error.bind(console))
