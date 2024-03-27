@@ -2092,24 +2092,23 @@ router.post("/rejectApproveAcctFunding", isAuth, async (req, res) => {
         With transaction ID <b>${userFund.fund_number}</b><br> 
         We are unable to verify that the transaction was valid and successful! Please you can contact support for more details and possible resolutions.<br><br>
         Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`, logoImage)
-
-            const mailText = loginText(userDetail.display_name, `this is to notify you that your account funding request has been rejected or cancelled after been review your transaction details.
-            <br> Amount Funding: <b>\u20A6${new Intl.NumberFormat().format(userFund.amount)}</b> <br>
-            With transaction ID <b>${userFund.fund_number}</b><br> 
-            We are unable to verify that the transaction was valid and successful! Please you can contact support for more details and possible resolutions.<br><br>
-            Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
-            let account_issueEMail = {
-              from: `${appName +' Support'} <noreply@ozaapp.com>`,
-              to: userDetail.email,
-              subject: 'Account Funding Notification!',
-              text: mailText,
-              html: mailBody,
+        const mailText = loginText(userDetail.display_name, `this is to notify you that your account funding request has been rejected or cancelled after been review your transaction details.
+        <br> Amount Funding: <b>\u20A6${new Intl.NumberFormat().format(userFund.amount)}</b> <br>
+        With transaction ID <b>${userFund.fund_number}</b><br> 
+        We are unable to verify that the transaction was valid and successful! Please you can contact support for more details and possible resolutions.<br><br>
+        Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
+        let account_issueEMail = {
+          from: `${appName +' Support'} <noreply@ozaapp.com>`,
+          to: userDetail.email,
+          subject: 'Account Funding Notification!',
+          text: mailText,
+          html: mailBody,
+        }
+        async function main() {
+        const info = await transporterMailer.sendMail(account_issueEMail);
             }
-            async function main() {
-            const info = await transporterMailer.sendMail(account_issueEMail);
-                }
-            main().catch('Message Error', console.error);
-            }).catch(console.error.bind(console))
+        main().catch('Message Error', console.error);
+        }).catch(console.error.bind(console))
 
         res.status(201).json({msg: '201'}) // success message
      }
@@ -2242,9 +2241,8 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
             const mailBody = loginEmail(appName, 'Fund Sales Approved', checkUser.display_name, `this is to notify you that your referral bonus funds has been approved and your account has be credited with the sum of \n\n
             <b>\u20A6${new Intl.NumberFormat().format(addAmount)}</b> for your hard work for sharing your referral Tag ID <br>
             </b><br>  Keep it up and keep referring your friends, loves one to continue earning... <br>
-            Thank you for choosing ${appName}, we hope you continue to enjoy our awesome services.`, logoImage)
-            
-          const mailText = loginText(checkUser.display_name, `this is to notify you that your referral bonus funds has been approved and your account has be credited with the sum of \n\n
+            Thank you for choosing ${appName}, we hope you continue to enjoy our awesome services.`, logoImage)            
+           const mailText = loginText(checkUser.display_name, `this is to notify you that your referral bonus funds has been approved and your account has be credited with the sum of \n\n
           <b>\u20A6${new Intl.NumberFormat().format(addAmount)}</b> for your hard work for sharing your referral Tag ID <br>
           </b><br>  Keep it up and keep referring your friends, loves one to continue earning... <br>
           Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)

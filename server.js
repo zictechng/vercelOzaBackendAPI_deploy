@@ -15,7 +15,7 @@ const adminLogin = require("./routes/adminLoginRoutes");
 const app = express()
 const path = require('path')
 // import the logger function
-const {logger, logEvents} = require('./middleware/logger')
+//const {logger, logEvents} = require('./middleware/logger')
 
 // import the errorhandler
 const errorHandler = require('./middleware/errorHandler')
@@ -36,7 +36,7 @@ console.log(process.env.NODE_ENV)
 connectDB() // calling the database function
 
 // call the logger function for use here
-app.use(logger)
+//app.use(logger)
 
 // call the cors here...
 app.use(cors()) // for public usage, remove the corsOptions
