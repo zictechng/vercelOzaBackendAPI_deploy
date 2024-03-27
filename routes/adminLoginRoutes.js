@@ -4,6 +4,12 @@ const jwt = require("jsonwebtoken");
 
 const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
+
+const {MailtrapClient} = require('mailtrap')
+
+const TOKEN = process.env.EMAIL_API_PASSWORD;
+const client = new MailtrapClient({ token: TOKEN });
+
 const transporterMailer = require('../controllers/signupMailer');
 const User = require('../models/User');
 const SystemActivity = require('../models/SystemActivityLogs');
@@ -104,17 +110,22 @@ const { fetchApp } = require('../middleware/appDetails');
                 const mailBody = loginEmail(appName, 'Login Authentication', userExist.display_name, 'this is to notify you that your account has just been logged into successfully, If this is not you, contact support for immediate intervention, thank you.', logoImage)
                 const TextBody = loginText(userExist.display_name,);
                 let mailOptions = {
-                    from: `${appName +' Support'} <noreply@ozaapp.com>`,
-                    to: userExist.email,
+                    from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
+                    to: [{ email: userExist.email }],
                     subject: 'Login notification!',
                     text: TextBody,
                     html: mailBody,
                 }
-                async function main() {
-                    // send mail with defined transport object
-                const info = await transporterMailer.sendMail(mailOptions);
-                }
-                main().catch('Email Message Error', console.error);
+                    client
+                    .send(mailOptions)
+                    .then(console.log)
+                    .catch(console.error);
+
+                // async function main() {
+                //     // send mail with defined transport object
+                // const info = await transporterMailer.sendMail(mailOptions);
+                // }
+                // main().catch('Email Message Error', console.error);
     
                }).catch(console.error.bind(console))
             res.send({ msg: '200', token: token, userData: others, appData: getAppSetting})

@@ -1,7 +1,5 @@
 require('dotenv').config()
-const paypal = require('paypal-rest-sdk');
 const express = require('express')
-const passport = require('passport');
 
 const registerUser = require("./routes/registerRoutes");
 const loginUser = require("./routes/loginRoutes");
@@ -18,7 +16,7 @@ const path = require('path')
 //const {logger, logEvents} = require('./middleware/logger')
 
 // import the errorhandler
-const errorHandler = require('./middleware/errorHandler')
+//const errorHandler = require('./middleware/errorHandler')
 // 3rd party middleware here
 const cookieParser = require('cookie-parser')
 const cors = require('cors');
