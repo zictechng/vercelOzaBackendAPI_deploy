@@ -3,7 +3,7 @@ const {MailtrapClient} = require('mailtrap')
 // const TOKEN = process.env.EMAIL_API_PASSWORD;
 // const client = new MailtrapClient({ token: TOKEN });
 
-const mailTransporter = MailtrapClient.createTransport({
+const mailTransporter = new MailtrapClient({
     token: process.env.EMAIL_API_PASSWORD
 });
 
