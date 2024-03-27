@@ -7,6 +7,7 @@ const asyncHandler = require('express-async-handler');
 const bcrypt = require('bcrypt');
 
 const multer = require("multer");
+const {MailtrapClient} = require('mailtrap')
 
 const TOKEN = process.env.EMAIL_API_PASSWORD;
 const client = new MailtrapClient({ token: TOKEN });
