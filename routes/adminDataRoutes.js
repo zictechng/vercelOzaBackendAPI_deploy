@@ -7,6 +7,10 @@ const asyncHandler = require('express-async-handler');
 const bcrypt = require('bcrypt');
 
 const multer = require("multer");
+
+const TOKEN = process.env.EMAIL_API_PASSWORD;
+const client = new MailtrapClient({ token: TOKEN });
+
 const transporterMailer = require('../controllers/signupMailer');
 const nodemailer = require("nodemailer");
 const googleMailer = require('../controllers/gmailMailer');
@@ -1985,16 +1989,24 @@ router.post("/approveAcctFunding", isAuth, async (req, res) => {
             with transaction ID <b>${userFund.fund_number}</b><br>
             thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
             let account_issueEMail = {
-              from: `${appName +' Sales'} <noreply@ozaapp.com>`,
-              to: userDetail.email,
+              //from: `${appName +' Sales'} <noreply@ozaapp.com>`,
+              from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
+              //to: userDetail.email,
+              to: [{ email: userDetail.email }],
               subject: 'Account Funding Notification!',
               text: mailText,
               html: mailBody,
             }
-            async function main() {
-            const info = await transporterMailer.sendMail(account_issueEMail);
-                }
-            main().catch('Message Error', console.error);
+
+            client
+            .send(account_issueEMail)
+            .then(console.log)
+            .catch(console.error);
+
+            // async function main() {
+            // const info = await transporterMailer.sendMail(account_issueEMail);
+            //     }
+            // main().catch('Message Error', console.error);
             }).catch(console.error.bind(console))
 
         res.status(201).json({msg: '201'}) // success message
