@@ -5,10 +5,11 @@ const jwt = require("jsonwebtoken");
 const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
 
-const {MailtrapClient} = require('mailtrap')
+// const {MailtrapClient} = require('mailtrap')
 
-const TOKEN = process.env.EMAIL_API_PASSWORD;
-const client = new MailtrapClient({ token: TOKEN });
+// const TOKEN = process.env.EMAIL_API_PASSWORD;
+// const client = new MailtrapClient({ token: TOKEN });
+const mailTransporter = require('../controllers/emailSender')
 
 const transporterMailer = require('../controllers/signupMailer');
 const User = require('../models/User');
@@ -113,16 +114,11 @@ const { fetchApp } = require('../middleware/appDetails');
                     text: TextBody,
                     html: mailBody,
                 }
-                    client
+                    mailTransporter
                     .send(mailOptions)
                     .then(console.log)
                     .catch(console.error);
 
-                // async function main() {
-                //     // send mail with defined transport object
-                // const info = await transporterMailer.sendMail(mailOptions);
-                // }
-                // main().catch('Email Message Error', console.error);
     
                }).catch(console.error.bind(console))
             res.send({ msg: '200', token: token, userData: others, appData: getAppSetting})
