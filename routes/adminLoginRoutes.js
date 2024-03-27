@@ -27,9 +27,6 @@ const { passwordResetEmail, passwordResetText } = require('../emailTemplate/emai
 const { fetchApp } = require('../middleware/appDetails');
 
    // generate registration OTP Code here
-   function generateRandomNumber() {
-    return Math.floor(100000 + Math.random() * 900000);
-    }
     var appName = '';
 
  // route to login user
@@ -110,7 +107,7 @@ const { fetchApp } = require('../middleware/appDetails');
                 const mailBody = loginEmail(appName, 'Login Authentication', userExist.display_name, 'this is to notify you that your account has just been logged into successfully, If this is not you, contact support for immediate intervention, thank you.', logoImage)
                 const TextBody = loginText(userExist.display_name,);
                 let mailOptions = {
-                    from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
+                    from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
                     to: [{ email: userExist.email }],
                     subject: 'Login notification!',
                     text: TextBody,
