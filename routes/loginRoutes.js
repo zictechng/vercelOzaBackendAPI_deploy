@@ -3,20 +3,15 @@ const router = express.Router()
 const jwt = require("jsonwebtoken");
 const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
-
+const mailTransporter = require('../controllers/emailSender');
 const User = require('../models/User');
 const SystemActivity = require('../models/SystemActivityLogs');
 const UserLogs = require('../models/UserLogs')
 const AppSetting = require('../models/AppSettingDetails')
 
-const nodemailer = require("nodemailer");
 const googleMailer = require('../controllers/gmailMailer');
-const resendMailerTransport = require('../controllers/resendMailer');
-const transporterMailtrap = require('../controllers/mailSender');
 const transporterMailer = require('../controllers/signupMailer');
 const { isAuth } = require('../middleware/auth');
-const { mailTemplate } = require('../middleware/emailTemplate');
-const contentMail = require('../middleware/emailTemplate');
 const { welcomeEmail } = require('../middleware/welcome');
 const { loginEmail, loginText } = require('../emailTemplate/emailLogin');
 const { passwordResetEmail, passwordResetText } = require('../emailTemplate/emailPasswordReset');
@@ -51,7 +46,6 @@ function verifyToken(req, res, next) {
 router.post("/login", async (req, res, next) => {
     const file = req.file;
     const filter = req.body;
-    //console.log("Login Data ", req.body);
     //check in input fields is empty
     if(filter.username == '' || filter.password == ''){
         return res.json({status: 400, message: ' All fields are required'})
@@ -127,18 +121,21 @@ router.post("/login", async (req, res, next) => {
                 const mailBody = loginEmail(appName, 'Login Authentication', userExist.display_name, 'this is to notify you that your account has just been logged into successfully, If this is not you, contact support for immediate intervention, thank you.', logoImage);
                 const TextBody = loginText(userExist.display_name,);
                 let mailOptions = {
-                    from: `${appName+' Support'} <noreply@ozaapp.com>`,
-                    to: userExist.email,
+                    from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                    to: [{ email: userExist.email }],
                     subject: 'Account login notification!',
                     text: TextBody,
                     html: mailBody,
                 }
-                async function main() {
-                    // send mail with defined transport object
-                const info = await transporterMailer.sendMail(mailOptions);
+                mailTransporter.send(mailOptions).then(console.log)
+	            .catch('Email Sending Error ', console.error);
+
+                // async function main() {
+                //     // send mail with defined transport object
+                // const info = await transporterMailer.sendMail(mailOptions);
                 
-                }
-                main().catch('Email Message Error', console.error);
+                // }
+                // main().catch('Email Message Error', console.error);
     
                }).catch(console.error.bind(console))
 
@@ -306,19 +303,17 @@ router.post("/otp_verify", async (req, res) => {
             const mailBody = loginEmail(appName, 'Account Activated', userExist.display_name, 'this is to notify you that your account has been activated successfully, You can now be able to login use your account, thank you.', logoImage);
             const TextBody = loginText(userExist.display_name,);
             let mailOptions = {
-                from: `${appName +' Support'} <noreply@ozaapp.com>`,
-                to: userExist.email,
+                from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                to: [{ email: userExist.email }],
                 subject: 'Oza Account Activation!',
                 text: TextBody,
                 html: mailBody,
             }
-                // async..await is not allowed in global scope, must use a wrapper
-                async function main() {
-                const info = await transporterMailer.sendMail(mailOptions);
-                }
-                main().catch('Message Error', console.error);
+                mailTransporter.send(mailOptions).then(console.log)
+	            .catch('Email Sending Error ', console.error);
 
-        }).catch(console.error.bind(console))
+                // async..await is not allowed in global scope, must use a wrapper
+                }).catch(console.error.bind(console))
             
             //res.status(200).json({ msg: '200'}) // success message
             res.send({ msg: '200'})
@@ -376,10 +371,8 @@ router.post("/otpResend", async (req, res) => {
             appName = result.app_name
             appLogo = result.app_logo
             const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-            
             // const mailBody = registerEmail(appName, 'OTP Code', userExist.display_name, userExist.reg_otp, logoImage);
             const TextBody = registerEmailText(userExist.display_name, userExist.reg_otp);
-            
             let resendMailOptions = {
                 from: `${appName +' Support'} <ozaappng@gmail.com>`,
                 to: userExist.email,
@@ -390,11 +383,10 @@ router.post("/otpResend", async (req, res) => {
             }
                 // async..await is not allowed in global scope, must use a wrapper
                 async function main() {
-                const info = await googleMailer.sendMail(resendMailOptions);
-                }
-            main().catch('Message Error', console.error);
-
-        }).catch(console.error.bind(console))
+                    const info = await googleMailer.sendMail(resendMailOptions);
+                    }
+                 main().catch('Message Error', console.error);
+            }).catch(console.error.bind(console))
             
             //res.status(200).json({ msg: '200'}) // success message
             res.send({ msg: '200'})
@@ -452,17 +444,16 @@ router.post("/forgetPasswordMobile", async (req, res) => {
                 const mailBody = passwordResetEmail(appName, 'Forget password reset', userExist.display_name, 'this is to notify you that your account has been requested to reset password, If this is not your, contact our support immediately. \n', otpCode, logoImage)
                 const TextBody = passwordResetText(userExist.display_name, otpCode);
                 let mailOptions = {
-                from: `${appName +' Support'} <noreply@ozaapp.com>` ,
-                to: userExist.email,
+                from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                to: [{ email: userExist.email }],
                 subject: 'Forget password reset!',
                 text: TextBody,
                 html: mailBody,
             }
+                mailTransporter.send(mailOptions).then(console.log)
+	            .catch('Email Sending Error ', console.error);
                 // async..await is not allowed in global scope, must use a wrapper
-                async function main() {
-                const info = await transporterMailer.sendMail(mailOptions);
-                }
-            main().catch('Message Error', console.error);
+               
             }).catch(console.error.bind(console))
          //res.status(200).json({ msg: '200'}) // success message
                 
@@ -535,16 +526,15 @@ router.post("/resetPasswordMobile", async (req, res) => {
                     const mailBody = loginEmail(appName, 'Password reset successfully', userExist.display_name, 'this is to notify you that your account password has been reset, If this is not you, contact our support immediately. \n', logoImage)
                     const TextBody = loginText(userExist.display_name, 'this is to notify you that your account password has been reset, If this is not you, contact our support immediately');
                     let mailOptions = {
-                        from: `${appName +' Support'} <noreply@ozaapp.com>`,
-                        to: userExist.email,
+                        from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                        to: [{ email: userExist.email }],
                         subject: 'Password reset successfully!',
                         text: TextBody,
                         html: mailBody,
                     }
-                    async function main() {
-                    const info = await transporterMailer.sendMail(mailOptions);
-                    }
-                main().catch('Message Error', console.error);
+                    mailTransporter.send(mailOptions).then(console.log)
+	                .catch('Email Sending Error ', console.error);
+                    
             }).catch(console.error.bind(console))
  
                 //res.status(200).json({ msg: '200'}) // success message

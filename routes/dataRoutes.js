@@ -9,6 +9,8 @@ const multer = require("multer");
 
 const nodemailer = require("nodemailer");
 const googleMailer = require('../controllers/gmailMailer');
+const mailTransporter = require('../controllers/emailSender');
+
 const transporterMailer = require('../controllers/signupMailer');
 const User = require('../models/User');
 const TransferFund = require('../models/fundTransfer');
@@ -780,17 +782,15 @@ router.post("/block_AccountMobile", isAuth, async (req, res) => {
         const mailBody = loginEmail(appName, 'Account Security', checkUser.display_name, 'this is to notify you that your request to block your account was successful \n Contact admin to unlock the account any time thank you.', logoImage)
         const TextBody = loginText(checkUser.display_name, 'this is to notify you that your request was submitted successfully, your account has been blocked.');
         let mailOptions = {
-            from: `${appName +' Support'} <noreply@ozaapp.com>`,
-            to: checkUser.email,
+            from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+            to: [{ email: checkUser.email }],
             subject: 'Account security!',
             text: TextBody,
             html: mailBody,
         }
-          // async..await is not allowed in global scope, must use a wrapper
-          async function main() {
-            const info = await transporterMailer.sendMail(mailOptions);
-            }
-        main().catch('Message Error', console.error);
+        mailTransporter.send(mailOptions).then(console.log)
+        .catch('Email Sending Error ', console.error);
+
         //console.log('Data route Name ', result.app_name)
        }).catch(console.error.bind(console))
     }   
@@ -862,17 +862,15 @@ router.post("/reset_AccountPINMobile", isAuth, async (req, res) => {
             const mailBody = loginEmail(appName, 'Account Security', checkUser.display_name, 'this is to notify you that your support ticket was submitted successfully, we will get in-touch shortly thank you', logoImage)
             const TextBody = loginText(checkUser.display_name, 'this is to notify you that your request was submitted successfully, your account PIN been updated.');
            let Account_mailOptions = {
-               from: `${appName +' Support'} <noreply@ozaapp.com>`,
-               to: checkUser.email,
+               from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+               to: [{ email: checkUser.email }],
                subject: 'Account security!',
                text: TextBody,
                html: mailBody,
            }
-             // async..await is not allowed in global scope, must use a wrapper
-             async function main() {
-               const info = await transporterMailer.sendMail(Account_mailOptions);
-               }
-           main().catch('Message Error', console.error);
+           mailTransporter.send(Account_mailOptions).then(console.log)
+           .catch('Email Sending Error ', console.error);
+
             }).catch(console.error.bind(console))
            
          }
@@ -953,17 +951,16 @@ router.post("/submit_ticketMobile", isAuth, async (req, res) => {
         const mailBody = loginEmail(appName, 'Open Ticket for Support', checkUser.display_name, `this is to notify you that your support ticket with Ticket ID ${ticketNumber} was submitted successfully, we will get in-touch shortly thank you.`, logoImage)
         const TextBody = loginText(checkUser.display_name, `this is to notify you that your ticket with ID ${ticketNumber} submitted successfully, our staff will get in-touch thank you.`);
         let tickMailOptions = {
-        from: `${appName +' Support'} <noreply@ozaapp.com>`,
-        to: checkUser.email,
+        from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+        to: [{ email: checkUser.email }],
         subject: 'Open Ticket for Support!',
         text: TextBody,
         html: mailBody,
     }
+      mailTransporter.send(tickMailOptions).then(console.log)
+      .catch('Email Sending Error ', console.error);
+
       // async..await is not allowed in global scope, must use a wrapper
-      async function main() {
-        const info = await transporterMailer.sendMail(tickMailOptions);
-        }
-    main().catch('Message Error', console.error);
       }).catch(console.error.bind(console))
     
    }
@@ -1018,17 +1015,17 @@ router.post("/newsletter_subscriptions", async (req, res) => {
           const mailBody = loginEmail(appName, 'New Mailing Subscriptions', 'dear User', `this is to notify you that your subscription to our mailing list was successfully! <br/> Thank you for joining our mailing list.`, logoImage)
           const TextBody = loginText('dear User', `this is to notify you that your mailing request was successfully, you can now receive notifications and update from us.`);
           let tickMailOptions = {
-          from: `${appName+' Support'} <noreply@ozaapp.com>`,
-          to: req.body.userEmail,
+          from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+          to: [{ email: req.body.userEmail }],
           subject: 'Mailing Notification',
           text: TextBody,
           html: mailBody,
       }
+      mailTransporter.send(tickMailOptions).then(console.log)
+      .catch('Email Sending Error ', console.error);
+
         // async..await is not allowed in global scope, must use a wrapper
-        async function main() {
-          const info = await transporterMailer.sendMail(tickMailOptions);
-          }
-      main().catch('Message Error', console.error);
+        
         }).catch(console.error.bind(console))
       
     }
@@ -1087,17 +1084,16 @@ router.post("/submit_ticketWebsite", async (req, res) => {
       const mailBody = loginEmail(appName, 'Support Contact Message', req.body.customer_name, `this is to notify you that your message with Ticket ID ${ticketNumber} was submitted successfully, we will get in-touch shortly thank you.`, logoImage)
       const TextBody = loginText(req.body.customer_name, `this is to notify you that your message with ticket ID ${ticketNumber} was submitted successfully, our staff will get in-touch thank you.`);
       let tickMailOptions = {
-      from: `${appName + ' Support'} <noreply@ozaapp.com>`,
-      to: req.body.customer_email,
+      from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+      to: [{ email: req.body.customer_email }],
       subject: 'Support Contact Message!',
       text: TextBody,
       html: mailBody,
     }
+      mailTransporter.send(tickMailOptions).then(console.log)
+      .catch('Email Sending Error ', console.error);
+
     // async..await is not allowed in global scope, must use a wrapper
-    async function main() {
-      const info = await transporterMailer.sendMail(tickMailOptions);
-      }
-  main().catch('Message Error', console.error);
     }).catch(console.error.bind(console))
   }
 
@@ -1112,17 +1108,16 @@ router.post("/submit_ticketWebsite", async (req, res) => {
     <b>Customer Message </b>  <br/>${req.body.customer_message} <br/>`, logoImage)
     const TextBody = loginText('Admin', `this is to notify you that ${req.body.customer_name} sent you a message from the website contact page with ticket ID ${ticketNumber} kindly review and get in-touch thank you.`);
     let tickMailOptions = {
-    from: `${appName+' Support'} <noreply@ozaapp.com>`,
-    to: 'support@ozaapp.com',
+    from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+    to: [{ email: 'support@ozaapp.com' }],
     subject: 'Online Contact Message!',
     text: TextBody,
     html: mailBody,
   }
+     mailTransporter.send(tickMailOptions).then(console.log)
+      .catch('Email Sending Error ', console.error);
+
   // async..await is not allowed in global scope, must use a wrapper
-  async function main() {
-    const info = await transporterMailer.sendMail(tickMailOptions);
-    }
-main().catch('Message Error', console.error);
   }).catch(console.error.bind(console))
 
   //res.status(200).send({ msg: "200" });
@@ -1182,17 +1177,16 @@ router.post("/submit_webbitYoutubeTicketMobile", isAuth, async (req, res) => {
         Message: ${req.body.ticket_message} \n
         Email ID: ${req.body.email}`);
         let tickMailOptions = {
-        from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
-        to: 'ayoungchief@gmail.com', //'ayoungchief@gmail.com',
+        from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+        to: [{ email: 'ayoungchief@gmail.com' }], //'ayoungchief@gmail.com',
         subject: 'Support ticket from youtube app',
         text: TextBody,
         html: mailBody,
       }
+      mailTransporter.send(tickMailOptions).then(console.log)
+      .catch('Email Sending Error ', console.error);
+
       // async..await is not allowed in global scope, must use a wrapper
-      async function main() {
-        const info = await transporter.sendMail(tickMailOptions);
-        }
-      main().catch('Message Error', console.error);
       }).catch(console.error.bind(console))
 
       //res.status(200).send({ msg: "200" });
@@ -1545,9 +1539,9 @@ router.post("/system_setup", upload.single("file"), async (req, res) => {
           app_logo: imageUrl,
           createdBy: req.body.user_id,
           })
-    saveRecord = await officerData.save();
-    res.status(200).send({msg: "200"});
-  }
+        saveRecord = await officerData.save();
+        res.status(200).send({msg: "200"});
+      }
     
   } catch (err) {
     res.status(500).json(err);

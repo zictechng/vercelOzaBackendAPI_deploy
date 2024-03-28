@@ -9,7 +9,7 @@ const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
 const transporter = require('../controllers/signupMailer');
 const googleMailer = require('../controllers/gmailMailer');
-//const resendMailerTransport = require('../controllers/resendMailer');
+const mailTransporter = require('../controllers/emailSender');
 const multer = require("multer");
 const User = require('../models/User');
 const SystemActivity = require('../models/SystemActivityLogs');
@@ -232,17 +232,15 @@ router.post("/register", async (req, res, next) => {
             const mailBody = registerEmail(appName, 'Account Opening Successfully', userDone.display_name, randomSixDigitNumber, logoImage);
             const TextBody = registerEmailText(userDone.display_name, randomSixDigitNumber);
             let sendMailOptions = {
-               from: `${appName +' Support'} <noreply@ozaapp.com>`,
-               to: req.body.email,
+               from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+               to: [{ email: req.body.email }],
                subject: 'Account Opening Successfully!',
                text: TextBody,
                html: mailBody,
            }
+           mailTransporter.send(sendMailOptions).then(console.log)
+	          .catch('Email Sending Error ', console.error);
              // async..await is not allowed in global scope, must use a wrapper
-             async function main() {
-               const info = await transporter.sendMail(sendMailOptions);
-               }
-            main().catch('Message Error', console.error);
             }).catch(console.error.bind(console))
         
             res.status(201).json({ msg: '201', userCode: userDone }) // success message
@@ -332,19 +330,17 @@ router.post("/registerWebbiit", upload.single("file"), async (req, res, next) =>
             mailBody = registerEmail(appName, 'Account Opening Successfully', userDone.display_name, randomSixDigitNumber)
             const TextBody = registerEmailText(userDone.display_name, randomSixDigitNumber);
             let register_mailOptions = {
-               from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
-               to: userDone.email,
+               from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+               to: [{ email: userDone.email }],
                subject: 'Account Opening Successfully!',
                text: TextBody,
                html: mailBody,
              }
-             // async..await is not allowed in global scope, must use a wrapper
-             async function main() {
-               const info = await transporter.sendMail(register_mailOptions);
-               }
-                main().catch('Message Error', console.error);
+             mailTransporter.send(register_mailOptions).then(console.log)
+	            .catch('Email Sending Error ', console.error);
 
-            }).catch(console.error.bind(console))
+             // async..await is not allowed in global scope, must use a wrapper
+             }).catch(console.error.bind(console))
 
              res.send(201).json({ msg: '201'}) // success message
             
@@ -414,16 +410,15 @@ router.post("/registerWebbiit", upload.single("file"), async (req, res, next) =>
             const TextBody = registerEmailText(userDone.display_name, randomSixDigitNumber);
             let register_mailOptions = {
                from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
-               to: userDone.email,
+               to: [{ email: userDone.email }],
                subject: 'Account Opening Successfully!',
                text: TextBody,
                html: mailBody,
            }
+              mailTransporter.send(register_mailOptions).then(console.log)
+	            .catch('Email Sending Error ', console.error);
              // async..await is not allowed in global scope, must use a wrapper
-             async function main() {
-               const info = await transporter.sendMail(register_mailOptions);
-               }
-            main().catch('Message Error', console.error);
+            
             }).catch(console.error.bind(console))
         
             res.status(201).json({ msg: '201'}) // success message
@@ -495,8 +490,6 @@ router.post("/user_uploadPhoto", isAuth, upload.single("FileData"), async (req, 
                 fs.unlinkSync(`public/images/${req.file.filename}`)
                 return res.json({status: 402, message: 'You need to login to do this'})
             }
-            
-            
             if(userInfo){
               // Upload profile image to cloudinary storage location
               const result = await cloudinary.uploader.upload(ImagePath, ImageOptions);
@@ -723,17 +716,17 @@ router.post("/user_2fa_otpSend", isAuth, async (req, res) => {
                 const mailBody = _2FAEmail(appName, '2FA OTP Code', userInfo.display_name, randomSixDigitNumber, logoImage);
                 const TextBody = _2FAEmailText(userInfo.display_name, randomSixDigitNumber);
                 let _2FAMailOptions = {
-                from: `${appName +' Support'} <noreply@ozaapp.com>`,
-                to: userInfo.email,
+                from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                to:[{ email: userInfo.email }],
                 subject: '2FA OTP Code!',
                 text: TextBody,
                 html: mailBody,
                 }
+                mailTransporter.send(_2FAMailOptions).then(console.log)
+	                .catch('Email Sending Error ', console.error);
+
             // async..await is not allowed in global scope, must use a wrapper
-                async function main() {
-                const info = await transporter.sendMail(_2FAMailOptions);
-                }
-                main().catch('Message Error', console.error);
+               
             }).catch(console.error.bind(console))
 
         res.status(201).json({ msg: '201'}) // success message
@@ -951,17 +944,16 @@ router.post("/user_activate_email", isAuth, async (req, res) => {
             const mailBody = loginEmail(appName, 'Email Notification', userPro.display_name, `this is to notify you that email notification has been ${actionStatus == true? 'Enabled': 'Disabled'} in your account, thank you`, logoImage)
             const TextBody = loginText(userPro.display_name, `this is to notify you that email notification has been ${actionStatus == true? 'Enabled': 'Disabled'} in your account, thank you. \n`);
             let _2FAMailOptions = {
-            from: `${appName +' Support'} <noreply@ozaapp.com>`,
-            to: userPro.email,
+            from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+            to: [{ email: userPro.email }],
             subject: 'Email Notification!',
             text: TextBody,
             html: mailBody,
             }
+            mailTransporter.send(_2FAMailOptions).then(console.log)
+	            .catch('Email Sending Error ', console.error);
+
             // async..await is not allowed in global scope, must use a wrapper
-            async function main() {
-            const info = await transporter.sendMail(_2FAMailOptions);
-            }
-            main().catch('Message Error', console.error);
             }).catch(console.error.bind(console))
         
         res.status(201).json({dataPro: userPro, msg: '201'}) // success message
@@ -1015,17 +1007,17 @@ router.post("/user_activate_2fa_notice", isAuth, async (req, res) => {
             const mailBody = loginEmail(appName, '2FA Authentication Notification', userPro.display_name, `this is to notify you that 2FA authentication has been ${actionStatus == true? 'Enabled': 'Disabled'} in your account, thank you`, logoImage)
             const TextBody = loginText(userPro.display_name, `this is to notify you that 2FA authentication has been ${actionStatus == true? 'Enabled': 'Disabled'} in your account, thank you. \n`);
             let _2FAAuthMailOptions = {
-            from: `${appName +' Support'} <noreply@ozaapp.com>`,
-            to: userPro.email,
+            from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+            to: [{ email: userPro.email }],
             subject: '2FA Authentication Notification!',
             text: TextBody,
             html: mailBody,
             }
+            mailTransporter.send(_2FAAuthMailOptions).then(console.log)
+	            .catch('Email Sending Error ', console.error);
+
             // async..await is not allowed in global scope, must use a wrapper
-            async function main() {
-            const info = await transporter.sendMail(_2FAAuthMailOptions);
-            }
-            main().catch('Message Error', console.error);
+           
         }).catch(console.error.bind(console))
 
         res.status(201).json({data2fa: userPro, msg: '201'}) // success message
@@ -1078,17 +1070,16 @@ router.post("/user_notice_request", isAuth, async (req, res) => {
                 const mailBody = loginEmail(appName, 'In-App Notification', userPro.display_name, `this is to notify you that in-app notification has been ${actionStatus == true? 'Enabled': 'Disabled'} in your account, thank you.`, logoImage)
                 const TextBody = loginText(userPro.display_name, `this is to notify you that in-app notification has been ${actionStatus == true? 'Enabled': 'Disabled'} in your account, thank you. \n`);
                 let _2FAAuthMailOptions = {
-                from: `${appName +' Support'} <noreply@ozaapp.com>`,
-                to: userPro.email,
+                from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                to: [{ email: userPro.email }],
                 subject: 'In-App Notification!',
                 text: TextBody,
                 html: mailBody,
                 }
+                mailTransporter.send(_2FAAuthMailOptions).then(console.log)
+	                .catch('Email Sending Error ', console.error);
                 // async..await is not allowed in global scope, must use a wrapper
-                async function main() {
-                const info = await transporter.sendMail(_2FAAuthMailOptions);
-                }
-                main().catch('Message Error', console.error);
+               
             }).catch(console.error.bind(console))
 
         res.status(201).json({msg: '201'}) // success message

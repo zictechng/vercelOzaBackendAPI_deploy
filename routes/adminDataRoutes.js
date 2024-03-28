@@ -7,10 +7,7 @@ const asyncHandler = require('express-async-handler');
 const bcrypt = require('bcrypt');
 
 const multer = require("multer");
-const {MailtrapClient} = require('mailtrap')
-
-const TOKEN = process.env.EMAIL_API_PASSWORD;
-const client = new MailtrapClient({ token: TOKEN });
+const mailTransporter = require('../controllers/emailSender')
 
 const transporterMailer = require('../controllers/signupMailer');
 const nodemailer = require("nodemailer");
@@ -1475,16 +1472,22 @@ router.post("/user_accountAction/", isAuth, async (req, res) => {
             thank you for choosing ${appName} and we hope you will continue enjoy our services`:`this is to notify you that your account has been flashed with and issue. Kindly contact support for more details and possible resolution.
             Thank you` }`)
             let account_issueEMail = {
-              from: `${appName} <noreply@ozaapp.com>`,
-              to: user.email,
+              from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+              to: [{ email: user.email }],
               subject: 'Account Notification!',
               text: mailText,
               html: mailBody,
             }
-            async function main() {
-            const info = await transporterMailer.sendMail(account_issueEMail);
-                }
-            main().catch('Message Error', console.error);
+              mailTransporter
+              .send(account_issueEMail)
+              .then(console.log)
+              .catch(console.error);
+
+            // async function main() {
+            // const info = await transporterMailer.sendMail(account_issueEMail);
+            //     }
+            // main().catch('Message Error', console.error);
+
             }).catch(console.error.bind(console))
            res.status(201).json({msg: '201'}) // success message
             //console.log("Updated Details", updateUserNow.modifiedCount)
@@ -1550,16 +1553,15 @@ router.post("/user_accountStateAction/", isAuth, async (req, res) => {
                 thank you for choosing ${appName} and we hope you will continue enjoy our services`:`this is to notify you that your account has been flashed with and issue. Kindly contact support for more details and possible resolution.
                 Thank you` }`)
                 let account_issueEMail = {
-                  from: `${appName} <noreply@ozaapp.com>`,
-                  to: user.email,
+                  from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                  to: [{ email: user.email }],
                   subject: 'Account Notification!',
                   text: mailText,
                   html: mailBody,
                 }
-                async function main() {
-                const info = await transporterMailer.sendMail(account_issueEMail);
-                    }
-                main().catch('Message Error', console.error);
+              mailTransporter.send(account_issueEMail).then(console.log)
+              .catch('Email Sending Error ', console.error);
+
                 }).catch(console.error.bind(console))
 
            res.status(201).json({msg: '201'}) // success message
@@ -1625,16 +1627,15 @@ router.post("/user_ApproveAccountAction/", isAuth, async (req, res) => {
                 thank you for choosing ${appName} and we hope you will enjoy our services`:`this is to notify you that your account has been flashed with and issue. Kindly contact support for more details and possible resolution.
                 Thank you` }`)
                 let account_issueEMail = {
-                  from: `${appName +' Support'} <noreply@ozaapp.com>`,
-                  to: user.email,
+                  from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                  to: [{ email: user.email }],
                   subject: 'Account Notification!',
                   text: mailText,
                   html: mailBody,
                 }
-                async function main() {
-                const info = await transporterMailer.sendMail(account_issueEMail);
-                    }
-                main().catch('Message Error', console.error);
+                mailTransporter.send(account_issueEMail).then(console.log)
+                .catch('Email Sending Error ', console.error);
+
                 }).catch(console.error.bind(console))
 
            res.status(201).json({msg: '201'}) // success message
@@ -1728,16 +1729,15 @@ router.post("/adminApprove_document", isAuth, async (req, res) => {
                 thank you for choosing ${appName} and we hope you will enjoy our services`:`this is to notify you that your account document was not approved. Kindly contact support for more details and possible resolution.
                 Thank you` }`)
                 let account_issueEMail = {
-                  from: `${appName +' Support'} <noreply@ozaapp.com>`,
-                  to: user.email,
+                  from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                  to: [{ email: user.email }],
                   subject: 'Account Document Notification!',
                   text: mailText,
                   html: mailBody,
                 }
-                async function main() {
-                const info = await transporterMailer.sendMail(account_issueEMail);
-                    }
-                main().catch('Message Error', console.error);
+                mailTransporter.send(account_issueEMail).then(console.log)
+                .catch('Email Sending Error ', console.error);
+
                 }).catch(console.error.bind(console))
 
            res.status(201).json({msg: '201'}) // success message
@@ -1829,16 +1829,15 @@ router.post("/adminRejected_documentUpload", isAuth, async (req, res) => {
                 const mailText = loginText(user.display_name, `this is to notify you that your ${documentName} has been rejected after been carefully reviewed the documents, Reason: ${documentReason} 
                 you can contact support for more details and possible resolution, Thank you`)
                 let account_issueEMail = {
-                  from: `${appName +' Support'} <noreply@ozaapp.com>`,
-                  to: user.email,
+                  from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                  to: [{ email: user.email }],
                   subject: 'Account Document Notification!',
                   text: mailText,
                   html: mailBody,
                 }
-                async function main() {
-                const info = await transporterMailer.sendMail(account_issueEMail);
-                    }
-                main().catch('Message Error', console.error);
+                mailTransporter.send(account_issueEMail).then(console.log)
+                .catch('Email Sending Error ', console.error);
+
                 }).catch(console.error.bind(console))
 
         // check if user enabled in-app notifications and send notification
@@ -1998,16 +1997,9 @@ router.post("/approveAcctFunding", isAuth, async (req, res) => {
               text: mailText,
               html: mailBody,
             }
-
-            client
-            .send(account_issueEMail)
-            .then(console.log)
-            .catch(console.error);
-
-            // async function main() {
-            // const info = await transporterMailer.sendMail(account_issueEMail);
-            //     }
-            // main().catch('Message Error', console.error);
+            mailTransporter.send(account_issueEMail).then(console.log)
+            .catch('Email Sending Error ', console.error);
+           
             }).catch(console.error.bind(console))
 
         res.status(201).json({msg: '201'}) // success message
@@ -2111,16 +2103,15 @@ router.post("/rejectApproveAcctFunding", isAuth, async (req, res) => {
         We are unable to verify that the transaction was valid and successful! Please you can contact support for more details and possible resolutions.<br><br>
         Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
         let account_issueEMail = {
-          from: `${appName +' Support'} <noreply@ozaapp.com>`,
-          to: userDetail.email,
+          from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+          to: [{ email: userDetail.email }],
           subject: 'Account Funding Notification!',
           text: mailText,
           html: mailBody,
         }
-        async function main() {
-        const info = await transporterMailer.sendMail(account_issueEMail);
-            }
-        main().catch('Message Error', console.error);
+        mailTransporter.send(account_issueEMail).then(console.log)
+        .catch('Email Sending Error ', console.error);
+
         }).catch(console.error.bind(console))
 
         res.status(201).json({msg: '201'}) // success message
@@ -2260,16 +2251,15 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
           </b><br>  Keep it up and keep referring your friends, loves one to continue earning... <br>
           Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
           let account_issueEMail = {
-            from: `${appName +' Sales'} <noreply@ozaapp.com>`,
-            to: checkUser.email,
+            from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+            to: [{ email: checkUser.email }],
             subject: 'Funds Credit Notification!',
             text: mailText,
             html: mailBody,
           }
-          async function main() {
-          const info = await transporterMailer.sendMail(account_issueEMail);
-              }
-          main().catch('Message Error', console.error);
+          mailTransporter.send(account_issueEMail).then(console.log)
+          .catch('Email Sending Error ', console.error);
+
           }).catch(console.error.bind(console))
           }
       }
@@ -2466,16 +2456,15 @@ router.post("/rejectSaleFunding", isAuth, async (req, res) => {
             We are unable to verify that the transaction was valid and successful! Please you can contact support for more details and possible resolutions.<br><br>
             Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
             let account_issueEMail = {
-              from: `${appName+' Sales'} <noreply@ozaapp.com>`,
-              to: userDetail.email,
+              from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+              to: [{ email: userDetail.email }],
               subject: 'Funding Sales Notification!',
               text: mailText,
               html: mailBody,
             }
-            async function main() {
-            const info = await transporterMailer.sendMail(account_issueEMail);
-                }
-            main().catch('Message Error', console.error);
+            mailTransporter.send(account_issueEMail).then(console.log)
+            .catch('Email Sending Error ', console.error);
+
             }).catch(console.error.bind(console))
 
         res.status(201).json({msg: '201'}) // success message
@@ -2762,16 +2751,15 @@ router.post("/messageFeedback_send", isAuth, async (req, res) => {
       
             thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`, logoImage)
             let account_issueEMail = {
-              from: `${appName} <noreply@ozaapp.com>`,
-              to: userDetail.email,
+              from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+              to: [{ email: userDetail.email }],
               subject: 'Account Funding Notification!',
               text: mailText,
               html: mailBody,
             }
-            async function main() {
-            const info = await transporterMailer.sendMail(account_issueEMail);
-                }
-            main().catch('Message Error', console.error);
+            mailTransporter.send(account_issueEMail).then(console.log)
+            .catch('Email Sending Error ', console.error);
+
             }).catch(console.error.bind(console))
 
         res.status(201).json({msg: '201'}) // success message
@@ -2891,16 +2879,15 @@ router.post("/closeUserTicket_message", isAuth, async (req, res) => {
             const mailText = loginText(userDetail.display_name, `This is to notified you that your <b>Ticket ID: ${closeMessage?.tick_id} </b> has been marked completed and closed! If you still have still any issue please, feel free to get back to us. <br><br> 
             Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
             let ticket_issueEMail = {
-              from: `${appName +' Support'} <noreply@ozaapp.com>`,
-              to: userDetail.email,
+              from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+              to: [{ email: userDetail.email }],
               subject: 'Account Funding Notification!',
               text: mailText,
               html: mailBody,
             }
-            async function main() {
-            const info = await transporterMailer.sendMail(ticket_issueEMail);
-                }
-            main().catch('Message Error', console.error);
+            mailTransporter.send(account_issueEMail).then(console.log)
+	          .catch('Email Sending Error ', console.error);
+            
             }).catch(console.error.bind(console))
 
         res.status(201).json({msg: '201'}) // success message
