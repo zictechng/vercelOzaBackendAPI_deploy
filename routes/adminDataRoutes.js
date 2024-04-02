@@ -409,7 +409,7 @@ router.get("/dashboard_userReport", isAuth, async (req, res) => {
 router.get("/user_recentReport", isAuth, async (req, res) => {
   try {
     //get all user count details
-     const allRecentTran = await TransferFund.find().sort({ createdOn: -1 }).limit(10);
+     const allRecentTran = await TransferFund.find().sort({ creditOn: -1 }).limit(10);
     
      //console.log('allRecentTran ', allRecentTran)
       res.send({ msg: '201', 
