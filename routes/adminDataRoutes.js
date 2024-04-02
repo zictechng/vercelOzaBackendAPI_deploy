@@ -718,7 +718,7 @@ router.get("/allUser_transaction", isAuth, async (req, res) => {
     const totalPageNumber = Math.ceil(pageCount / limit); // get the number of pages
 
     //get all user count details
-     const allTransDocument = await TransferFund.find().sort({ createdOn: -1 }).skip(skip).limit(limit);
+     const allTransDocument = await TransferFund.find().sort({ creditOn: -1 }).skip(skip).limit(limit);
 
       res.send({ msg: '201', feedAll: allTransDocument, page: page, limit: limit, totalPage: totalPageNumber, totalRecord: pageCount})
     } catch (err) {
@@ -2281,8 +2281,8 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
      const totalSales = allSales.amount * allSales.tran_rate
     let gTotal = bonusMoney+ + totalSales;
 
-    console.log("Total Sales: " + gTotal);
-    console.log("Total Bonus: " + bonusMoney);
+    //console.log("Total Sales: " + gTotal);
+    //console.log("Total Bonus: " + bonusMoney);
      // credit approval request account here
      if(userDetail){
       const filterUser = { _id: userDetail._id };

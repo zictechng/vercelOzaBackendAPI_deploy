@@ -313,9 +313,9 @@ const processPaymentDetails = async(data, paymentId) =>{
             const userCurrentBalance = userFund.amount - dataReceive.amt
             //const userBalance = userDetails.amount+ +amt_send
   
-            console.log("Current balance: ", userCurrentBalance)
+            //console.log("Current balance: ", userCurrentBalance)
                 if(userFund.acct_cot_pin !== dataReceive.acctPin){
-                  console.log("wrong Pin id: ")
+                  //console.log("wrong Pin id: ")
                   return res.json({status: 404, message: 'Invalid Pin entered' }) // wrong pin
                 }
   
