@@ -473,35 +473,127 @@ router.post("/registerWebbiit", upload.single("file"), async (req, res, next) =>
       
 //   });
 
+
+
 // user profile photo upload here
-router.post("/user_uploadPhoto", isAuth, upload.single("FileData"), async (req, res) => {
+// router.post("/user_uploadPhoto", isAuth, upload.single("FileData"), async (req, res) => {
+//     const file = req.FileData;
+//     //const url = req.protocol + '://' + req.get('host') // this will get the host url directly
+//     const url = process.env.SERVER_BASEURL;
+//     const filterUser = { _id: req.body.userId };
+//     const randomSixDigitNumber = generateRandomNumber();
+//     //console.log("Data submitted ", req.body.userId)
+//        try {
+//             const userInfo = await User.findOne({_id:req.body.userId}).lean().exec()
+
+//             const ImagePath = `public/images/${req.file.filename}`
+
+//             if(!userInfo){
+//                 fs.unlinkSync(`public/images/${req.file.filename}`)
+//                 return res.json({status: 402, message: 'You need to login to do this'})
+//             }
+//             if(userInfo){
+//               // Upload profile image to cloudinary storage location
+//               const result = await cloudinary.uploader.upload(ImagePath, ImageOptions);
+//               //console.log(result);
+//               const imageUrl = result.secure_url
+
+//                 const updateDoc = {
+//                     $set: {
+//                     reg_stage3:'Yes',
+//                     profile_photo: imageUrl != null? imageUrl:'', 
+//                     },
+//                 };
+//             const updateUserNow = await User.updateOne(filterUser, updateDoc);
+                
+//           if(updateUserNow){
+//               // create log here
+//                   const addLogs = await SystemActivity.create({
+//                   log_username: userInfo.email,
+//                   log_name: userInfo.display_name,
+//                   log_acct_number: userInfo?.tag_id,
+//                   log_receiver_name: '',
+//                   log_receiver_number: '',
+//                   log_receiver_bank: '',
+//                   log_country: '',
+//                   log_swift_code: '',
+//                   log_desc:'User update profile photo',
+//                   log_amt: '',
+//                   log_status: 'Successful',
+//                   log_nature:'Photo uploaded',
+//                   })
+//                 }
+//             const userProfile = await User.findOne({ _id: req.body.userId });
+//             const { password, ...others } = userProfile._doc;
+//                  res.status(201).json({ msg: '201', userData: others}) // success message
+//                 }
+//                     //return res.json({status: 402, message: ' User email already exist'})
+//         } catch (error) {
+//             console.error(error);
+//             return res.json({status: 500, message: 'Server error: ' })
+//         }
+//   });
+
+// delete image when error is occurred  during upload
+  router.post("/deleteUploaded_image", isAuth, async (req, res) => {
+    try {
+      const userInfo = await User.findOne({_id:req.body.userId}).lean().exec()
+
+      if(!userInfo){
+       return res.json({status: 402, message: 'You need to login to do this'})
+      }
+          // delete old image from cloudinary
+          const deleteImage = req.body.delete_url;
+          //console.log("Delete Route Called ", req.body.delete_url)
+          await cloudinary.uploader.destroy(deleteImage, 
+          function(err, result) { console.log("Delete Status ", result) })
+
+      const userProfile = await User.findOne({ _id: req.body.userId });
+      const { password, ...others } = userProfile._doc;
+           res.status(201).json({ msg: '201', userData: others}) // success message
+  } catch (error) {
+      console.error(error);
+      return res.json({status: 500, message: 'Server error: ' })
+  }
+
+  })
+
+  // upload user profile image route
+  router.post("/user_uploadPhoto", isAuth, async (req, res) => {
     const file = req.FileData;
     //const url = req.protocol + '://' + req.get('host') // this will get the host url directly
     const url = process.env.SERVER_BASEURL;
     const filterUser = { _id: req.body.userId };
-    const randomSixDigitNumber = generateRandomNumber();
-    //console.log("Data submitted ", req.body.userId)
+    //console.log("Data submitted ", req.body)
        try {
             const userInfo = await User.findOne({_id:req.body.userId}).lean().exec()
 
-            const ImagePath = `public/images/${req.file.filename}`
-
             if(!userInfo){
-                fs.unlinkSync(`public/images/${req.file.filename}`)
-                return res.json({status: 402, message: 'You need to login to do this'})
+             return res.json({status: 402, message: 'You need to login to do this'})
             }
             if(userInfo){
-              // Upload profile image to cloudinary storage location
-              const result = await cloudinary.uploader.upload(ImagePath, ImageOptions);
               //console.log(result);
-              const imageUrl = result.secure_url
-
+              const imageUrl = req.body.image_url;
                 const updateDoc = {
                     $set: {
                     reg_stage3:'Yes',
                     profile_photo: imageUrl != null? imageUrl:'', 
                     },
                 };
+                // delete old image from cloudinary
+                if(userInfo.profile_photo != null || userInfo.profile_photo !==''){
+                    const oldImage = userInfo.profile_photo;
+                    const imageDirectory = oldImage?.split("/")[7];
+                    const public_id = oldImage?.split("/")[8]
+                    const newPublicId = public_id?.split(".")[0]
+                    const deleteImage = imageDirectory+'/'+newPublicId;
+
+                    // console.log('delete old image', oldImage.split("/")[8]);
+                    // console.log('delete directory', oldImage.split("/")[7]);
+                    await cloudinary.uploader.destroy(deleteImage, 
+                    function(err, result) { console.log("Delete Status ", result) })
+                  }
+                
             const updateUserNow = await User.updateOne(filterUser, updateDoc);
                 
           if(updateUserNow){
@@ -532,27 +624,42 @@ router.post("/user_uploadPhoto", isAuth, upload.single("FileData"), async (req, 
         }
   });
 
-  // upload user document verifications route
-router.post("/user_uploadDocument", isAuth, upload.single("documentData"), multerErrorHandling, async (req, res) => {
-    const file = req.documentData;
-    //const baseURL = process.env.BASEURL; // this one get url link from .env variable
-    const url = process.env.SERVER_BASEURL; // this will get the host url directly
-    const filterUser = { _id: req.body.userId };
+  // User upload document ID 
+  router.post("/user_uploadDocument", isAuth, async (req, res) => {
+   const filterUser = { _id: req.body.userId };
     
         try {
             const userInfo = await User.findOne({_id:req.body.userId}).lean().exec()
-            const ImagePath = `public/images/${req.file.filename}`
-                
+            const delete_query = {owners_tag_id: userInfo.tag_id,
+              document_type:'Document'}
+            const userInfoDocument = await DocumentUpload.findOne({owners_tag_id: userInfo.tag_id,
+              document_type:'Document'}).lean().exec()
+               
             if(!userInfo){
-                    fs.unlinkSync(`public/images/${req.file.filename}`)
                     return res.json({status: 402, message: 'You need to login to do this'})
                 } 
                 if(userInfo){
                   // Upload to cloudinary storage location
-                  const result = await cloudinary.uploader.upload(ImagePath, ImageOptions);
+                  //const result = await cloudinary.uploader.upload(ImagePath, ImageOptions);
                   //console.log(result);
+
+                  // delete old image from cloudinary
+                if(userInfoDocument?.document_url != null || userInfoDocument?.document_url !==''){
+                  const defaultDoc = userInfoDocument?.document_url;
+                  const imageDirectory = defaultDoc?.split("/")[7];
+                  const public_id = defaultDoc?.split("/")[8]
+                  const newPublicId = public_id?.split(".")[0]
+                  const deleteImage = imageDirectory+'/'+newPublicId;
+
+                  // console.log('delete old image', oldImage.split("/")[8]);
+                  // console.log('delete directory', oldImage.split("/")[7]);
+                  await cloudinary.uploader.destroy(deleteImage, 
+                  function(err, result) { console.log("Document ID Status ", result) })
+                  const result2 = await DocumentUpload.deleteOne(delete_query);
+                }
+
                   // get the uploaded image url location
-                  const imageUrl = result.secure_url
+                  const imageUrl = req.body.image_url;
 
                     const updateDoc = {
                         $set: {
@@ -562,12 +669,14 @@ router.post("/user_uploadDocument", isAuth, upload.single("documentData"), multe
                     const userDocument = await DocumentUpload.create({
                       document_name: req.body.document_name,
                       document_category: 'Document',
+                      document_type:'Document',
                       owners_tag_id: userInfo.tag_id,
                       document_url: imageUrl != null || imageUrl != undefined ? imageUrl : '',
                       user_id: req.body.userId,
                       document_action: "Pending",
                       document_status: "Pending",
-                    })
+                    })       
+
                 const updateUserNow = await User.updateOne(filterUser, updateDoc);
                     
                 if(userDocument){
@@ -599,36 +708,53 @@ router.post("/user_uploadDocument", isAuth, upload.single("documentData"), multe
   });
 
   // upload user document verifications route
-router.post("/user_upload2fa", isAuth, upload.single("document2FA"), multerErrorHandling, async (req, res) => {
-    const file = req.documentData;
+router.post("/user_upload2fa", isAuth, async (req, res) => {
     const TransID = transactionID(25)
     //const baseURL = process.env.BASEURL; // this one get url link from .env variable
     //const url = req.protocol + '://' + req.get('host') // this will get the host url directly
-    const url = process.env.SERVER_BASEURL;
     const filterUser = { _id: req.body.userId };
 
         try {
             const userInfo = await User.findOne({_id:req.body.userId}).lean().exec()
-            const ImagePath = `public/images/${req.file.filename}`
+            const delete_query = {owners_tag_id: userInfo.tag_id,
+              document_type:'2FA'}
+            const userDocInfo = await DocumentUpload.findOne({owners_tag_id: userInfo.tag_id,
+              document_type:'2FA'}).lean().exec()
 
-                if(!userInfo){
-                    fs.unlinkSync(`public/images/${req.file.filename}`)
+              const deleteDoc = await DocumentUpload.findOne(delete_query)
+              if(!userInfo){
                     return res.json({status: 402, message: 'You need to login to do this'})
                 } 
                 if(userInfo){
                   // Upload to cloudinary storage location
-                  const result = await cloudinary.uploader.upload(ImagePath, ImageOptions);
+                  //const result = await cloudinary.uploader.upload(ImagePath, ImageOptions);
                   // get the uploaded image url location
-                  const imageUrl = result.secure_url
+                  //console.log(userDocInfo)
+                  const imageUrl = req.body.image_url;
 
                     const updateDoc = {
                         $set: {
                         reg_stage5:'Yes',
                         },
                     };
+
+              // delete old image from cloudinary
+              if(userDocInfo){
+                const oldDoc2FA = userDocInfo?.document_url;
+                const imageDirectory = oldDoc2FA?.split("/")[7];
+                const public_id = oldDoc2FA?.split("/")[8]
+                const newPublicId = public_id?.split(".")[0]
+                const deleteImage = imageDirectory+'/'+newPublicId;
+                await cloudinary.uploader.destroy(deleteImage, 
+                function(err, result) { console.log("Doc Delete Status ", result) })
+                
+                const result2 = await DocumentUpload.deleteOne(delete_query);
+              }
+
                     const userDocument = await DocumentUpload.create({
                       document_name: '2FA Document',
                       document_category: '2FA OTP Document',
+                      document_type:'2FA',
                       owners_tag_id: userInfo.tag_id,
                       document_url: imageUrl != null || imageUrl != undefined ? imageUrl : '',
                       user_id: req.body.userId,
@@ -638,6 +764,7 @@ router.post("/user_upload2fa", isAuth, upload.single("document2FA"), multerError
                       document_status: "Pending",
                       track_document: TransID,
                     })
+              
                 const updateUserNow = await User.updateOne(filterUser, updateDoc);
                     
                 if(userDocument){
@@ -833,33 +960,47 @@ router.post("/complete_registration", isAuth, async (req, res) => {
 router.post("/user_uploadProof_address", isAuth, upload.single("FileAddress"), multerErrorHandling, async (req, res) => {
     const file = req.documentData;
     const TransID = transactionID(25)
-    //const baseURL = process.env.BASEURL; // this one get url link from .env variable
-    //const url = req.protocol + '://' + req.get('host') // this will get the host url directly
-    const url = process.env.SERVER_BASEURL;
+    
     const filterUser = { _id: req.body.userId };
 
         try {
             const userInfo = await User.findOne({_id:req.body.userId}).lean().exec()
-            const ImagePath = `public/images/${req.file.filename}`
+            const delete_query = {owners_tag_id: userInfo.tag_id,
+              document_type:'Address'}
+            const userAddrDoc = await DocumentUpload.findOne({owners_tag_id: userInfo.tag_id,
+              document_type:'Address'}).lean().exec()
 
-                if(!userInfo){
-                    fs.unlinkSync(`public/images/${req.file.filename}`)
+              const deleteDoc = await DocumentUpload.findOne(delete_query)
+
+            if(!userInfo){
                     return res.json({status: 402, message: 'You need to login to do this'})
                 } 
                 if(userInfo){
                   // Upload to cloudinary storage location
-                  const result = await cloudinary.uploader.upload(ImagePath, ImageOptions);
+                 // const result = await cloudinary.uploader.upload(ImagePath, ImageOptions);
                   // get the uploaded image url location
-                  const imageUrl = result.secure_url
+                  const imageUrl = req.body.image_url
 
                     const updateDoc = {
                         $set: {
                         reg_stage6:'Yes',
                         },
                     };
+
+                const oldDocAddress = userAddrDoc?.document_url;
+                const imageDirectory = oldDocAddress?.split("/")[7];
+                const public_id = oldDocAddress?.split("/")[8]
+                const newPublicId = public_id?.split(".")[0]
+                const deleteImage = imageDirectory+'/'+newPublicId;
+                await cloudinary.uploader.destroy(deleteImage, 
+                function(err, result) { console.log("Doc Delete Status ", result) })
+                
+                const result2 = await DocumentUpload.deleteOne(delete_query);
+
                     const userDocument = await DocumentUpload.create({
                       document_name: 'Proof of address',
                       document_category: 'User Address Document',
+                      document_type:'Address',
                       owners_tag_id: userInfo.tag_id,
                       document_url: imageUrl != null || imageUrl != undefined ? imageUrl : '',
                       user_id: req.body.userId,

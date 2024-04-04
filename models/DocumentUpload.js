@@ -11,6 +11,9 @@ const DocumentUploadSchema = new mongoose.Schema({
     document_url:{
         type: 'string',
         },
+    document_type:{
+        type: 'string',
+        },
     user_id:{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Users'
