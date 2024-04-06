@@ -37,7 +37,7 @@ connectDB() // calling the database function
 //app.use(logger)
 
 // call the cors here...
-app.use(cors()) // for public usage, remove the corsOptions
+app.use(cors(corsOptions)) // for public usage, remove the corsOptions
 // for private usage, add the corsOptions into the cors middleware
 
 app.use(express.json()) // this is also built-in middleware
