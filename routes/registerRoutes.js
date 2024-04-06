@@ -433,7 +433,7 @@ router.post("/registerWebbiit", upload.single("file"), async (req, res, next) =>
         }
   });
   
-  // this for deleting users photos in the database and folder
+// this for deleting users photos in the database and folder
 // router.post('/deletePhoto', (req, res) => {
 //     console.log(req.body._id);
 //     const userDetails = User.findByIdAndRemove(req.body._id, (err, data) =>{

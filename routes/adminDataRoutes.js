@@ -2203,7 +2203,7 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
         const updateUserBal = await User.updateOne(filterUser, updateUserBalance);
         const updateRef = await Referrals.updateOne(filterReferral, updateReferralStatus);
       
-        // process notifications in different levels
+        // process notifications for receiver referral bonus in different levels
         const addLogs = await SystemActivity.create({
           log_username: '',
           log_name: checkUser.display_name,
@@ -2219,7 +2219,7 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
           log_nature:'Bonus fund Approved',
          })
   
-         // check if user enabled in-app notifications and send notification
+         // check if receiver referral bonus user enabled in-app notifications and send notification
         if(checkUser.receive_app_message == true) {
           const userLogs = Notification.create({
           alert_username: checkUser.email,
@@ -2234,8 +2234,20 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
           alert_read_date: ''
           })
         }
+
+         // create record for funding purposes
+         const fundAccount = FundUserAccount.create({
+          fund_name: checkUser.display_name,
+          fund_number: allSales.tid,
+          fund_tag_id: checkUser.tag_id,
+          amount: addAmount,
+          fund_email: checkUser.email,
+          fund_note: 'Your referral bonus has been approved and credited to your funding account',
+          fund_status: 'Credited',
+          fund_type: 'Referral Bonus'
+        });
   
-        // send email to the account owner
+        // send email to receiver referral bonus account owner
         if(checkUser.receive_email_notification == true){
           fetchApp().then((result) => {
             appName = result.app_name
@@ -2264,43 +2276,45 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
           }
       }
 
-     const currentBal = userDetail.tran_account+ +allSales.amount
-     // check for user signup bonus amount
-     const filterUser = { _id: userDetail._id };
-     if(userDetail.signup_account > 0){
-      
-      bonusMoney = userDetail.signup_account * allSales.tran_rate;
-      const updateUserBonus = {
-        $set: {
-          signup_account: 0,
-          },
-        };
-        const updateUserBalBonus = await User.updateOne(filterUser, updateUserBonus);
-      }
+      // seller details here 
+        const currentBal = userDetail.tran_account+ +allSales.amount
+        // check for user signup bonus amount and give the money to the user
+        const filterUser = { _id: userDetail._id };
+        if(userDetail.signup_account > 0){
+          bonusMoney = userDetail.signup_account * allSales.tran_rate;
+          const updateUserBonus = {
+            $set: {
+              signup_account: 0,
+              },
+            };
+            const updateUserBalBonus = await User.updateOne(filterUser, updateUserBonus);
+          }
 
-     const totalSales = allSales.amount * allSales.tran_rate
-    let gTotal = bonusMoney+ + totalSales;
+        // get naira equivalent for the user funds sales and bonus amount
+          const totalSales = allSales.amount * allSales.tran_rate
+          let gTotal = bonusMoney+ + totalSales;
 
-    //console.log("Total Sales: " + gTotal);
-    //console.log("Total Bonus: " + bonusMoney);
-     // credit approval request account here
-     if(userDetail){
-      const filterUser = { _id: userDetail._id };
-      const filterGeneral = { _id: allSales._id}
-      // update user balance
-      const updateUserAcctBal = {
-        $set: {
-          tran_account: currentBal,
-        },
-      };
+        //console.log("Total Sales: " + gTotal);
+        //console.log("Total Bonus: " + bonusMoney);
 
-      // update general transaction status here
-      const updateGeneralStatus = {
-        $set: {
-          transaction_status: "Successful",
-          approved_date:  Date.now(),
-        },
-      };
+        // credit approval request account here
+        if(userDetail){
+          const filterUser = { _id: userDetail._id };
+          const filterGeneral = { _id: allSales._id}
+          // update user balance
+          const updateUserAcctBal = {
+            $set: {
+              tran_account: currentBal,
+            },
+          };
+
+          // update general transaction status here
+          const updateGeneralStatus = {
+            $set: {
+              transaction_status: "Successful",
+              approved_date:  Date.now(),
+            },
+          };
 
       const updateUserBal = await User.updateOne(filterUser, updateUserAcctBal);
       const updateGeneral = await TransferFund.updateOne(filterGeneral, updateGeneralStatus);
