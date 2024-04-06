@@ -4,7 +4,7 @@ const allowedOrigins = [
     'http://www.zictech-ng.com',
     //'http://localhost:4200',
     'https://www.zictech-ng.com',
-    'http://localhost',
+    //'http://localhost',
     //'http://localhost:3500',
     'https://ozawebservice.onrender.com',
     'http://192.168.1.169:3500',
