@@ -1050,11 +1050,15 @@ router.post("/update_appName", isAuth, async (req, res, next) => {
         const addNew = await AppSetting.create({
         app_short_name: req.body.appDesc,
         app_name: req.body.appName,
-        app_version: req.body.appVersion
+        app_version: req.body.appVersion,
+        app_update_note: req.body.updateNote,
+        app_update_btn_text: req.body.updateBtnText,
+        app_updateShowIcon: req.body.updateIcon,
+        app_updateTitle: req.body.updateTitle
         //user_policy
         });
        
-        console.log(' res ', addNew)
+        //console.log(' res ', addNew)
         if (addNew?._id) {
         res.send({ msg: "201", message: " Record created successfully" });
         } else {
@@ -1067,7 +1071,11 @@ router.post("/update_appName", isAuth, async (req, res, next) => {
       $set: {
         app_short_name: req.body.appDesc,
         app_name: req.body.appName,
-        app_version: req.body.appVersion
+        app_version: req.body.appVersion,
+        app_update_note: req.body.updateNote,
+        app_update_btn_text: req.body.updateBtnText,
+        app_updateShowIcon: req.body.updateIcon,
+        app_updateTitle: req.body.updateTitle
           },
       }
       const updateRead = await AppSetting.updateOne(updateDoc);

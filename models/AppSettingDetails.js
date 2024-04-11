@@ -59,6 +59,18 @@ const systemSettingSchema = new mongoose.Schema({
         type: String,
         default: false,
     },
+    app_update_note:{
+        type: String,
+       },
+    app_update_btn_text:{
+        type: String,
+        },
+    app_updateShowIcon:{
+        type: String,
+        },
+    app_updateTitle:{
+        type: String,
+        },
 
     app_state: {
         type: String,

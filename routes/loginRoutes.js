@@ -374,19 +374,18 @@ router.post("/otpResend", async (req, res) => {
             // const mailBody = registerEmail(appName, 'OTP Code', userExist.display_name, userExist.reg_otp, logoImage);
             const TextBody = registerEmailText(userExist.display_name, userExist.reg_otp);
             let resendMailOptions = {
-                from: `${appName +' Support'} <ozaappng@gmail.com>`,
-                to: userExist.email,
+                from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                to: [{ email: userExist.email }],
                 subject: 'New OTP Code For Account Activation!',
                 text: TextBody,
                 html: `<h4> Hello ${userExist.display_name + ', Your new OTP Code Is '}</h4>\n
                 <h2>${userExist.reg_otp}</h2> \nUse this to activate your account, thank you.`,
             }
+                mailTransporter.send(resendMailOptions).then(console.log)
+	            .catch('Email Sending Error ', console.error);
+
                 // async..await is not allowed in global scope, must use a wrapper
-                async function main() {
-                    const info = await googleMailer.sendMail(resendMailOptions);
-                    }
-                 main().catch('Message Error', console.error);
-            }).catch(console.error.bind(console))
+                }).catch(console.error.bind(console))
             
             //res.status(200).json({ msg: '200'}) // success message
             res.send({ msg: '200'})
