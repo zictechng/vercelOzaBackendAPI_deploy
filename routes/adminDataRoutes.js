@@ -2198,6 +2198,7 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
           const updateReferralStatus = {
           $set: {
             ref_status: 'Approved',
+            ref_amt: checkTradeRate.bonus_rate,
             ref_approvedDate: Date.now()
             },
           };
