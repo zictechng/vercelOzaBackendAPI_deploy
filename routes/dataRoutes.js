@@ -130,6 +130,24 @@ router.get("/profile/:id", async (req, res) => {
     }
   });
 
+  router.get("/getPendingOtp/:id", async (req, res) => {
+    let userId = req.params.id;
+    //console.log(userId)
+    try {
+      const userDetails = await User.findOne({ _id: userId });
+      if(!userDetails){
+        return res.json({status: 404, message: 'No record found'})
+      }
+      if(userDetails){
+        const { password, ...others } = userDetails._doc; // this will remove password from the details send to server.
+      res.status(200).json({msg: '200', infoData: others})
+      }
+    } catch (err) {
+      res.status(500).json(err.message);
+      console.log(err.message);
+    }
+  });
+
   // get current user account details/profile here..
 router.get("/userProfileMobile/:id", isAuth, async (req, res) => {
   let userId = req.params.id;
