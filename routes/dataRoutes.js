@@ -105,6 +105,7 @@ router.get("/fetchApp_info", async (req, res) => {
 // get current user account details/profile here..
 router.get("/profile/:id", async (req, res) => {
     let userId = req.params.id;
+    console.log(userId)
     try {
       const userDetails = await User.findOne({ _id: userId });
      //   const userTransacSuccess = await TransferFund.aggregate([
@@ -510,7 +511,7 @@ router.get("/user_referrals/:id",isAuth, async (req, res) => {
           // ]}
           // Query base on some conditions here
           const allReferral = await Referrals.find({createdBy: userId}) 
-        .sort({ creditOn: -1 })
+        .sort({ createdOn: -1 })
         .skip(skip)
         .limit(itemsPerPage);
         //console.log(" Total Records is: ", countAll);

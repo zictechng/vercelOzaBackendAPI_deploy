@@ -190,20 +190,20 @@ router.post("/register", async (req, res, next) => {
             // create referral here
             let userDetails = await User.findOne({tag_id: req.body.share_code });
              
-             if(userDetails){
-              // check if referral bonus is active at this moment from application settings
-              let referralBonusStatus = await AppSetting.findOne();
-              const checkTradeRate = await GetRate.findOne();
+          if(userDetails){
+          // check if referral bonus is active at this moment from application settings
+          let referralBonusStatus = await AppSetting.findOne();
+          const checkTradeRate = await GetRate.findOne();
 
-                const createReferral = await UserReferral.create({
-                    ref_mainEmail: userDetails.email,
-                    ref_mainTag: userDetails.tag_id,
-                    ref_userEmail: req.body.email,
-                    ref_userName: req.body.display_name,
-                    ref_status: 'Pending',
-                    ref_state: referralBonusStatus.app_referral_bonus,
-                    createdBy: userDetails._id,
-                   });
+            const createReferral = await UserReferral.create({
+                ref_mainEmail: userDetails.email,
+                ref_mainTag: userDetails.tag_id,
+                ref_userEmail: req.body.email,
+                ref_userName: req.body.display_name,
+                ref_status: 'Pending',
+                ref_state: referralBonusStatus.app_referral_bonus,
+                createdBy: userDetails._id,
+                });
              }
            // create log here
            const addLogs = await SystemActivity.create({
