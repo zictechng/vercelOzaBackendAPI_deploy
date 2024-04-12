@@ -108,6 +108,9 @@ router.get("/profile/:id", async (req, res) => {
     console.log(userId)
     try {
       const userDetails = await User.findOne({ _id: userId });
+      if(!userDetails){
+        return res.json({status: 404, message: 'No record found'})
+      }
      //   const userTransacSuccess = await TransferFund.aggregate([
     //     { $match: { createdBy: userId } },
     //     {
