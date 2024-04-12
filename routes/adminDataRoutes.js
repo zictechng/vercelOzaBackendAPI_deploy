@@ -437,7 +437,7 @@ router.get("/activeUser_details", isAuth, async (req, res) => {
      const allActive = await User.find({acct_status: 'Active'}).sort({ createdOn: -1 }).skip(skip).limit(limit);
     
       res.send({ msg: '201', 
-      feedAll: allActive})
+      feedAll: allActive, page: page, limit: limit, totalPage: totalPageNumber, totalRecord: pageCount})
     } catch (err) {
     res.status(500).json(err.message);
     console.log(err.message);
@@ -641,7 +641,7 @@ router.get("/userAcctFunding_details", isAuth, async (req, res) => {
   let page = parseInt(req.query.pageNumber);
   let limit = parseInt(req.query.pageLimit);
   if(!page) page = 1;
-  if(!limit) limit = 5;
+  if(!limit) limit = 10;
 
   const skip = (page - 1) * limit;
   try {
