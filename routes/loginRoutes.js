@@ -372,28 +372,29 @@ router.post("/otpResend", async (req, res) => {
             const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
             // const mailBody = registerEmail(appName, 'OTP Code', userExist.display_name, userExist.reg_otp, logoImage);
             const TextBody = registerEmailText(userExist.display_name, userExist.reg_otp);
-            // let resendMailOptions = {
-            //     from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
-            //     to: [{ email: userExist.email }],
-            //     subject: 'New OTP Code For Account Activation!',
-            //     text: TextBody,
-            //     html: `<h4> Hello ${userExist.display_name + ', Your new OTP Code Is '}</h4>\n
-            //     <h2>${userExist.reg_otp}</h2> \nUse this to activate your account, thank you.`,
-            // }
-            //     mailTransporter.send(resendMailOptions).then(console.log)
-	        //     .catch('Email Sending Error ', console.error);
-                let mailResendOptions = {
-                    from: `${appName +' Support'} <noreply@ozaapp.com>`,
-                    to: userExist.email,
-                    subject: 'New OTP Code For Account Activation!',
-                    text: TextBody,
-                    html: `<h4> Hello ${userExist.display_name + ', Your new OTP Code Is '}</h4>\n
-                    <h2>${userExist.reg_otp}</h2> \nUse this to activate your account, thank you.`,
-                }
-                async function main() {
-                const info = await transporterMailer.sendMail(mailResendOptions);
-                        }
-                    main().catch('Message Error', console.error);
+            let resendMailOptions = {
+                from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                to: [{ email: userExist.email }],
+                subject: 'New OTP Code For Account Activation!',
+                text: TextBody,
+                html: `<h4> Hello ${userExist.display_name + ', Your new OTP Code Is '}</h4>\n
+                <h2>${userExist.reg_otp}</h2> \nUse this to activate your account, thank you.`,
+            }
+                mailTransporter.send(resendMailOptions).then(console.log)
+	            .catch('Email Sending Error ', console.error);
+                
+                // let mailResendOptions = {
+                //     from: `${appName +' Support'} <noreply@ozaapp.com>`,
+                //     to: userExist.email,
+                //     subject: 'New OTP Code For Account Activation!',
+                //     text: TextBody,
+                //     html: `<h4> Hello ${userExist.display_name + ', Your new OTP Code Is '}</h4>\n
+                //     <h2>${userExist.reg_otp}</h2> \nUse this to activate your account, thank you.`,
+                // }
+                // async function main() {
+                // const info = await transporterMailer.sendMail(mailResendOptions);
+                //         }
+                //     main().catch('Message Error', console.error);
 
                 // async..await is not allowed in global scope, must use a wrapper
                 }).catch(console.error.bind(console))
