@@ -382,7 +382,7 @@ router.post("/otpResend", async (req, res) => {
             }
                 mailTransporter.send(resendMailOptions).then(console.log)
 	            .catch('Email Sending Error ', console.error);
-                
+
                 // let mailResendOptions = {
                 //     from: `${appName +' Support'} <noreply@ozaapp.com>`,
                 //     to: userExist.email,
@@ -401,12 +401,12 @@ router.post("/otpResend", async (req, res) => {
             
             //res.status(200).json({ msg: '200'}) // success message
             res.send({ msg: '200'})
-        }
-        else{
-            console.log('OTP Operation: Something went wrong');
-        }
+            }
+            else{
+                console.log('OTP Operation: Something went wrong');
+            }
         } catch (err) {
-    res.status(500).send({ msg: "500" });
+        res.status(500).send({ msg: "500" });
     }
     });
 
