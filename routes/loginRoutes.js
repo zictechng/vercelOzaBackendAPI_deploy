@@ -329,32 +329,30 @@ router.post("/otp_verify", async (req, res) => {
 router.post("/otpResend", async (req, res) => {
     //const file = req.file;
     const filter = req.body ;
-    const filterUser = { email: req.body.email };
     //console.log("OTP Data from APP", req.body);
-
-       //check in input fields is empty
+  //check in input fields is empty
     if(filter.email == ''){
         return res.json({status: 400, message: 'Email ID missing'})
         } 
     
     try {
     // Check if user exist
-    const userExist = await User.findOne({email: filter.email})
+    const userExistResend = await User.findOne({email: filter.email})
     
-    if(!userExist){
+    if(!userExistResend){
         //console.log("OTP Data from APP", userExist);
         return res.json({status: 401, message: ' User not found'})
         }
     
-        if (userExist.acct_status != 'Pending'){
+        if (userExistResend.acct_status != 'Pending'){
             //console.log("OTP not matched ");
             return res.json({status: 404, message: ' Sorry, account not required OTP'})
             }
-        if(userExist.acct_status == 'Pending'){
+        if(userExistResend.acct_status == 'Pending'){
             // create log here
             const addLogs = SystemActivity.create({
-            log_username: userExist.email,
-            log_name: userExist.display_name,
+            log_username: userExistResend.email,
+            log_name: userExistResend.display_name,
             log_acct_number: '',
             log_receiver_name: '',
             log_receiver_number: '',
@@ -369,34 +367,17 @@ router.post("/otpResend", async (req, res) => {
             fetchApp().then((result) =>{
             appName = result.app_name
             appLogo = result.app_logo
-            const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-            // const mailBody = registerEmail(appName, 'OTP Code', userExist.display_name, userExist.reg_otp, logoImage);
-            const TextBody = registerEmailText(userExist.display_name, userExist.reg_otp);
+            const TextBody = registerEmailText(userExistResend.display_name, userExistResend.reg_otp);
             let resendMailOptions = {
                 from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
-                to: [{ email: userExist.email }],
+                to: [{ email: userExistResend.email }],
                 subject: 'New OTP Code For Account Activation!',
                 text: TextBody,
-                html: `<h4> Hello ${userExist.display_name + ', Your new OTP Code Is '}</h4>\n
-                <h2>${userExist.reg_otp}</h2> \nUse this to activate your account, thank you.`,
+                html: `<h4> Hello ${userExistResend.display_name + ', Your new OTP Code Is '}</h4>\n
+                <h2>${userExistResend.reg_otp}</h2> \nUse this to activate your account, thank you.`,
             }
                 mailTransporter.send(resendMailOptions).then(console.log)
 	            .catch('Email Sending Error ', console.error);
-
-                // let mailResendOptions = {
-                //     from: `${appName +' Support'} <noreply@ozaapp.com>`,
-                //     to: userExist.email,
-                //     subject: 'New OTP Code For Account Activation!',
-                //     text: TextBody,
-                //     html: `<h4> Hello ${userExist.display_name + ', Your new OTP Code Is '}</h4>\n
-                //     <h2>${userExist.reg_otp}</h2> \nUse this to activate your account, thank you.`,
-                // }
-                // async function main() {
-                // const info = await transporterMailer.sendMail(mailResendOptions);
-                //         }
-                //     main().catch('Message Error', console.error);
-
-                // async..await is not allowed in global scope, must use a wrapper
                 }).catch(console.error.bind(console))
             
             //res.status(200).json({ msg: '200'}) // success message

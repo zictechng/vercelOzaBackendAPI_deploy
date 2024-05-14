@@ -169,7 +169,7 @@ This email, its attachment and any rights attaching hereto are, unless the conte
     </html> `
 
 const registerEmailText = (sendReceiverName, otpCode) =>
-    `Hello ${sendReceiverName}, this is to notify you that your has been opened successfully, your account officer will contact you shortly for further details, thank you. \n
+    `Hello ${sendReceiverName}, this is to notify you that your account has been opened successfully, your account officer will contact you shortly for further details, thank you. \n
     OTP Code ${otpCode}, Use this code to verify your account before you can be able to login.`
 
     const _2FAEmail = (sendCompanyName, sendTitle, sendReceiverName, otpCode, logo) =>
