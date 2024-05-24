@@ -410,7 +410,7 @@ router.post("/forgetPasswordMobile", async (req, res) => {
             //console.log("OTP Data from APP", userExist);
             return res.json({status: 404, message: ' User not found'})
             }
-            else if(userExist){
+        if(userExist){
                     // just update one row
             //const updateUserNow = await User.updateOne(filterUser, updateActStatus);
             // create log here
@@ -441,13 +441,13 @@ router.post("/forgetPasswordMobile", async (req, res) => {
                 subject: 'Forget password reset!',
                 text: TextBody,
                 html: mailBody,
-            }
+                }
                 mailTransporter.send(resetPasswordMailSend).then(console.log)
 	            .catch('Email Sending Error ', console.error);
-            }).catch(console.error.bind(console))
-         //res.status(200).json({ msg: '200'}) // success message
+                 }).catch(console.error.bind(console))
+                //res.status(200).json({ msg: '200'}) // success message
                 
-            res.send({ msg: '200', otpPin: otpCode, myEmail:userExist.email })
+             res.send({ msg: '200', otpPin: otpCode, myEmail:userExist.email })
             }
             else{
                 console.log('OTP Operation: Something went wrong');
