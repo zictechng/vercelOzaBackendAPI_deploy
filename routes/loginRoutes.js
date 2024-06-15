@@ -397,6 +397,7 @@ router.post("/forgetPasswordMobile", async (req, res) => {
         const filter = req.body ;
         const filterUser = { email: req.body.user_email };
         const otpCode = generateRandomNumber()
+        console.log(filter);
            //check in input fields is empty
         if(filter.user_email == '' || filter.user_email == null){
             return res.json({status: 400, message: 'Some fields are missing'})
@@ -410,9 +411,8 @@ router.post("/forgetPasswordMobile", async (req, res) => {
             //console.log("OTP Data from APP", userExist);
             return res.json({status: 404, message: ' User not found'})
             }
-        if(userExist){
-                    // just update one row
-            //const updateUserNow = await User.updateOne(filterUser, updateActStatus);
+        
+            // if user email found run the below command
             // create log here
                 const addLogs = SystemActivity.create({
                 log_username: userExist.username,
@@ -448,10 +448,6 @@ router.post("/forgetPasswordMobile", async (req, res) => {
                 //res.status(200).json({ msg: '200'}) // success message
                 
              res.send({ msg: '200', otpPin: otpCode, myEmail:userExist.email })
-            }
-            else{
-                console.log('OTP Operation: Something went wrong');
-            }
             } catch (err) {
         res.status(500).send({ msg: "500" });
         }
