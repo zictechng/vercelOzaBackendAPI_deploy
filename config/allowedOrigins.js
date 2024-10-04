@@ -10,7 +10,8 @@ const allowedOrigins = [
     'http://192.168.1.169:3500',
     'https://admin.ozaapp.com',
     'https://adminoffice.ozaapp.com',
-    'https://ozabackendapi.ozaapp.com'
+    'https://ozabackendapi.ozaapp.com',
+    'https://ozaapp.com'
 ]
 
 // these are the url that we want to be able to access our api end point
