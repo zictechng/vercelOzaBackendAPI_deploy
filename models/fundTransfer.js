@@ -25,6 +25,8 @@ const transferSchema = new Schema({
     trans_method:String,
     currency_level: String,
     tran_rate: String,
+    payment_proof_url: String,
+    payment_proofDoc_type: String,
     trans_balance: 
     {
         type: Number,

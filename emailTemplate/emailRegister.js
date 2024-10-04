@@ -92,17 +92,17 @@ const registerEmail = (sendCompanyName, sendTitle, sendReceiverName, otpCode, lo
                 <tr>
                     <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
                         <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                        Hello ${sendReceiverName}, this is to notify you that your account has been opened successfully, your account officer will contact you shortly for more details, thank you.
+                        Hello ${sendReceiverName}, this is to notify you that your account has been created successfully. <br>Next step is to activate your account, use the OTP code below to activate your account.
                         </p>
                     </td>
                 </tr>
                 <tr>
-                      <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                      <h3 style="font-size: 30px; font-weight: 800; line-height: 36px; color: #333333; margin: 0;">
+                      <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 20px; padding-top: 10px;">
+                      <h3 style="font-size: 20px; font-weight: 800; line-height: 36px; color: #333333; margin: 0;">
                         OTP Code ${otpCode}
                       </h3>
                           <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                          Use this code to verify your account before you can be able to login.
+                          Use this code to activate your account before you can be able to login.
                           </p>
                       </td>
                   </tr>
@@ -265,17 +265,17 @@ const registerEmailText = (sendReceiverName, otpCode) =>
                 <tr>
                     <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
                         <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                        Hello ${sendReceiverName}, this is to notify you that your 2FA OTP code has arrival, thank you.
+                        Hello ${sendReceiverName}, this is your 2FA security code.
                         </p>
                     </td>
                 </tr>
                 <tr>
                       <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
                       <h3 style="font-size: 30px; font-weight: 800; line-height: 36px; color: #333333; margin: 0;">
-                        2FA OTP Code ${otpCode}
+                        2FA OTP Security Code ${otpCode}
                       </h3>
                           <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                          Use this code to verify your account! Write this code in a white clean paper boldly and take a selfie with it and then upload it via the mobile app.
+                          Use this code to confirm your account ownership when ask! Keep the OTP security code safe for future reference and do not share it with an unknown person's.
                           </p>
                       </td>
                   </tr>
@@ -438,7 +438,7 @@ This email, its attachment and any rights attaching hereto are, unless the conte
                 <tr>
                     <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
                         <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                        Hello ${sendReceiverName}, ${sendMsg} \u20A6${new Intl.NumberFormat().format(amt)} \n Transaction ID is ${tran_id}  \n Thank you
+                        Hello ${sendReceiverName}, ${sendMsg} \n Transaction ID is ${tran_id}  \n Thank you
                         </p>
                     </td>
                 </tr>
@@ -514,7 +514,7 @@ This email, its attachment and any rights attaching hereto are, unless the conte
 </body>
     </html> `
 
-    const transactEmailText = (sendReceiverName, msg, amt, tarnsId) =>
-    `Hello ${sendReceiverName}, ${msg} \u20A6${new Intl.NumberFormat().format(amt)}. \n Transaction ID is ${tarnsId}`
+    const transactEmailText = (sendReceiverName, msg, tarnsId) =>
+    `Hello ${sendReceiverName}, ${msg}. \n Transaction ID is ${tarnsId}`
 
 module.exports = {registerEmail, registerEmailText,_2FAEmail,_2FAEmailText,transactEmail ,transactEmailText}

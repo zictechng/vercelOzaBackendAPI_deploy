@@ -19,6 +19,14 @@ const systemSettingSchema = new mongoose.Schema({
         type: Number,
         default: 0.0
     },
+    app_maxi_withdrawal:{
+        type: Number,
+        default: 0.0
+    },
+    app_mini_withdrawal:{
+        type: Number,
+        default: 0.0
+    },
     app_paypal_bnt:{
         type: Boolean,
         default: false,
@@ -81,6 +89,10 @@ const systemSettingSchema = new mongoose.Schema({
         default: true
     },
     app_referral_bonus:{
+        type: Boolean,
+        default: false,
+    },
+    app_referral_percent:{
         type: Boolean,
         default: false,
     },

@@ -16,7 +16,8 @@ const SystemActivity = require('../models/SystemActivityLogs');
 const AppSetting = require('../models/AppSettingDetails')
 const userBankDetails = require('../models/UserBankDetails');
 const UserReferral = require('../models/referralUser');
-const GetRate = require('../models/businessRate')
+const GetRate = require('../models/businessRate');
+const TransferFund = require('../models/fundTransfer');
 const nodemailer = require("nodemailer");
 
 //const transporter = require('../controllers/mailSender');
@@ -127,7 +128,7 @@ router.post("/register", async (req, res, next) => {
     const dataReceived = {display_name: req.body.display_name, share_code: req.body.share_code,
     gender: req.body.gender, dob: req.body.dob, email: req.body.email, username: req.body.username,
     password: req.body.password, phone: req.body.phone, state: req.body.state, city: req.body.city,
-    currency_type: req.body.currency_type, acct_type: req.body.acct_type, country: req.body.country,
+    currency_type: req.body.currency_type, acct_type: req.body.acct_type, country: req.body.user_country,
     address: req.body.address };
     
     //get the object values of the request properties received
@@ -164,7 +165,7 @@ router.post("/register", async (req, res, next) => {
     
      // now we can destruction the variable
      const userObject = { display_name, gender, dob, email, phone, state, city, currency_type,
-        acct_type, "tag_id": userTagNumber, username, "password": hashedPwd, country, address, "reg_otp": randomSixDigitNumber }
+        acct_type, "tag_id": userTagNumber, username, "password": hashedPwd, "country":req.body.user_country, address, "reg_otp": randomSixDigitNumber }
         
         //console.log("details to save", dataReceived);
 
@@ -213,7 +214,7 @@ router.post("/register", async (req, res, next) => {
             log_receiver_name: '',
             log_receiver_number: '',
             log_receiver_bank: '',
-            log_country: '',
+            log_country: req.body.user_country,
             log_swift_code: '',
             log_desc:'New user account registered',
             log_amt: '',
@@ -229,16 +230,18 @@ router.post("/register", async (req, res, next) => {
             appLogo = result.app_logo
             const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
 
-            const mailBody = registerEmail(appName, 'Account Opening Successfully', userDone.display_name, randomSixDigitNumber, logoImage);
+            const mailBody = registerEmail(appName, 'Congratulations', userDone.display_name, randomSixDigitNumber, logoImage);
             const TextBody = registerEmailText(userDone.display_name, randomSixDigitNumber);
             let sendMailOptions = {
                from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
                to: [{ email: req.body.email }],
-               subject: 'Account Opening Successfully!',
+               subject: 'Account Opened Successfully!',
                text: TextBody,
                html: mailBody,
            }
-           mailTransporter.send(sendMailOptions).then(console.log)
+           mailTransporter.send(sendMailOptions).then(response => {
+            console.log("Signup Email Sent Status ", response)
+           })
 	          .catch('Email Sending Error ', console.error);
              // async..await is not allowed in global scope, must use a wrapper
             }).catch(console.error.bind(console))
@@ -251,184 +254,7 @@ router.post("/register", async (req, res, next) => {
         }
        } catch (err) {
           //res.send(500).send({ msg: "500" });
-          res.json({status: 500, msg: '500'})
-        }
-  });
-
-  // route to register user for webbiit youtube app
-router.post("/registerWebbiit", upload.single("file"), async (req, res, next) => {
-    const file = req.file;
-    const imageUrl = '';
-    //const url = req.protocol + '://' + req.get('host') // this will get the host url directly
-
-    //const filter = { _id: req.body.display_name };
-    const randomSixDigitNumber = generateRandomNumber();
-    //console.log("Data submitted ", req.body)
-    
-    const dataReceived = {display_name: req.body.display_name, share_code: req.body.share_code,
-    gender: req.body.gender, dob: req.body.dob, email: req.body.email, username: req.body.username,
-    password: req.body.password, phone: req.body.phone, state: req.body.state, city: req.body.city,
-    currency_type: req.body.currency_type, acct_type: req.body.acct_type, country: req.body.country,
-    address: req.body.address };
-    
-    //get the object values of the request properties received
-    const {display_name, gender,
-        dob, email, username, password, phone, state, city, currency_type,
-        acct_type, country, address, image_photo} = req.body
-       
-    // if(!username || !password || !surname || !first_name || !gender || !dob || !email || !address ){
-    //     return res.status(400).json({msg: '400'}) // all fields are required
-    // }
-     if(!dataReceived.display_name ){
-        return res.json({status: 404, message: ' All fields are required'})
-        //return res.status(400).json({msg: '400'}) // all fields are required
-    }
-      try {
-    // Check if user already exist
-    const userExist = await User.findOne({email}).lean().exec()
-    if(userExist){
-        return res.json({status: 409, message: ' User email already exist'})
-        //return res.status(409).json({msg: '409'}) // user already exist
-    }
-    // Check if phone already exist
-    const userPhoneExist = await User.findOne({phone}).lean().exec()
-    if(userPhoneExist){
-        return res.json({status: 403, message: ' User email already exist'})
-        //return res.status(409).json({msg: '409'}) // user already exist
-    }
-    // if user upload image file run this code
-    if(file){
-        const imageUrl = "/images/" + file.filename;
-    // hash the password here
-     const hashedPwd = await bcrypt.hash(password, 10) // salt rounds
-    
-     // now we can destruction the variable
-     const userObject = { display_name, gender, dob, email, phone, state, city, currency_type,
-        acct_type, username, "password": hashedPwd, "password_plain": password, country, address, "image_photo": imageUrl, "reg_otp": randomSixDigitNumber }
-        //now let create/save the user details
-            const user = await User.create(userObject)
-            if(user){
-                 // create log here
-           const addLogs = await SystemActivity.create({
-            log_username: user.email,
-            log_name: user.display_name,
-            log_acct_number: user.tag_id,
-            log_receiver_name: '',
-            log_receiver_number: '',
-            log_receiver_bank: '',
-            log_country: '',
-            log_swift_code: '',
-            log_desc:'New user account added',
-            log_amt: '',
-            log_status: 'Successful',
-            log_nature:'New user registration',
-           });
-           const userDone = await User.findOne({email: req.body.email})
-           // email notification sending
-           fetchApp().then((result) =>{
-            appName = result.app_name ;
-            mailBody = registerEmail(appName, 'Account Opening Successfully', userDone.display_name, randomSixDigitNumber)
-            const TextBody = registerEmailText(userDone.display_name, randomSixDigitNumber);
-            let register_mailOptions = {
-               from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
-               to: [{ email: userDone.email }],
-               subject: 'Account Opening Successfully!',
-               text: TextBody,
-               html: mailBody,
-             }
-             mailTransporter.send(register_mailOptions).then(console.log)
-	            .catch('Email Sending Error ', console.error);
-
-             // async..await is not allowed in global scope, must use a wrapper
-             }).catch(console.error.bind(console))
-
-             res.send(201).json({ msg: '201'}) // success message
-            
-              } else{
-            //res.send(401).json({ msg: '401'}) 
-            res.json({status: 401, msg: '401'}) // invalid user details
-            }
-    }
-    // if user did upload image file, run this
-    else if(!file){
-       // const imageUrl = "/images/" + file.filename;
-    // hash the password here
-     const hashedPwd = await bcrypt.hash(password, 10) // salt rounds
-    
-     // now we can destruction the variable
-     const userObject = { display_name, gender, dob, email, phone, state, city, currency_type,
-        acct_type, "tag_id": userTagNumber, username, "password": hashedPwd, "password_plain": password, country, address, "reg_otp": randomSixDigitNumber }
-        
-        //console.log("details to save", dataReceived);
-     
-        //now let create/save the user details
-            const user = await User.create(userObject)
-            if(user){
-            let userDetails = await User.findOne({tag_id: req.body.share_code });
-            
-            const filterUser = { _id: userDetails._id };
-            const updateDocUser = {
-                $set: {
-                    acct_status: 'Active',
-                 },
-              };
-        const updateUserNow = await User.updateOne(filterUser, updateDocUser);
-            
-            // create referral here
-             if(userDetails){
-                const createReferral = await UserReferral.create({
-                    ref_mainEmail: userDetails.email,
-                    ref_mainTag: userDetails.tag_id,
-                    ref_userEmail: req.body.email,
-                    ref_userName: req.body.display_name,
-                    ref_status: 'Pending',
-                    createdBy: userDetails._id
-                   });
-             }
-           // create log here
-           const addLogs = await SystemActivity.create({
-            log_username: user.username,
-            log_name: user.display_name,
-            log_acct_number: user.tag_id,
-            log_receiver_name: '',
-            log_receiver_number: '',
-            log_receiver_bank: '',
-            log_country: '',
-            log_swift_code: '',
-            log_desc:'New webbiit youtube app user account registered',
-            log_amt: '',
-            log_status: 'Successful',
-            log_nature:'New user added',
-           });
-
-           const userDone = await User.findOne({email: req.body.email})
-           //console.log(userDone)
-            // email notification sending
-            fetchApp().then((result) =>{
-            appName = 'Webbiit Technology'
-            const mailBody = registerEmail(appName, 'Account Opening Successfully', userDone.display_name, randomSixDigitNumber)
-            const TextBody = registerEmailText(userDone.display_name, randomSixDigitNumber);
-            let register_mailOptions = {
-               from: `${appName} <noreply@rugipoalumni.zictech-ng.com>`,
-               to: [{ email: userDone.email }],
-               subject: 'Account Opening Successfully!',
-               text: TextBody,
-               html: mailBody,
-           }
-              mailTransporter.send(register_mailOptions).then(console.log)
-	            .catch('Email Sending Error ', console.error);
-             // async..await is not allowed in global scope, must use a wrapper
-            
-            }).catch(console.error.bind(console))
-        
-            res.status(201).json({ msg: '201'}) // success message
-              } else{
-            //res.send(401).json({ msg: '401'}) 
-            res.json({status: 401, msg: '401'}) // invalid user details
-            }
-        }
-       } catch (err) {
-          //res.send(500).send({ msg: "500" });
+          console.log(err);
           res.json({status: 500, msg: '500'})
         }
   });
@@ -565,6 +391,7 @@ router.post("/registerWebbiit", upload.single("file"), async (req, res, next) =>
     const url = process.env.SERVER_BASEURL;
     const filterUser = { _id: req.body.userId };
     //console.log("Data submitted ", req.body)
+    const Trans_ID = transactionID(25)
        try {
             const userInfo = await User.findOne({_id:req.body.userId}).lean().exec()
 
@@ -593,10 +420,25 @@ router.post("/registerWebbiit", upload.single("file"), async (req, res, next) =>
                     await cloudinary.uploader.destroy(deleteImage, 
                     function(err, result) { console.log("Delete Status ", result) })
                   }
+
+            
                 
             const updateUserNow = await User.updateOne(filterUser, updateDoc);
                 
           if(updateUserNow){
+            // create new record on document upload
+            const uploadDoc = await DocumentUpload.create({
+              document_name:'Profile Photo',
+              document_category:'User Photo',
+              document_type:'Photo',
+              document_url: imageUrl,
+              user_id: userInfo._id,
+              owners_name: userInfo.display_name,
+              owners_email: userInfo.email,
+              owners_tag_id: userInfo.tag_id,
+              document_status:'Pending',
+              track_document: Trans_ID
+            })
               // create log here
                   const addLogs = await SystemActivity.create({
                   log_username: userInfo.email,
@@ -616,6 +458,73 @@ router.post("/registerWebbiit", upload.single("file"), async (req, res, next) =>
             const userProfile = await User.findOne({ _id: req.body.userId });
             const { password, ...others } = userProfile._doc;
                  res.status(201).json({ msg: '201', userData: others}) // success message
+                }
+                    //return res.json({status: 402, message: ' User email already exist'})
+        } catch (error) {
+            console.error(error);
+            return res.json({status: 500, message: 'Server error: ' })
+        }
+  });
+
+  // upload user profile image route
+  router.post("/user_uploadPaymentProof", isAuth, async (req, res) => {
+    const file = req.FileData;
+    //const url = req.protocol + '://' + req.get('host') // this will get the host url directly
+    const url = process.env.SERVER_BASEURL;
+    const filterUser = {tid: req.body.trackId };
+    //console.log("Data submitted ", req.body)
+
+       try {
+            const fundDetails = await TransferFund.findOne({tid:req.body.trackId}).lean().exec()
+
+            if(!fundDetails){
+             return res.json({status: 402, message: 'Transaction not valid'})
+            }
+            if(fundDetails){
+              //console.log(result);
+              const imageUrl = req.body.image_url;
+                const updateDoc = {
+                    $set: {
+                    payment_proofDoc_type:req.body.fileType,
+                    payment_proof_url: imageUrl != null? imageUrl:'', 
+                    },
+                };
+                // delete old image from cloudinary
+                if(fundDetails.payment_proof_url != null || fundDetails.payment_proof_url !=''){
+                    const oldImage = fundDetails.payment_proof_url;
+                    const imageDirectory = oldImage?.split("/")[7];
+                    const public_id = oldImage?.split("/")[8]
+                    const newPublicId = public_id?.split(".")[0]
+                    const deleteImage = imageDirectory+'/'+newPublicId;
+
+                    // console.log('delete old image', oldImage.split("/")[8]);
+                    // console.log('delete directory', oldImage.split("/")[7]);
+                    await cloudinary.uploader.destroy(deleteImage, 
+                    function(err, result) { console.log("Delete Status ", result) })
+                  }
+                
+            const updateUserNow = await TransferFund.updateOne(filterUser, updateDoc);
+                
+          if(updateUserNow){
+              // create log here
+                  const addLogs = await SystemActivity.create({
+                  log_username: fundDetails.acct_number,
+                  log_name: fundDetails.acct_name,
+                  log_acct_number: fundDetails?.acct_number,
+                  log_receiver_name: '',
+                  log_receiver_number: '',
+                  log_receiver_bank: '',
+                  log_country: '',
+                  log_swift_code: '',
+                  log_desc:'User uploaded proof of payment',
+                  log_amt: '',
+                  log_status: 'Successful',
+                  log_nature:'Payment proof uploaded',
+                  })
+                }
+            // const userProfile = await User.findOne({ _id: req.body.userId });
+            // const { password, ...others } = userProfile._doc;
+                 res.status(201).json({ msg: '201'}) // success message
                 }
                     //return res.json({status: 402, message: ' User email already exist'})
         } catch (error) {
@@ -889,7 +798,6 @@ router.post("/complete_registration", isAuth, async (req, res) => {
                         gender: req.body.sex,
                         dob: req.body.dob,
                         state: req.body.state,
-                        country: req.body.country,
                         acct_type:'Virtual',
                         address: req.body.address,
                         tag_id: userTagNumber,

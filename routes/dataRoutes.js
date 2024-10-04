@@ -30,10 +30,13 @@ const { isAuth } = require('../middleware/auth');
 const userBankDetails = require('../models/UserBankDetails');
 const DocumentUpload = require('../models/DocumentUpload');
 const Referrals = require('../models/referralUser');
+const UserWithdrawal = require('../models/withdrawalRequest');
 const moment = require('moment/moment');
 const { getBeginningOfTheWeek } = require('../middleware/getStartDate');
 const { fetchApp } = require('../middleware/appDetails');
 const { loginEmail, loginText } = require('../emailTemplate/emailLogin');
+
+
 const {ObjectId} = require('mongodb');
 const uploadLocation = "public/images"; // this is the image store location in the project
 const storage = multer.diskStorage({
@@ -311,6 +314,28 @@ router.get("/recent_transactions/:id", isAuth, async (req, res) => {
       console.log(err.message);
     }
   });
+
+  // get specific transaction details here..
+router.get("/getTransactionInfo/:id", isAuth, async (req, res) => {
+    let reId = req.params.id;
+    //console.log("Recent record ", userId);
+    try {
+      const dTransaction = await TransferFund.findOne({_id: reId})
+      .sort({ creditOn: -1 });
+      if(!dTransaction)
+      {
+        return res.json({status: 404, message: 'Record not found'})
+      }
+      else if(dTransaction)
+      {
+        res.status(200).json({msg: '200', dataInfo: dTransaction})
+      }
+     } catch (err) {
+      res.status(500).json(err.message);
+      console.log(err.message);
+    }
+  });
+  
   // get recent transaction of the user financial details here..
   // router.get("/all_transaction/:id", async (req, res) => {
 
@@ -409,7 +434,7 @@ router.get("/all_statementMobile/:id", async (req, res) => {
     // all history transactions here
 router.get("/all_historyMobile/:id", isAuth, async (req, res) => {
       const userId = req.params.id;
-      const itemsPerPage = 15; // Number of transactions per page
+      const itemsPerPage = 10; // Number of transactions per page
       const page = parseInt(req.query.page) || 1; // Get page number from query or default to 1
       const skip = (page - 1) * itemsPerPage;
       const countAll = await TransferFund.find({createdBy: userId }).count();
@@ -431,8 +456,11 @@ router.get("/all_historyMobile/:id", isAuth, async (req, res) => {
       if(!recentTransaction || recentTransaction < 1){
         return res.json({status: 404, message: 'No more records'})
       }
-      //console.log(recentTransaction)
-      res.send(recentTransaction);
+      if(recentTransaction)
+        {
+          //console.log(recentTransaction)
+        res.send(recentTransaction);
+        }
       } catch (err) {
       res.status(500).json({ error: err.message });
       }
@@ -584,13 +612,39 @@ router.get("/user_Wallet_summary/:id", isAuth, async (req, res) => {
   //console.log("My ID", userId);
   try {
        //console.log('Balance ', userWalletBalance)
-    const userWallet = await FundUserAccount.aggregate(
+       let pendingBonus = 0;
+       let allWithdraw = 0;
+      
+       // get user details
+       const userDetails = await User.findOne({ tag_id: userId });
+       // get pending bonus totals
+       const userBonusPending = await Referrals.find(
+        {
+          ref_status: 'Pending',
+          ref_mainEmail: userDetails.email,
+        });
+
+        // get all time withdrawal totals
+       const userWithdrawalTotal = await UserWithdrawal.find(
+        {
+          withdrawal_status: 'Approved',
+          withdrawal_tag_id :userDetails.tag_id
+        });
+
+        
+        pendingBonus = userBonusPending.reduce((sum, transaction) => sum + transaction.ref_amt, 0);
+        allWithdraw = userWithdrawalTotal.reduce((sum, all_transaction) => sum + all_transaction.amount, 0);
+
+    // get wallet funding balance
+      const userWallet = await FundUserAccount.aggregate(
       [{$match: {fund_tag_id: userId, fund_status: 'Approved'}, },
       {$group: {_id: null, totalAmount: { $sum: '$amount' }}}]
       );
       
-        //console.log("wallet weekly ", weeklyReport)
-      res.send({ msg: '201', feedback: userWallet})
+      //console.log("wallet weekly ", userBonusPending.bonusTotalAmount)
+      res.send({ msg: '201', feedback: userWallet, feedbackBonus: pendingBonus,
+        feedbackWithdraw: allWithdraw
+      })
     } catch (err) {
     res.status(500).json(err.message);
     console.log(err.message);
@@ -1153,74 +1207,6 @@ return res.json({status: 500, message: 'Server error: ' })
 
 });
 
-// submit ticket details from mobile app here..
-router.post("/submit_webbitYoutubeTicketMobile", isAuth, async (req, res) => {
-  //console.log("Backend Data receive ", req.body)
- try {
-   let checkUser = await User.findOne({ _id:  req.body.createdBy }); // here I am checking if user exist then I will get user details
-   if (!checkUser) {
-     //console.log("User details: ", userDetails)
-     res.json({status: 401, message: ' No user found'})
-   } 
-   else if (checkUser){
-    //here we need those changings that we have done before
-     const sumbitTicket = await Ticket.create(req.body)
-       // create log here
-
-    const addLogs = await SystemActivity.create({
-     log_username: checkUser.email,
-     log_name: checkUser.display_name,
-     log_acct_number: checkUser.tag_id,
-     log_receiver_name: '',
-     log_receiver_number:'',
-     log_receiver_bank: '',
-     log_country: '',
-     log_swift_code: '',
-     log_desc:'Webiit youtube mobile support ticket created',
-     log_amt: '',
-     log_status: 'Successful',
-     log_nature:'Ticket created',
-    });
-    
- // email notification sending
-      fetchApp().then((result) =>{
-        appName = 'Webbiit Technology'
-        appLogo = result.app_logo
-        const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-
-        const mailBody = loginEmail('Webbiit Youtube Mobile App', 'Support Ticket', 'Webbiit',
-        `This is to notify you that a support ticket message was send by ${checkUser.display_name}, please check and get in-touch swiftly thank you. \n
-        subject: \n ${req.body.subject}. \n
-        Message: \n ${req.body.ticket_message}. \n
-        Email ID: \n ${req.body.email}.`, logoImage)
-
-        const TextBody = loginText('Hello', `this is to notify you that ${checkUser.display_name} send you a message via the webbiit youtube mobile mobile app, please check and get in-touch with the person thank you. \n
-        subject: ${req.body.subject} \n
-        Message: ${req.body.ticket_message} \n
-        Email ID: ${req.body.email}`);
-        let tickMailOptions = {
-        from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
-        to: [{ email: 'ayoungchief@gmail.com' }], //'ayoungchief@gmail.com',
-        subject: 'Support ticket from youtube app',
-        text: TextBody,
-        html: mailBody,
-      }
-      mailTransporter.send(tickMailOptions).then(console.log)
-      .catch('Email Sending Error ', console.error);
-
-      // async..await is not allowed in global scope, must use a wrapper
-      }).catch(console.error.bind(console))
-
-      //res.status(200).send({ msg: "200" });
-      res.send({ msg: '200'})
-        }
-      } catch (err) {
-      //res.status(500).send({ msg: "500" });
-      return res.json({status: 500, message: 'Server error: ' })
-      }
-
-  });
-
  // get user notification from Mobile here here..
  router.get("/user_notificationMobile/:id", isAuth, async (req, res) => {
   let myId = req.params.id;
@@ -1228,6 +1214,7 @@ router.post("/submit_webbitYoutubeTicketMobile", isAuth, async (req, res) => {
   const itemsPerPage = 10; // Number of transactions per page
   const page = parseInt(req.query.page) || 1; // Get page number from query or default to 1
   const skip = (page - 1) * itemsPerPage;
+
   const countAll = await Notification.find({alert_user_id: myId }).count();
   const filter = {alert_user_id: myId}
     

@@ -42,6 +42,7 @@ function verifyToken(req, res, next) {
     return Math.floor(100000 + Math.random() * 900000);
     }
     var appName = '';
+    var emailStatus = '';
 // route to login user
 router.post("/login", async (req, res, next) => {
     const file = req.file;
@@ -127,7 +128,9 @@ router.post("/login", async (req, res, next) => {
                     text: TextBody,
                     html: mailBody,
                 }
-                mailTransporter.send(loginMailOptions).then(console.log)
+                mailTransporter.send(loginMailOptions).then(response => {
+                    console.log("Login Email Sent Status ", response)
+                   })
 	            .catch('Email Sending Error ', console.error);
 
                 // async function main() {
@@ -299,12 +302,12 @@ router.post("/otp_verify", async (req, res) => {
             appName = result.app_name
             appLogo = result.app_logo
             const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-            const mailBody = loginEmail(appName, 'Account Activated', userExist.display_name, 'this is to notify you that your account has been activated successfully, You can now be able to login use your account, thank you.', logoImage);
+            const mailBody = loginEmail(appName, 'Account Activated', userExist.display_name, 'this is to notify you that your account has been activated successfully, You can now login to use your account, thank you.', logoImage);
             const TextBody = loginText(userExist.display_name,);
             let otpMailOptions = {
                 from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
                 to: [{ email: userExist.email }],
-                subject: 'Oza Account Activation!',
+                subject: 'Oza Account Activated!',
                 text: TextBody,
                 html: mailBody,
             }
@@ -397,7 +400,7 @@ router.post("/forgetPasswordMobile", async (req, res) => {
         const filter = req.body ;
         const filterUser = { email: req.body.user_email };
         const otpCode = generateRandomNumber()
-        console.log(filter);
+        //console.log(filter);
            //check in input fields is empty
         if(filter.user_email == '' || filter.user_email == null){
             return res.json({status: 400, message: 'Some fields are missing'})
@@ -433,7 +436,7 @@ router.post("/forgetPasswordMobile", async (req, res) => {
                 appLogo = result.app_logo
                 const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
 
-                const mailBody = passwordResetEmail(appName, 'Forget password reset', userExist.display_name, 'this is to notify you that your account has been requested to reset password, If this is not your, contact our support immediately. \n', otpCode, logoImage)
+                const mailBody = passwordResetEmail(appName, 'Forget password reset', userExist.display_name, 'this is to notify you that your account has been requested to reset password, If this is not you, contact our support immediately. \n', otpCode, logoImage)
                 const TextBody = passwordResetText(userExist.display_name, otpCode);
                 let resetPasswordMailSend = {
                 from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
@@ -479,7 +482,7 @@ router.post("/resetPasswordMobile", async (req, res) => {
                 const updatePassAccount = {
                     $set: {
                         "password": hashedPwd, 
-                        "password_plain": req.body.password,
+                        //"password_plain": req.body.password,
                     },
                 };
             
@@ -537,88 +540,94 @@ router.post("/resetPasswordMobile", async (req, res) => {
         }
     });
 
-// Webbiit youtube app forget password route reset here
-router.post("/forgetPasswordWebbiit", async (req, res) => {
-        //const file = req.file;
-        console.log(req.body);
-        const filter = req.body ;
-        const filterUser = { email: req.body.userEmail };
-         //check in input fields is empty
-if(filter.userEmail == '' || filter.userEmail == null){
-    return res.json({status: 400, message: 'Some fields are missing'})
-    } 
+// route to send user OTP code after successful registration
+router.post("/sendUserOTP", async (req, res) => {
 
-try {
-    // Check if user exist
-    const userExist = await User.findOne({email: filter.userEmail})
-
-    if(!userExist){
-        //console.log("OTP Data from APP", userExist);
-    return res.json({status: 404, message: ' User not found'})
-    }
-    else if(userExist){
-        // just update one row
-    // hash the password here
-    const hashedPwd = await bcrypt.hash(req.body.password, 10) // salt rounds
-    // set information to update table row
-    const updatePassAccount = {
-        $set: {
-            "password": hashedPwd, 
-            "password_plain": req.body.password,
-        },
-    };
-
-    const updateUserNow = await User.updateOne(filterUser, updatePassAccount);
-
-    if(updateUserNow){
-            // create log here
-        const addLogs = SystemActivity.create({
-        log_username: userExist.email,
-        log_name: userExist.display_name,
-        log_acct_number: '',
-        log_receiver_name: '',
-        log_receiver_number: '',
-        log_receiver_bank: '',
-        log_country: '',
-        log_swift_code: '',
-        log_desc:'Webbit youtube app password updated successfully',
-        log_amt: '',
-        log_status: 'Successful',
-        log_nature:'User update password',
-        })
-        // async..await is not allowed in global scope, must use a wrapper
+    const filter = req.body ;
+    //console.log("OTP Data from APP", req.body);
+  //check in input fields is empty
+    if(filter.email == ''){
+        return res.json({status: 400, message: 'Email ID missing'})
+        } 
     
-        // get app details and send mail
-        fetchApp().then((result) =>{
-        appName = 'Webbiit Technology'
-        const mailBody = loginEmail(appName, 'Password reset successfully', userExist.display_name, 'this is to notify you that your account password has been reset, If this is not you, contact our support immediately. \n')
-        const TextBody = loginText(userExist.display_name, 'this is to notify you that your account password has been reset, If this is not you, contact our support immediately');
-        let webiitMailOptions = {
-            from: `${appName +' Support'} <noreply@ozaapp.com>`,
-            to: userExist.email,
-            subject: 'Password reset successfully!',
-            text: TextBody,
-            html: mailBody,
-        }
-        async function main() {
-        const info = await transporterMailer.sendMail(webiitMailOptions);
-                }
-            main().catch('Message Error', console.error);
-        }).catch(console.error.bind(console))
+    try {
+    // Check if user exist
+    const userExistResend = await User.findOne({email: filter.email})
+    const filterUser = userExistResend._id;
 
-            //res.status(200).json({ msg: '200'}) // success message
-                res.send({ msg: '200'}) 
-                }
+    if(!userExistResend){
+        //console.log("OTP Data from APP", userExist);
+        return res.json({status: 401, message: ' User not found'})
+        }
+    
+        if (userExistResend.acct_status != 'Pending'){
+            //console.log("OTP not matched ");
+            return res.json({status: 404, message: ' Sorry, account not required activation'})
+            }
+        if(userExistResend.acct_status == 'Pending'){
+            // create log here
+            const addLogs = SystemActivity.create({
+            log_username: userExistResend.email,
+            log_name: userExistResend.display_name,
+            log_acct_number: '',
+            log_receiver_name: '',
+            log_receiver_number: '',
+            log_receiver_bank: '',
+            log_country: '',
+            log_swift_code: '',
+            log_desc:'Activation code sent to user email',
+            log_amt: '',
+            log_status: 'Successful',
+            log_nature:'OTP sent',
+            })
+            
+             // email notification sending
+            fetchApp().then((result) =>{
+            appName = result.app_name
+            appLogo = result.app_logo
+            const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+
+            const mailBody = loginEmail(appName, 'Activation Code', userExistResend.display_name, `Here is your activation code! \n Use the OTP code below to activate your account if you have not done so. \n\n OTP Cde: <h2> ${req.body.otp_code} </h2> \n
+                Thank you.`, logoImage)
+            const TextBody = registerEmailText(userExistResend.display_name, req.body.otp_code);
+            let sendMailOptions = {
+                from: { name: `${appName + ' Activation Code'}`, email: '<noreply@ozaapp.com>' },
+                to: [{ email: req.body.email }],
+                subject: 'Account Activation Code',
+                text: TextBody,
+                html: mailBody,
+            }
+            mailTransporter.send(sendMailOptions).then(response => {
+            //console.log("OTP Email Sent Status ", response)
+            emailStatus = response;
+            //update user table if email sent successfully
+            
+            console.log("OTP 1 Email Sent Status ", emailStatus.message_ids)
+            }).catch('Email Sending Error ', console.error);
+                // async..await is not allowed in global scope, must use a wrapper
+            }).catch(console.error.bind(console))
+        
+            
+            if(emailStatus.message_ids != null || emailStatus.message_ids != undefined) {
+                const updateUserAcct = {
+                    $set: {
+                        reg_otp_send: 'Yes',
+                        },
+                    };
+            console.log("OTP 2 Email Sent Status ", emailStatus)
+            const updateUserBalBonus = await User.updateOne(filterUser, updateUserAcct);
+                    }
+             //res.status(200).json({ msg: '200'}) // success message
+            res.send({ msg: '200'})
             }
             else{
-                console.log('Password reset : Something went wrong');
+                console.log('OTP Operation: Something went wrong');
             }
         } catch (err) {
-            //res.status(500).send({ msg: "500" });
-            console.log('Server error : ', err.message)
-            return res.json({status: 500, message:err.message})
-        }
- });
+        res.status(500).send({ msg: "500" });
+    }
+    });
+
 
 
 module.exports = router;

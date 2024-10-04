@@ -36,6 +36,7 @@ const UserBankDetails = require('../models/UserBankDetails');
 const TermCondition = require('../models/companyTermsCondition');
 const { isNull } = require('lodash');
 const { transactEmail } = require('../emailTemplate/emailRegister');
+const UserWithdrawal = require('../models/withdrawalRequest');
 
 const uploadLocation = "public/images"; // this is the image store location in the project
 const storage = multer.diskStorage({
@@ -118,7 +119,11 @@ function verifyToken(req, res, next) {
   return Math.floor(1000000 + Math.random() * 9000000);
   }
 
+
  var appName = '';
+ var withdrawStatus = 'Withdraw';
+ var buyStatus = 'Sales';
+ var sellStatus = 'Buy';
 
  
   // upload user document verifications route
@@ -519,7 +524,7 @@ router.get("/approvedDocument_details", isAuth, async (req, res) => {
   let page = parseInt(req.query.pageNumber);
   let limit = parseInt(req.query.pageLimit);
   if(!page) page = 1;
-  if(!limit) limit = 10;
+  if(!limit) limit = 15;
 
   const skip = (page - 1) * limit;
   try {
@@ -528,7 +533,7 @@ router.get("/approvedDocument_details", isAuth, async (req, res) => {
     const totalPageNumber = Math.ceil(pageCount / limit); // get the number of pages
 
     //get all user count details
-     const allApprove = await DocumentUpload.find({document_status: 'Approved'}).sort({ createdOn: -1 }).skip(skip).limit(limit);
+     const allApprove = await DocumentUpload.find({document_status: 'Approved'}).sort({ action_date: -1 }).skip(skip).limit(limit);
     //  const double = await DocumentUpload.aggregate([
     //   // {
     //   //   "$match": {
@@ -561,12 +566,12 @@ router.get("/pendingDocument_details", isAuth, async (req, res) => {
 
   const skip = (page - 1) * limit;
   try {
-    //get all user count details
+    //get all user document count details
     const pageCount = await DocumentUpload.find({document_status: 'Pending'}).count(); // get total records
     const totalPageNumber = Math.ceil(pageCount / limit); // get the number of pages
 
-    //get all user count details
-     const allPendingDocument = await DocumentUpload.find({document_status: 'Pending'}).sort({ createdOn: -1 }).skip(skip).limit(limit);
+    //get all pending document details
+     //const allPendingDocument = await DocumentUpload.find({document_status: 'Pending'}).sort({ createdOn: -1 }).skip(skip).limit(limit);
     //  const double = await DocumentUpload.aggregate([
     //   // {
     //   //   "$match": {
@@ -583,6 +588,18 @@ router.get("/pendingDocument_details", isAuth, async (req, res) => {
     //   }
     // ])
 
+    const allPendingDocument = await DocumentUpload.aggregate([
+            // Match only pending records
+              {
+                $match: {
+                  document_status: 'Pending'
+                }
+              },
+              // Group by tag ID and create an array of users with that tag ID
+             {"$group":{"_id":"$owners_tag_id", "doc":{"$first":"$$ROOT"}}},
+             {"$replaceRoot":{"newRoot":"$doc"}},
+          ]).sort({ createdOn: -1 }).skip(skip).limit(limit);
+
       res.send({ msg: '201', feedAll: allPendingDocument, page: page, limit: limit, totalPage: totalPageNumber, totalRecord: pageCount})
     } catch (err) {
     res.status(500).json(err.message);
@@ -595,7 +612,7 @@ router.get("/rejectedDocument_details", isAuth, async (req, res) => {
   let page = parseInt(req.query.pageNumber);
   let limit = parseInt(req.query.pageLimit);
   if(!page) page = 1;
-  if(!limit) limit = 10;
+  if(!limit) limit = 15;
 
   const skip = (page - 1) * limit;
   try {
@@ -604,7 +621,7 @@ router.get("/rejectedDocument_details", isAuth, async (req, res) => {
     const totalPageNumber = Math.ceil(pageCount / limit); // get the number of pages
 
     //get all user count details
-     const allRejectDocument = await DocumentUpload.find({document_status: 'Rejected'}).sort({ createdOn: -1 }).skip(skip).limit(limit);
+     const allRejectDocument = await DocumentUpload.find({document_status: 'Rejected'}).sort({ action_date: -1 }).skip(skip).limit(limit);
 
       res.send({ msg: '201', feedAll: allRejectDocument, page: page, limit: limit, totalPage: totalPageNumber, totalRecord: pageCount})
     } catch (err) {
@@ -699,6 +716,457 @@ router.get("/userBuyOrder_details", isAuth, async (req, res) => {
      const allBuyDocument = await TransferFund.find({tran_service_type: 'Buy'}).sort({ creditOn: -1 }).skip(skip).limit(limit);
       res.send({ msg: '201', feedAll: allBuyDocument, page: page, limit: limit, totalPage: totalPageNumber, totalRecord: pageCount})
     } catch (err) {
+    res.status(500).json(err.message);
+    console.log(err.message);
+  }
+});
+
+// get all users withdrawal request transaction details here..
+router.get("/userWithdrawalApproved_details", isAuth, async (req, res) => {
+  let page = parseInt(req.query.pageNumber);
+  let limit = parseInt(req.query.pageLimit);
+  if(!page) page = 1;
+  if(!limit) limit = 10;
+
+  const skip = (page - 1) * limit;
+  try {
+    //get all user count details
+    const pageCountWithdrawal = await UserWithdrawal.find({withdrawal_status:'Approved'}).count(); // get total records
+    const totalPageNumber = Math.ceil(pageCountWithdrawal / limit); // get the number of pages
+    //console.log("Withdrawal ", pageCountWithdrawal)
+    //get all user count details
+     const allWithdrawalDocument = await UserWithdrawal.find({withdrawal_status:'Approved'}).sort({ creditOn: -1 }).skip(skip).limit(limit);
+      res.send({ msg: '201', feedAll: allWithdrawalDocument, page: page, limit: limit, totalPage: totalPageNumber, totalRecord: pageCountWithdrawal})
+    } catch (err) {
+    res.status(500).json(err.message);
+    console.log(err.message);
+  }
+});
+
+// get all users withdrawal request transaction details here..
+router.get("/userWithdrawal_details", isAuth, async (req, res) => {
+  let page = parseInt(req.query.pageNumber);
+  let limit = parseInt(req.query.pageLimit);
+  if(!page) page = 1;
+  if(!limit) limit = 10;
+
+  const skip = (page - 1) * limit;
+  try {
+    //get all user count details
+    const pageCountWithdrawal = await UserWithdrawal.find({withdrawal_status:'Pending'}).count(); // get total records
+    const totalPageNumber = Math.ceil(pageCountWithdrawal / limit); // get the number of pages
+    //console.log("Withdrawal ", pageCountWithdrawal)
+    //get all user count details
+     const allWithdrawalDocument = await UserWithdrawal.find({withdrawal_status:'Pending'}).sort({ creditOn: -1 }).skip(skip).limit(limit);
+      res.send({ msg: '201', feedAll: allWithdrawalDocument, page: page, limit: limit, totalPage: totalPageNumber, totalRecord: pageCountWithdrawal})
+    } catch (err) {
+    res.status(500).json(err.message);
+    console.log(err.message);
+  }
+});
+
+
+// get user withdrawal details via ID passed from withdrawal table here..
+router.get("/getAcctWithdrawal_details/:id", isAuth, async (req, res) => {
+  let userId = req.params.id;
+  //console.log("MY ID ", userId);
+  try {
+    if(userId == '' || userId == null){
+      return res.json({status: 404, message: ' User ID not found'})
+    }
+    //get all user count details
+     const userFund = await UserWithdrawal.findOne({_id: userId} );
+     if(userFund){
+      res.send({ msg: '201', feedAll: userFund})
+     }
+     else{
+      return res.json({status: 404, message: ' Records not found'})
+     }
+     } catch (err) {
+    res.status(500).json(err.message);
+    console.log(err.message);
+  }
+});
+
+
+// Approved user withdrawal request details here..
+router.post("/approveAcctWithdrawal", isAuth, async (req, res) => {
+  let userId = req.body.tran_id;
+  //console.log("MY ID ", userId);
+  try {
+    if(userId == '' || userId == null){
+      return res.json({status: 404, message: ' User ID not found'})
+    }
+    //get all user count details
+     const userFund = await UserWithdrawal.findOne({_id: userId} );
+     const userDetail = await User.findOne({tag_id: userFund.withdrawal_tag_id} );
+     
+     const allTran = await TransferFund.findOne({tid: userFund.withdrawal_tid} );
+     
+     if(!userDetail){
+      return res.json({status: 404, message: ' User record not found'})
+     }
+     if(!userFund){
+      return res.json({status: 404, message: ' Transaction not valid'})
+     }
+
+     const currentBal = parseInt(userDetail.all_withdraw_acct)+ +parseInt(userFund.amount)
+
+     if(userDetail){
+      const filterUser = { _id: userDetail._id };
+      const filterTransaction = { _id: req.body.tran_id };
+      const filterGeneral = { _id: allTran._id}
+
+      // withdrawal status
+      const updateUserWithdrawalStatus = {
+        $set: {
+          withdrawal_status: 'Approved',
+        },
+      };
+
+      // user all time withdrawal status
+      const updateUserAcctBal = {
+        $set: {
+          all_withdraw_acct: currentBal,
+        },
+      };
+
+      // update general transaction status here
+      const updateGeneralStatus = {
+        $set: {
+          transaction_status: "Successful",
+          approved_date:  Date.now(),
+        },
+      };
+
+      const updateUserBal = await User.updateOne(filterUser, updateUserAcctBal);
+      const updateWithdrawStatus = await UserWithdrawal.updateOne(filterTransaction, updateUserWithdrawalStatus);
+      const updateGeneral = await TransferFund.updateOne(filterGeneral, updateGeneralStatus);
+
+      const addLogs = await SystemActivity.create({
+        log_username: '',
+        log_name: userDetail.display_name,
+        log_acct_number: userDetail.tag_id,
+        log_receiver_name: '',
+        log_receiver_number: '',
+        log_receiver_bank: '',
+        log_country: '',
+        log_swift_code: '',
+        log_desc:'Admin staff approved user withdrawal request',
+        log_amt: '',
+        log_status: 'Successful',
+        log_nature:'Withdrawal Approved',
+       })
+
+       // check if user enabled in-app notifications and send notification
+      if(userDetail.receive_app_message == true) {
+        const userLogs = Notification.create({
+        alert_username: userDetail.display_name,
+        alert_name: userDetail.display_name,
+        alert_user_ip: '',
+        alert_country: '',
+        alert_browser: '',
+        alert_date:  Date.now(),
+        alert_user_id: userDetail._id,
+        alert_nature: `\nThis is to notify you that your withdrawal request of \$${new Intl.NumberFormat().format(userFund.amount)}. has been approved and your wallet has be credited with the equivalent. \nTransaction ID: ${userFund.withdrawal_tid}`,
+        alert_status: 1,
+        alert_read_date: ''
+        })
+      }
+
+      console.log(currentBal)
+       // create record for approval purposes
+       const createRecord = TransferFund.create({
+        acct_name: userDetail.display_name,
+        acct_number: userDetail.tag_id,
+        amount: userFund.amount,
+        bank_name: '',
+        sender_name: userDetail.display_name,
+        sender_acct_number: userDetail.tag_id,
+        sender_currency_type: '$',
+        tran_type: 'Debit',
+        transac_nature:'Withdraw',
+        transac_category: 'Bonus',
+        tran_desc:'Withdrawal request approved ',
+        tr_year:'',
+        colorcode:'red',
+        trans_method: 'Manual',
+        currency_level:'2',
+        createdBy: userDetail._id,
+        trans_balance: currentBal,
+        tid: userFund.withdrawal_tid,
+        tran_service_type: 'Bonus',
+        transaction_status:'Successful',
+        approved_date: Date.now(),
+        });
+
+      // send email to the account owner
+      fetchApp().then((result) => {
+        appName = result.app_name
+        appLogo = result.app_logo
+        const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+        const mailBody = loginEmail(appName, 'Withdrawal Approved', userDetail.display_name, `this is to notify you that your withdrawal request of <b>\$${new Intl.NumberFormat().format(userFund.amount)}</b> has been approved and your wallet has be credited with equivalent. 
+        <br>
+        Transaction ID <b>${userFund.withdrawal_tid}</b><br>
+        thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`, logoImage)
+            const mailText = loginText(userDetail.display_name, `this is to notify you that your withdrawal request of <b>\$${new Intl.NumberFormat().format(userFund.amount)}</b> has been approved and your wallet has be credited with the sum of it's equivalent. \n\n
+            <br>
+            Transaction ID <b>${userFund.withdrawal_tid}</b><br>
+            thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
+            let account_issueEMail = {
+              //from: `${appName +' Sales'} <noreply@ozaapp.com>`,
+              from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
+              //to: userDetail.email,
+              to: [{ email: userDetail.email }],
+              subject: 'Withdrawal Notification!',
+              text: mailText,
+              html: mailBody,
+            }
+            mailTransporter.send(account_issueEMail).then(console.log)
+            .catch('Email Sending Error ', console.error);
+           
+            }).catch(console.error.bind(console))
+
+        res.status(201).json({msg: '201'}) // success message
+     }
+     else{
+      return res.json({status: 404, message: ' Error occurred, try again'})
+     }
+     } catch (err) {
+    res.status(500).json(err.message);
+    console.log(err.message);
+  }
+});
+
+// Rejected user withdrawal request details here..
+router.post("/rejectAccountWithdrawal", isAuth, async (req, res) => {
+  let userId = req.body.tran_id;
+  //console.log("MY ID ", userId);
+  try {
+    if(userId == '' || userId == null){
+      return res.json({status: 404, message: ' User ID not found'})
+    }
+    //get all user count details
+     const userFund = await UserWithdrawal.findOne({_id: userId} );
+     const userDetail = await User.findOne({tag_id: userFund.withdrawal_tag_id} );
+     
+     const allTran = await TransferFund.findOne({tid: userFund.withdrawal_tid} );
+
+     if(!userDetail){
+      return res.json({status: 404, message: ' User record not found'})
+     }
+     if(!userFund){
+      return res.json({status: 404, message: ' Transaction not valid'})
+     }
+
+     const currentBal = userDetail.all_withdraw_amount+ +userFund.amount
+     const filterTransaction = { _id: req.body.tran_id };
+     const filterGeneral = { _id: allTran._id}
+
+     if(userDetail){
+
+      const updateUserWIthdrawalStatus = {
+        $set: {
+          withdrawal_status: 'Rejected',
+        },
+      };
+
+      // update general transaction status here
+      const updateGeneralStatus = {
+        $set: {
+          transaction_status: "Rejected",
+          approved_date:  Date.now(),
+        },
+      };
+
+      const updateFundStatus = await UserWithdrawal.updateOne(filterTransaction, updateUserWIthdrawalStatus);
+      // check if user enabled in-app notifications and send notification
+      const updateGeneral = await TransferFund.updateOne(filterGeneral, updateGeneralStatus);
+
+      if(userDetail.receive_app_message == true) {
+        const userLogs = Notification.create({
+        alert_username: userDetail.display_name,
+        alert_name: userDetail.display_name,
+        alert_user_ip: '',
+        alert_country: '',
+        alert_browser: '',
+        alert_date:  Date.now(),
+        alert_user_id: userDetail._id,
+        alert_nature: `Withdrawal Issues\nReason: We are unable to proceed with this transaction with transaction ID: ${userFund.withdrawal_tid}!\nPlease, contact support for more details and possible resolutions` ,
+        alert_status: 1,
+        alert_read_date: ''
+        })
+      }
+      const addLogs = await SystemActivity.create({
+        log_username: '',
+        log_name: userDetail.display_name,
+        log_acct_number: userDetail.tag_id,
+        log_receiver_name: '',
+        log_receiver_number: '',
+        log_receiver_bank: '',
+        log_country: '',
+        log_swift_code: '',
+        log_desc:'Admin staff rejected user withdrawal request',
+        log_amt: '',
+        log_status: 'Successful',
+        log_nature:'Withdrawal Request Rejected ',
+       })
+      // send email to the account owner
+      fetchApp().then((result) => {
+        appName = result.app_name
+        appLogo = result.app_logo
+        const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+
+        const mailBody = loginEmail(appName, 'Withdrawal Issue', userDetail.display_name, `this is to notify you that your withdrawal request has been rejected or cancelled after been reviewed.
+        <br> Withdrawal Amount : <b>\u20A6${new Intl.NumberFormat().format(userFund.amount)}</b> <br>
+        With transaction ID <b>${userFund.withdrawal_tid}</b><br> 
+        We are unable to proceed with your withdrawal request! Please you can contact support for more details and possible resolutions.<br><br>
+        Thank you for choosing ${appName}, we hope you continue to enjoy our awesome services.`, logoImage)
+        const mailText = loginText(userDetail.display_name, `this is to notify you that your withdrawal request has been rejected or cancelled after been reviewed.
+        <br> Withdrawal Amount : <b>\u20A6${new Intl.NumberFormat().format(userFund.amount)}</b> <br>
+        With transaction ID <b>${userFund.withdrawal_tid}</b><br> 
+        We are unable to withdrawal request! Please you can contact support for more details and possible resolutions.<br><br>
+        Thank you for choosing ${appName}, we hope you continue to enjoy our awesome services.`)
+        let account_issueEMail = {
+          from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+          to: [{ email: userDetail.email }],
+          subject: 'Withdrawal Notification!',
+          text: mailText,
+          html: mailBody,
+        }
+        mailTransporter.send(account_issueEMail).then(console.log)
+        .catch('Email Sending Error ', console.error);
+
+        }).catch(console.error.bind(console))
+
+        res.status(201).json({msg: '201'}) // success message
+     }
+     else{
+      return res.json({status: 404, message: ' Error occurred, try again'})
+     }
+     } catch (err) {
+    res.status(500).json(err.message);
+    console.log(err.message);
+  }
+});
+
+// Search withdrawal details with transaction ID here..
+router.post("/searchWithdrawal_database", isAuth, async (req, res) => {
+  let searchData = req.body.queryData;
+  //console.log("MY ID ", searchData);
+        if(searchData.searchValue == '' || searchData == null || req.body.dataInfo ==''){
+          return res.json({status: 404, message: ' Query parameters is empty!'})
+        }
+  try {
+    //get all user count details
+     const userQuery = await UserWithdrawal.findOne({withdrawal_tid: searchData} );
+     if(!userQuery){
+      return res.json({ status: 404, message: ' No results matching your query'})
+     }
+     if(userQuery){
+      res.send({ msg: '201', feedAll: userQuery})
+     }
+     } catch (err) {
+    res.status(500).json(err.message);
+    console.log(err.message);
+  }
+});
+
+
+// get user proof of payment uploaded  details here..
+router.get("/proof_payment_transaction", isAuth, async (req, res) => {
+  let page = parseInt(req.query.pageNumber);
+  let limit = parseInt(req.query.pageLimit);
+  if(!page) page = 1;
+  if(!limit) limit = 10;
+
+  const skip = (page - 1) * limit;
+  try {
+    //get all user count details
+    const pageCount = await TransferFund.find().count(); // get total records
+    const totalPageNumber = Math.ceil(pageCount / limit); // get the number of pages
+
+    //get all user count details
+     const allTransDocument = await TransferFund.find().sort({ creditOn: -1 }).skip(skip).limit(limit);
+
+      res.send({ msg: '201', feedAll: allTransDocument, page: page, limit: limit, totalPage: totalPageNumber, totalRecord: pageCount})
+    } catch (err) {
+    res.status(500).json(err.message);
+    console.log(err.message);
+  }
+});
+
+// Search proof of payment details with transaction ID here..
+router.post("/searchProofPayment_database", isAuth, async (req, res) => {
+  let searchData = req.body.queryData;
+  //console.log("result ", searchData)
+  
+        if(searchData.searchValue == '' || searchData == null || req.body.dataInfo =='') {
+          return res.json({status: 404, message: ' Query parameters is empty!'})
+        }
+  try {
+    //get search query with multiple condition from database
+     const userQuery = await TransferFund.findOne({
+      $or: [{tid: searchData},
+            {pay_tran: searchData}]
+           }).sort({ creditOn: -1 }).limit(100);
+
+     if(!userQuery){
+      return res.json({ status: 404, message: ' No results matching your query'})
+     }
+     if(userQuery.length < 1){
+      return res.json({ status: 404, message: ' No results matching your query'})
+     }
+     if(userQuery){
+      res.send({ msg: '201', feedAll: userQuery})
+     }
+     } catch (err) {
+    res.status(500).json(err.message);
+    console.log(err.message);
+  }
+});
+
+
+// get user proof of payment image preview via ID passed from the table here..
+router.get("/getProofPreview_details/:id", isAuth, async (req, res) => {
+  let userId = req.params.id;
+  //console.log("MY ID ", userId);
+  try {
+    if(userId == '' || userId == null){
+      return res.json({status: 404, message: ' User ID not found'})
+    }
+    //get all user count details
+     const userSales = await TransferFund.findOne({_id: userId} );
+     if(userSales){
+      res.send({ msg: '201', feedAll: userSales})
+     }
+     else{
+      return res.json({status: 404, message: ' Records not found'})
+     }
+     } catch (err) {
+    res.status(500).json(err.message);
+    console.log(err.message);
+  }
+});
+
+// get single user proof of payment via ID passed here..
+router.get("/adminGet_proofPaymentDocument/:id", isAuth, async (req, res) => {
+  let userId = req.params.id;
+  //console.log("MY ID ", userId);
+  try {
+    if(userId == '' || userId == null){
+      return res.json({status: 404, message: ' User ID not found'})
+    }
+    //get all user count details
+     const userPaymentProof = await TransferFund.findOne({_id: userId} );
+     if(userPaymentProof){
+      //console.log(userDocument)
+      res.send({ msg: '201', feedAll: userPaymentProof})
+     }
+     else{
+      return res.json({status: 404, message: ' Document not found'})
+     }
+     } catch (err) {
     res.status(500).json(err.message);
     console.log(err.message);
   }
@@ -1120,6 +1588,7 @@ router.post("/update_appStatus", isAuth, async (req, res, next) => {
         app_operation_status: req.body.appMode_status,
         app_stop_login_status: req.body.appLogin_status,
         app_mode_message: req.body.appMode_message,
+        app_referral_percent: req.body.referral_percent,
         
         //user_policy
         });
@@ -1154,6 +1623,7 @@ router.post("/update_appStatus", isAuth, async (req, res, next) => {
         app_operation_status: req.body.appMode_status,
         app_stop_login_status: req.body.appLogin_status,
         app_mode_message: req.body.appMode_message,
+        app_referral_percent: req.body.referral_percent,
           },
       }
       const updateRead = await AppSetting.updateOne(updateDoc);
@@ -1371,9 +1841,11 @@ router.get("/adminGetUser_details/:id", isAuth, async (req, res) => {
   try {
     //get all user count details
      const userDetails = await User.findOne({_id: userId});
-     const { password, password_plain, ...others } = userDetails._doc; // this will remove password from the details send to server.
+     //get all user count details
+  const userDocument = await DocumentUpload.find({owners_tag_id: userDetails.tag_id} );
+  const { password, password_plain, ...others } = userDetails._doc; // this will remove password from the details send to server.
       res.send({ msg: '201', 
-      feedAll: others})
+      feedAll: others, feedDoc: userDocument })
     } catch (err) {
     res.status(500).json(err.message);
     console.log(err.message);
@@ -1473,11 +1945,11 @@ router.post("/user_accountAction/", isAuth, async (req, res) => {
         appLogo = result.app_logo
         const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
 
-        const mailBody = loginEmail(appName, actionStatus =='Active' ? 'Congratulations' :'Account Issue', user.display_name, ` ${actionStatus ==`Active` ? `this is to notify you that your account has been activated after been carefully reviewed.
-        thank you for choosing ${appName} and we hope you will continue enjoy our services`: `this is to notify you that your account has been flashed with and issue. Kindly contact support for more details and possible resolution.
-        Thank you` }, $logoImage`)
+        const mailBody = loginEmail(appName, `${actionStatus =='Active' ? 'Congratulations' :'Account Issue'}`, user.display_name, ` ${actionStatus ==`Active` ? `this is to notify you that your account has been activated after been carefully reviewed.
+        thank you for choosing ${appName} and we hope you will continue enjoy our services`: `this is to notify you that your account has been flashed with an issue. Kindly contact support for more details and possible resolution.
+        Thank you` }`, logoImage)
             const mailText = loginText(user.display_name, ` ${actionStatus ==`Active` ? `this is to notify you that your account has been activated after been carefully reviewed,
-            thank you for choosing ${appName} and we hope you will continue enjoy our services`:`this is to notify you that your account has been flashed with and issue. Kindly contact support for more details and possible resolution.
+            thank you for choosing ${appName} and we hope you will continue to enjoy our services`:`this is to notify you that your account has been flashed with an issue. Kindly contact support for more details and possible resolution.
             Thank you` }`)
             let account_issueEMail = {
               from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
@@ -1554,11 +2026,11 @@ router.post("/user_accountStateAction/", isAuth, async (req, res) => {
             appLogo = result.app_logo
             const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
 
-            const mailBody = loginEmail(appName, actionStatus =='Active' ? 'Congratulations' :'Account Issue', user.display_name, ` ${actionStatus ==`Active` ? `this is to notify you that your account has been activated after been carefully reviewed.
-            thank you for choosing ${appName} and we hope you will continue enjoy our services`: `this is to notify you that your account has been flashed with and issue. Kindly contact support for more details and possible resolution.
-            Thank you` }, $logoImage`)
+            const mailBody = loginEmail(appName, `${actionStatus =='Active' ? 'Congratulations' :'Account Issue'}`, user.display_name, ` ${actionStatus ==`Active` ? `this is to notify you that your account has been activated after been carefully reviewed.
+            thank you for choosing ${appName} and we hope you will continue enjoy our services`: `this is to notify you that your account has been flashed with an issue. Kindly contact support for more details and possible resolution.
+            Thank you` }`, logoImage)
                 const mailText = loginText(user.display_name, ` ${actionStatus ==`Active` ? `this is to notify you that your account has been activated after been carefully reviewed,
-                thank you for choosing ${appName} and we hope you will continue enjoy our services`:`this is to notify you that your account has been flashed with and issue. Kindly contact support for more details and possible resolution.
+                thank you for choosing ${appName} and we hope you will continue to enjoy our services`:`this is to notify you that your account has been flashed with an issue. Kindly contact support for more details and possible resolution.
                 Thank you` }`)
                 let account_issueEMail = {
                   from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
@@ -1628,11 +2100,11 @@ router.post("/user_ApproveAccountAction/", isAuth, async (req, res) => {
             appLogo = result.app_logo
             const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
 
-            const mailBody = loginEmail(appName, actionStatus =='Approved' ? 'Congratulations' :'Account Issue', user.display_name, ` ${actionStatus ==`Approved` ? `this is to notify you that your account has been fully approved after been carefully reviewed your documents,.
-            thank you for choosing ${appName} and we hope you will enjoy our services`: `this is to notify you that your account has been flashed with and issue. Kindly contact support for more details and possible resolution.
-            Thank you` }, $logoImage`)
+            const mailBody = loginEmail(appName, `${actionStatus =='Approved' ? 'Congratulations' :'Account Issue'}`, user.display_name, ` ${actionStatus ==`Approved` ? `this is to notify you that your account has been fully approved after been carefully reviewed your documents.
+            thank you for choosing ${appName} and we hope you will enjoy our services`: `this is to notify you that your account has been flashed with an issue. Kindly contact support for more details and possible resolution.
+            Thank you` }`, logoImage)
                 const mailText = loginText(user.display_name, ` ${actionStatus ==`Approved` ? `this is to notify you that your account has been fully approved after been carefully reviewed your documents,.
-                thank you for choosing ${appName} and we hope you will enjoy our services`:`this is to notify you that your account has been flashed with and issue. Kindly contact support for more details and possible resolution.
+                thank you for choosing ${appName} and we hope you will enjoy our services`:`this is to notify you that your account has been flashed with an issue. Kindly contact support for more details and possible resolution.
                 Thank you` }`)
                 let account_issueEMail = {
                   from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
@@ -1662,6 +2134,52 @@ router.post("/user_ApproveAccountAction/", isAuth, async (req, res) => {
 // get user document via ID passed here..
 router.get("/adminGetUser_document/:id", isAuth, async (req, res) => {
   let userId = req.params.id;
+  console.log("MY ID ", userId);
+  try {
+    if(userId == '' || userId == null){
+      return res.json({status: 404, message: ' User ID not found'})
+    }
+    //get all user count details
+     const userDocument = await DocumentUpload.find({owners_tag_id: userId, document_status: 'Pending'} );
+     if(userDocument){
+      //console.log(userDocument)
+      res.send({ msg: '201', feedAll: userDocument})
+     }
+     else{
+      return res.json({status: 404, message: ' Document not found'})
+     }
+     } catch (err) {
+    res.status(500).json(err.message);
+    console.log(err.message);
+  }
+});
+
+// get user document via ID passed here..
+router.get("/adminFetchUser_document/:id", isAuth, async (req, res) => {
+  let userId = req.params.id;
+  //console.log("MY ID ", userId);
+  try {
+    if(userId == '' || userId == null){
+      return res.json({status: 404, message: ' User ID not found'})
+    }
+    //get all user count details
+     const userDocument = await DocumentUpload.find({owners_tag_id: userId} );
+     if(userDocument){
+      //console.log(userDocument)
+      res.send({ msg: '201', feedAll: userDocument})
+     }
+     else{
+      return res.json({status: 404, message: ' Document not found'})
+     }
+     } catch (err) {
+    res.status(500).json(err.message);
+    console.log(err.message);
+  }
+});
+
+// get single user document via ID passed here..
+router.get("/adminGet_document/:id", isAuth, async (req, res) => {
+  let userId = req.params.id;
   //console.log("MY ID ", userId);
   try {
     if(userId == '' || userId == null){
@@ -1670,6 +2188,7 @@ router.get("/adminGetUser_document/:id", isAuth, async (req, res) => {
     //get all user count details
      const userDocument = await DocumentUpload.findOne({_id: userId} );
      if(userDocument){
+      //console.log(userDocument)
       res.send({ msg: '201', feedAll: userDocument})
      }
      else{
@@ -1683,29 +2202,33 @@ router.get("/adminGetUser_document/:id", isAuth, async (req, res) => {
 
 // User account document details here..
 router.post("/adminApprove_document", isAuth, async (req, res) => {
-  const filterUser = { _id: req.body.doc_id };
-  const documentName = req.body.doc_name
-  const documentType = req.body.doc_type
-
-  console.log(req.body)
+  
+  const filterDocument = { _id: req.body.doc_id };
 
   const actionStatus = req.body.action_status;
     try {
           if(req.body.user_id == '' || req.body.user_id == null){
             return res.json({status: 404, message: ' User ID not found'})
           }
-        const user = await User.findOne({ _id: req.body.user_id})
+        const user = await User.findOne({ tag_id: req.body.user_id})
+        const userDoc = await DocumentUpload.findOne({_id: req.body.doc_id})
         if(!user){
             return res.json({status: 404, message: ' User not found'})
          }
+         
+
         else if(user){
+          const filterUser = { _id: user._id };
+          let documentName = userDoc.document_name
+          const documentType = userDoc.document_type
             const updateDocUser = {
                 $set: {
                   document_status: req.body.action_status,
+                  document_action:req.body.action_status,
                   action_date: Date.now()
                 },
               };
-        const updateUserNow = await DocumentUpload.updateOne(filterUser, updateDocUser);
+        const updateUserNow = await DocumentUpload.updateOne(filterDocument, updateDocUser);
               // update user current balance here
             if(updateUserNow){
               // create log here
@@ -1718,10 +2241,10 @@ router.post("/adminApprove_document", isAuth, async (req, res) => {
             log_receiver_bank: '',
             log_country: '',
             log_swift_code: '',
-            log_desc:'Admin user perform action on user document',
+            log_desc:'Admin perform action on user document',
             log_amt: '',
             log_status: 'Successful',
-            log_nature:'User Document ',
+            log_nature:'User Document Approved ',
            })
 
            // send email to the account owner
@@ -1730,9 +2253,9 @@ router.post("/adminApprove_document", isAuth, async (req, res) => {
             appLogo = result.app_logo
             const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
 
-            const mailBody = loginEmail(appName, actionStatus =='Approved' ? 'Congratulations' :'Document Issue', user.display_name, ` ${actionStatus ==`Approved` ? `this is to notify you that your ${documentName} document has been fully approved after been carefully reviewed the documents,
+            const mailBody = loginEmail(appName, `${actionStatus =='Approved' ? 'Congratulations' :'Document Issue'}`, user.display_name, ` ${actionStatus ==`Approved` ? `this is to notify you that your ${documentName} document has been fully approved after been carefully reviewed the documents,
             thank you for choosing ${appName} and we hope you will enjoy our services`: `this is to notify you that your account document was not approved. Kindly contact support for more details and possible resolution.
-            Thank you` }, $logoImage`)
+            Thank you` },`, logoImage)
                 const mailText = loginText(user.display_name, ` ${actionStatus ==`Approved` ? `this is to notify you that your ${documentName} document has been fully approved after been carefully reviewed the documents,
                 thank you for choosing ${appName} and we hope you will enjoy our services`:`this is to notify you that your account document was not approved. Kindly contact support for more details and possible resolution.
                 Thank you` }`)
@@ -1763,36 +2286,45 @@ router.post("/adminApprove_document", isAuth, async (req, res) => {
 
 // Reject User account document submitted here..
 router.post("/adminRejected_documentUpload", isAuth, async (req, res) => {
-  const filterUser = { _id: req.body.doc_id };
-  const filterUserId = { _id: req.body.user_id };
-  const documentName = req.body.doc_name
+  
+  const filterDocument = { _id: req.body.doc_id };
   const documentType = req.body.doc_type
   const documentReason = req.body.reasons
-
-  console.log(req.body)
-
+  
   const actionStatus = req.body.action_status;
     try {
           if(req.body.user_id == '' || req.body.user_id == null){
             return res.json({status: 404, message: ' User ID not found'})
           }
-        const user = await User.findOne({ _id: req.body.user_id})
+        const user = await User.findOne({ tag_id: req.body.user_id})
+        const userDoc = await DocumentUpload.findOne({_id: req.body.doc_id})
         if(!user){
             return res.json({status: 404, message: ' User not found'})
          }
         else if(user){
+          const filterUserId = { _id: user._id };
+          const documentName = userDoc.document_name
           // update the document status
             const updateDocUser = {
                 $set: {
-                  document_status: req.body.action_status,
+                  document_status: 'Rejected',
+                  document_action: req.body.action_status,
                   reject_document_reason: req.body.reasons,
                   action_date: Date.now()
                 },
               };
-        const updateUserNow = await DocumentUpload.updateOne(filterUser, updateDocUser);
+        const updateUserNow = await DocumentUpload.updateOne(filterDocument, updateDocUser);
 
         // update the user registration account document status
-        if(req.body.doc_name =='Document'){
+        if(userDoc.document_type =='Photo'){
+          const updateUserAcct = {
+            $set: {
+              reg_stage3: "",
+            },
+          };
+          const updateUser = await User.updateOne(filterUserId, updateUserAcct);
+        }
+        else if(userDoc.document_type =='Document'){
           const updateUserAcct = {
             $set: {
               reg_stage4: "",
@@ -1800,7 +2332,7 @@ router.post("/adminRejected_documentUpload", isAuth, async (req, res) => {
           };
           const updateUser = await User.updateOne(filterUserId, updateUserAcct);
         }
-        if(req.body.doc_name !='Document'){
+        else if(userDoc.document_type =='2FA'){
           const updateUserAcct = {
             $set: {
               reg_stage5: "",
@@ -1808,6 +2340,15 @@ router.post("/adminRejected_documentUpload", isAuth, async (req, res) => {
           };
           const updateUser = await User.updateOne(filterUserId, updateUserAcct);
         }
+        else if(userDoc.document_type =='Address'){
+          const updateUserAcct = {
+            $set: {
+              reg_stage6: "",
+            },
+          };
+          const updateUser = await User.updateOne(filterUserId, updateUserAcct);
+        }
+
               // update user current balance here
             if(updateUserNow){
               // create log here
@@ -1820,7 +2361,7 @@ router.post("/adminRejected_documentUpload", isAuth, async (req, res) => {
             log_receiver_bank: '',
             log_country: '',
             log_swift_code: '',
-            log_desc:'Admin user perform action on user document',
+            log_desc:'Admin perform action on user document',
             log_amt: '',
             log_status: 'Successful',
             log_nature:'User Document Rejected ',
@@ -1835,11 +2376,11 @@ router.post("/adminRejected_documentUpload", isAuth, async (req, res) => {
             const mailBody = loginEmail(appName, 'Document Issue', user.display_name, `this is to notify you that your ${documentName} has been rejected after been carefully reviewed the documents, Reason: ${documentReason} 
             you can contact support for more details and possible resolution, Thank you`, logoImage)
                 const mailText = loginText(user.display_name, `this is to notify you that your ${documentName} has been rejected after been carefully reviewed the documents, Reason: ${documentReason} 
-                you can contact support for more details and possible resolution, Thank you`)
+                you can contact support for more details and possible resolution.`)
                 let account_issueEMail = {
                   from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
                   to: [{ email: user.email }],
-                  subject: 'Account Document Notification!',
+                  subject: 'Uploaded Document Notification!',
                   text: mailText,
                   html: mailBody,
                 }
@@ -2166,9 +2707,10 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
     if(recordId == '' || recordId == null){
       return res.json({status: 404, message: ' Record ID not found'})
     }
-    //get all user count details
+    //get user sale details
     const allSales = await TransferFund.findOne({_id: recordId} );
      
+    // get user details via tag ID
      const userDetail = await User.findOne({tag_id: allSales.acct_number} );
      
      if(!userDetail){
@@ -2181,16 +2723,112 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
       //process user referral bonus details here
     const checkReferral = await Referrals.findOne({ref_userEmail: userDetail.email, ref_status:'Pending' });
     
+    const getSaleBonusStatus = await AppSetting.find();
+
+        // implement bonus sharing profit system here
+        const checkSalesBonus = await Referrals.findOne({ref_userEmail: userDetail.email, ref_status:'Approved'});
+        if(checkSalesBonus && getSaleBonusStatus[0].app_referral_percent == true)
+        {
+          // get the main person who refer the user details
+          const checkUserBonus = await User.findOne({email: checkSalesBonus.ref_mainEmail });
+          // Calculate 20% of seller amount as a share profit
+          const sellerPercentage = 20;
+          const sellerTotal = allSales.amount;
+          const sellerResult = (sellerPercentage / 100) * sellerTotal;
+          
+          // Calculate live time percentage bonus sharing of 0.5% to a the user
+          const bonusPercentage = 1;
+          const bonusTotal = sellerResult;
+          const bonusResult = (bonusPercentage / 100) * bonusTotal;
+
+          const currentBonusBal = checkUserBonus.all_bonus_acct+ +bonusResult
+          const filterUserBonus = { _id: checkUserBonus._id };
+          // update user bonus balance
+            const updateUserBonusBal = {
+              $set: {
+                all_bonus_acct: currentBonusBal,
+              },
+            };
+            const updateUserBal = await User.updateOne(filterUserBonus, updateUserBonusBal);
+            // create history record
+          const createRecord = TransferFund.create({
+            acct_name: checkUserBonus.display_name,
+            acct_number: checkUserBonus.tag_id,
+            amount: bonusResult,
+            bank_name: '',
+            sender_currency_type: '$',
+            tran_type: 'Credit',
+            transac_nature:'Profit Bonus',
+            transac_category: 'Shared Bonus',
+            tran_desc:'Free shared profit bonus to a member ',
+            tr_year:'',
+            colorcode:'green',
+            trans_method: 'Paypal',
+            createdBy: checkUserBonus._id,
+            currency_level:'2',
+            transaction_status:'successful',
+            tid: allSales.tid,
+            });
+
+            // check if user enabled in-app notifications and send notification
+            if(checkUserBonus.receive_app_message == true) {
+              const userLogs = Notification.create({
+              alert_username: checkUserBonus.display_name,
+              alert_name: checkUserBonus.display_name,
+              alert_user_ip: '',
+              alert_country: '',
+              alert_browser: '',
+              alert_date:  Date.now(),
+              alert_user_id: checkUserBonus._id,
+              alert_nature: `Bonus Profit \nNote: .${bonusResult? `\nYou got a bonus profit awarded to you \$${new Intl.NumberFormat().format(bonusResult)}. \n`: '\n' }With transaction ID: ${allSales.tid}`,
+              alert_status: 1,
+              alert_read_date: ''
+              })
+            }
+            // send email notification if enabled by user
+            if(checkUserBonus.receive_email_notification == true){
+              fetchApp().then((result) => {
+                appName = result.app_name
+                appLogo = result.app_logo
+                const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+      
+                const mailBody = loginEmail(appName, 'Profit Bonus', checkUserBonus.display_name, `this is to notify you that you have received a profit bonus and it has be credited to your wallet account
+                <b>\$${new Intl.NumberFormat().format(bonusResult)}</b>. 
+                ${bonusResult? ` <br>` :''}
+                With transaction ID <b>${allSales.tid}</b><br>
+                Thank you for choosing ${appName}, we hope you continue to enjoy our awesome services.`, logoImage)
+                    const mailText = loginText(checkUserBonus.display_name, `this is to notify you that you have received a profit bonus and it has be credited to your wallet account \n\n
+                    <b>\$${new Intl.NumberFormat().format(bonusResult)}</b><br>
+                    with transaction ID <b>${allSales.tid}</b><br>
+                    thank you for choosing ${appName}, we hope you continue to enjoy our awesome services.`)
+                    let account_issueEMail = {
+                      
+                      from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                      to: [{ email: checkUserBonus.email }],
+                      subject: 'Credit Notification',
+                      text: mailText,
+                      html: mailBody,
+                    }
+                     mailTransporter
+                      .send(account_issueEMail)
+                      .then(console.log)
+                      .catch(console.error);
+      
+                    }).catch(console.error.bind(console))
+                }
+          }
+
     //check if referral is valid and award the user the credit amount
-    if(checkReferral && checkReferral.ref_status == 'Pending' && checkReferral.ref_state == true ){
-      // get referral user details
+      if(checkReferral && checkReferral.ref_status == 'Pending' && checkReferral.ref_state == true ){
+      // get the main person who refer the user details
         const checkUser = await User.findOne({email: checkReferral.ref_mainEmail });
           // get exchange rate details
           const checkTradeRate = await GetRate.findOne();
 
-          let addAmount = parseInt(checkTradeRate.bonus_rate) * parseInt(checkTradeRate.paypal_buying);
+          //let addAmount = parseInt(checkTradeRate.bonus_rate) * parseInt(checkTradeRate.paypal_buying);
+          let addAmount = parseInt(checkTradeRate.bonus_rate);
           
-          const InitialBal = checkUser.amount+ +addAmount
+          const InitialBal = checkUser.all_bonus_acct+ +addAmount
 
           const filterUser = { _id: checkUser._id };
           const filterReferral = { _id: checkReferral._id };
@@ -2205,7 +2843,7 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
 
         const updateUserBalance = {
           $set: {
-            amount: InitialBal,
+            all_bonus_acct: InitialBal,
           },
         };
 
@@ -2214,7 +2852,7 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
       
         // process notifications for receiver referral bonus in different levels
         const addLogs = await SystemActivity.create({
-          log_username: '',
+          log_username: checkUser.email,
           log_name: checkUser.display_name,
           log_acct_number: checkUser.tag_id,
           log_receiver_name: '',
@@ -2238,23 +2876,24 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
           alert_browser: '',
           alert_date:  Date.now(),
           alert_user_id: checkUser._id,
-          alert_nature: `Referral Bonus Approved \n Note: this is to notify you that your referral bonus funds has been approved and your account has been credited with the sum of \u20A6${new Intl.NumberFormat().format(addAmount)}\n for your hard work by sharing your referral ID.\n Keep referring to keep earning...`,
+          alert_nature: `Referral Bonus Approved \n Note: this is to notify you that your referral bonus has been approved and your wallet has been credited with the sum of \$${new Intl.NumberFormat().format(addAmount)}\n for your hard work by sharing your referral ID.\n Keep referring to keep earning free money.`,
           alert_status: 1,
           alert_read_date: ''
           })
         }
 
          // create record for funding purposes
-         const fundAccount = FundUserAccount.create({
-          fund_name: checkUser.display_name,
-          fund_number: allSales.tid,
-          fund_tag_id: checkUser.tag_id,
-          amount: addAmount,
-          fund_email: checkUser.email,
-          fund_note: 'Your referral bonus has been approved and credited to your funding account',
-          fund_status: 'Credited',
-          fund_type: 'Referral Bonus'
-        });
+        
+         //  const fundAccount = FundUserAccount.create({
+        //   fund_name: checkUser.display_name,
+        //   fund_number: allSales.tid,
+        //   fund_tag_id: checkUser.tag_id,
+        //   amount: addAmount,
+        //   fund_email: checkUser.email,
+        //   fund_note: 'Your referral bonus has been approved and credited to your wallet account',
+        //   fund_status: 'Credited',
+        //   fund_type: 'Referral Bonus'
+        // });
   
         // send email to receiver referral bonus account owner
         if(checkUser.receive_email_notification == true){
@@ -2263,14 +2902,14 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
             appLogo = result.app_logo
             const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
 
-            const mailBody = loginEmail(appName, 'Fund Sales Approved', checkUser.display_name, `this is to notify you that your referral bonus funds has been approved and your account has be credited with the sum of \n\n
-            <b>\u20A6${new Intl.NumberFormat().format(addAmount)}</b> for your hard work for sharing your referral Tag ID <br>
-            </b><br>  Keep it up and keep referring your friends, loves one to continue earning... <br>
+            const mailBody = loginEmail(appName, 'Fund Sales Approved', checkUser.display_name, `this is to notify you that your referral bonus has been approved and your wallet account has be credited with the sum of \n\n
+            <b>\$${new Intl.NumberFormat().format(addAmount)}</b> for your hard work for sharing your referral Tag ID <br>
+            </b><br>  Keep it up and keep referring your friends and loves once to continue earning free money. <br>
             Thank you for choosing ${appName}, we hope you continue to enjoy our awesome services.`, logoImage)            
-           const mailText = loginText(checkUser.display_name, `this is to notify you that your referral bonus funds has been approved and your account has be credited with the sum of \n\n
-          <b>\u20A6${new Intl.NumberFormat().format(addAmount)}</b> for your hard work for sharing your referral Tag ID <br>
-          </b><br>  Keep it up and keep referring your friends, loves one to continue earning... <br>
-          Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
+           const mailText = loginText(checkUser.display_name, `this is to notify you that your referral bonus funds has been approved and your wallet account has be credited with the sum of \n\n
+          <b>\$${new Intl.NumberFormat().format(addAmount)}</b> for your hard work for sharing your referral Tag ID <br>
+          </b><br>  Keep it up and keep referring your friends and loves once to continue earning free money. <br>
+          Thank you for choosing ${appName}, we hope you continue to enjoy our awesome services.`)
           let account_issueEMail = {
             from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
             to: [{ email: checkUser.email }],
@@ -2283,28 +2922,50 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
 
           }).catch(console.error.bind(console))
           }
-      }
+        }
 
       // seller details here 
         const currentBal = userDetail.tran_account+ +allSales.amount
         // check for user signup bonus amount and give the money to the user
         const filterUser = { _id: userDetail._id };
         if(userDetail.signup_account > 0){
-          bonusMoney = userDetail.signup_account * allSales.tran_rate;
+          // refetch user updated details here
+          const userDetailBonus = await User.findOne({tag_id: allSales.acct_number} );
+           bonusMoney = userDetailBonus.all_bonus_acct+ +userDetailBonus.signup_account
+           bonusAmount = userDetailBonus.signup_account
           const updateUserBonus = {
             $set: {
               signup_account: 0,
+              all_bonus_acct: bonusMoney,
               },
             };
             const updateUserBalBonus = await User.updateOne(filterUser, updateUserBonus);
-          }
+          
+            // create history record
+            console.log('my name: ', userDetail.display_name)
+            const createRecord = TransferFund.create({
+              acct_name: userDetailBonus.display_name,
+              acct_number: userDetail.tag_id,
+              amount: userDetail.signup_account,
+              bank_name: '',
+              sender_currency_type: '$',
+              tran_type: 'Credit',
+              transac_nature:'Signup Bonus',
+              transac_category: 'Bonus',
+              tran_desc:'Free signup bonus to a new user ',
+              tr_year:'',
+              colorcode:'green',
+              trans_method: 'Paypal',
+              createdBy: userDetail._id,
+              currency_level:'2',
+              transaction_status:'successful',
+              tid: allSales.tid,
+              });
+            }
 
         // get naira equivalent for the user funds sales and bonus amount
           const totalSales = allSales.amount * allSales.tran_rate
           let gTotal = bonusMoney+ + totalSales;
-
-        //console.log("Total Sales: " + gTotal);
-        //console.log("Total Bonus: " + bonusMoney);
 
         // credit approval request account here
         if(userDetail){
@@ -2329,7 +2990,7 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
       const updateGeneral = await TransferFund.updateOne(filterGeneral, updateGeneralStatus);
 
       const addLogs = await SystemActivity.create({
-        log_username: '',
+        log_username: userDetail.email,
         log_name: userDetail.display_name,
         log_acct_number: userDetail.tag_id,
         log_receiver_name: '',
@@ -2353,7 +3014,7 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
         alert_browser: '',
         alert_date:  Date.now(),
         alert_user_id: userDetail._id,
-        alert_nature: `Funds Sales Approved \nNote: this is to notify you that your ${allSales.transac_category} funds has been approved and your bank account has be credited with the sum of \u20A6${new Intl.NumberFormat().format(totalSales)}.${bonusMoney? `\nYou got a signup bonus awarded to you \u20A6${new Intl.NumberFormat().format(bonusMoney)}. \nTotal Sum is \u20A6${new Intl.NumberFormat().format(gTotal)}.\n`: '\n' }With transaction ID: ${allSales.tid}`,
+        alert_nature: `Funds Sales Approved \nNote: this is to notify you that your ${allSales.transac_category} funds has been approved and your bank account has be credited with the sum of \u20A6${new Intl.NumberFormat().format(totalSales)}.${bonusMoney? `\nYou got a signup bonus awarded to you \$${new Intl.NumberFormat().format(bonusAmount)}. \n`: '\n' }With transaction ID: ${allSales.tid}`,
         alert_status: 1,
         alert_read_date: ''
         })
@@ -2367,25 +3028,35 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
           const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
 
           const mailBody = loginEmail(appName, 'Fund Sales Approved', userDetail.display_name, `this is to notify you that your ${allSales.transac_category} funds has been approved and your bank account has be credited with the sum of
-          <b>\u20A6${new Intl.NumberFormat().format(totalSales)}</b>. ${bonusMoney? `<br/> Wow... you got some extra money credited to you as signup bonus! <b>\u20A6${new Intl.NumberFormat().format(bonusMoney)}</b> <br>`: '<br>'}
-          ${bonusMoney? `<b>Total Amount: \u20A6${new Intl.NumberFormat().format(gTotal)}. <br>` :''}</b>
+          <b>\u20A6${new Intl.NumberFormat().format(totalSales)}</b>. ${bonusMoney? `<br/> Wow... you got some extra money credited to you as signup bonus of <b>\$${new Intl.NumberFormat().format(bonusAmount)}</b>`: ''}
+          ${bonusMoney? ` <br>` :''}
           With transaction ID <b>${allSales.tid}</b><br>
           Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`, logoImage)
               const mailText = loginText(userDetail.display_name, `this is to notify you that your ${allSales.transac_category} funds sales has been approved and your bank account has be credited with the sum of \n\n
               <b>\u20A6${new Intl.NumberFormat().format(totalSales)}</b><br>
               with transaction ID <b>${allSales.tid}</b><br>
-              thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
+              thank you for choosing ${appName}, we hope you continue to enjoy our awesome services.`)
               let account_issueEMail = {
-                from: `${appName} <noreply@ozaapp.com>`,
-                to: userDetail.email,
-                subject: 'Funds Sales Notification!',
+                // from: `${appName} <noreply@ozaapp.com>`,
+                // to: userDetail.email,
+                // subject: 'Funds Sales Notification!',
+                // text: mailText,
+                // html: mailBody,
+                from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                to: [{ email: userDetail.email }],
+                subject: 'Funds Sales Notification',
                 text: mailText,
                 html: mailBody,
               }
-              async function main() {
-              const info = await transporterMailer.sendMail(account_issueEMail);
-                  }
-              main().catch('Message Error', console.error);
+              // async function main() {
+              // const info = await transporterMailer.sendMail(account_issueEMail);
+              //     }
+              // main().catch('Message Error', console.error);
+                mailTransporter
+                .send(account_issueEMail)
+                .then(console.log)
+                .catch(console.error);
+
               }).catch(console.error.bind(console))
           }
 

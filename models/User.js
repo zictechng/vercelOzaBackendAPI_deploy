@@ -81,10 +81,20 @@ const userSchema = new mongoose.Schema({
         //type: mongoose.SchemaTypes.Mixed,
         default: 0.0,   
     },
+    all_withdraw_acct: {
+        type: Number,
+        //type: mongoose.SchemaTypes.Mixed,
+        default: 0.0,   
+    },
+    all_bonus_acct: {
+        type: Number,
+        default: 0.0,
+    },
     acct_balance: {
         type: Number,
         default: 0.0,
     },
+
     tran_account: {
         type: Number,
         default: 0.0,
@@ -105,6 +115,9 @@ const userSchema = new mongoose.Schema({
         default: 0.0,
     },
     reg_otp:{
+        type: String,
+    },
+    reg_otp_send:{
         type: String,
     },
     user_role:{
