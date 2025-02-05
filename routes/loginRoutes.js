@@ -148,7 +148,7 @@ router.post("/login", async (req, res, next) => {
         }
     });
         } catch (err) {
-        res.status(500).send({ msg: "500" });
+        res.status(500).send({ msg: "500", message: ' Server error occurred' });
         }
     });
 
@@ -223,7 +223,6 @@ router.get("/user_logout/:id", async (req, res, next) => {
             console.log(err.message);
         }
     });
-    
 
     // verify user login state if it is valid or not
 router.get("/authenticate_user/:id", isAuth, async (req, res, next) =>{
@@ -627,7 +626,5 @@ router.post("/sendUserOTP", async (req, res) => {
         res.status(500).send({ msg: "500" });
     }
     });
-
-
 
 module.exports = router;

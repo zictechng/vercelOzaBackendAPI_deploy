@@ -1,6 +1,7 @@
 const allowedOrigins = [
     'http://localhost:2400',
     'http://localhost:3000',
+    'http://localhost:3000/user',
     'http://www.zictech-ng.com',
     'http://localhost:4200',
     'https://www.zictech-ng.com',
@@ -11,7 +12,8 @@ const allowedOrigins = [
     'https://admin.ozaapp.com',
     'https://adminoffice.ozaapp.com',
     'https://ozabackendapi.ozaapp.com',
-    'https://ozaapp.com'
+    'https://ozaapp.com',
+    
 ]
 
 // these are the url that we want to be able to access our api end point

@@ -38,6 +38,7 @@ const { loginEmail, loginText } = require('../emailTemplate/emailLogin');
 
 
 const {ObjectId} = require('mongodb');
+const fundTransfer = require('../models/fundTransfer');
 const uploadLocation = "public/images"; // this is the image store location in the project
 const storage = multer.diskStorage({
   destination: (req, file, callBack) => {
@@ -187,18 +188,17 @@ router.get("/user_bankDetails/:id", isAuth, async (req, res) => {
   //console.log(" userId: " + userId)
   if(req.params.id === undefined) {
     return res.json({status: 403, message: 'Access denied'});
-  }
-  try {
-    const userDetails = await userBankDetails.findOne({ user_id: userId });
-    if(!userDetails){
-      return res.json({status: 404, message: 'No record found'})
     }
+    try {
+      const userDetails = await userBankDetails.findOne({ user_id: userId });
+      if(!userDetails){
+        return res.json({status: 404, message: 'No record found'})
+      }
+      res.send({ msg: '200', bankDetail: userDetails})
 
-    res.send({ msg: '200', bankDetail: userDetails})
-
-  } catch (err) {
-    res.status(500).json(err.message);
-    console.log(err.message);
+    } catch (err) {
+      res.status(500).json(err.message);
+      console.log(err.message);
   }
 });
   
@@ -465,6 +465,42 @@ router.get("/all_historyMobile/:id", isAuth, async (req, res) => {
       res.status(500).json({ error: err.message });
       }
       });
+
+router.get("/all_userHistory/:id", isAuth, async (req, res) => {
+  const userId = req.params.id;
+  const itemsPerPage = 10; // Number of transactions per page
+  const page = parseInt(req.query.page) || 1; // Get page number from query or default to 1
+  const skip = (page - 1) * itemsPerPage;
+  const countAll = await TransferFund.find({ createdBy: userId }).count();
+
+  const pageTotal = Math.ceil(countAll / itemsPerPage);
+
+  if (countAll === 0) {
+    return res.json({ status: 401, message: 'No records found' });
+  }
+
+  try {
+    const recentTransaction = await TransferFund.find({ createdBy: userId }) // Use the user ID in the query
+      .sort({ creditOn: -1 })
+      .skip(skip)
+      .limit(itemsPerPage);
+
+    if (!recentTransaction || recentTransaction.length < 1) {
+      return res.json({ status: 404, message: 'No more records' });
+    }
+
+    res.json({
+      data: recentTransaction,
+      totalPages: pageTotal,
+      currentPage: page,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
 // history base on paypal transaction
 router.get("/all_historyMobilePapay/:id",isAuth, async (req, res) => {
         const userId = req.params.id;
@@ -540,7 +576,7 @@ router.get("/all_historyMobilePayooner/:id",isAuth, async (req, res) => {
           }
     });
         
-// history base on paypal transaction
+// get user referral details
 router.get("/user_referrals/:id",isAuth, async (req, res) => {
   const userId = req.params.id;
   const paypalSales = 'Referrals';
@@ -573,6 +609,77 @@ router.get("/user_referrals/:id",isAuth, async (req, res) => {
           res.status(500).json({ error: err.message });
           }
     });
+
+// get user referral details via web app
+router.get("/user_referralsDetails/:id", isAuth, async (req, res) => {
+  const userId = req.params.id;
+  const itemsPerPage = parseInt(req.query.pageSize) || 5;
+  const page = parseInt(req.query.page) || 1;
+
+  try {
+    // Get total count of records
+    const countAll = await Referrals.find({ createdBy: userId }).count();
+    const totalPages = Math.ceil(countAll / itemsPerPage);
+    // Validate the requested page number
+    if (page > totalPages) {
+      return res.status(400).json({ message: `Invalid page number. Maximum page is ${totalPages}.` });
+    }
+    const skip = (page - 1) * itemsPerPage;
+
+    // Fetch paginated data
+    const referralData = await Referrals.find({ createdBy: userId })
+      .sort({ createdOn: -1 })
+      .skip(skip)
+      .limit(itemsPerPage);
+      
+        res.json({
+          data: referralData,
+          totalPages,
+          currentPage: page,
+        });
+  } catch (err) {
+    console.error('Error fetching referrals:', err.message);
+    res.status(500).json({ error: 'Server Error' });
+  }
+});
+
+// get user uploaded documents via web app
+router.get("/user_documentUpload/:id", isAuth, async (req, res) => {
+  const userId = req.params.id;
+  //console.log("My ID " ,userId)
+  const itemsPerPage = parseInt(req.query.pageSize) || 5;
+  const page = parseInt(req.query.page) || 1;
+
+  try {
+    // Get total count of records
+    const countAll = await DocumentUpload.find({ user_id: userId }).count();
+    const totalPages = Math.ceil(countAll / itemsPerPage);
+   // console.log("Page " ,totalPages)
+    // Validate the requested page number
+    if (page > totalPages) {
+      return res.status(400).json({ message: `Invalid page number. Maximum page is ${totalPages}.` });
+    }
+    const skip = (page - 1) * itemsPerPage;
+
+    // Fetch paginated data
+    const docData = await DocumentUpload.find({ user_id: userId })
+      .sort({ createdOn: -1 })
+      .skip(skip)
+      .limit(itemsPerPage);
+
+      //console.log("Doc " ,docData)
+        res.json({
+          msg:'200',
+          data: docData,
+          totalPages,
+          currentPage: page,
+        });
+  } catch (err) {
+    console.error('Error fetching referrals:', err.message);
+    res.status(500).json({ error: 'Server Error' });
+  }
+});
+
 
 router.get("/all_transactions", async (req, res) => {
     let userId = req.params.id;
@@ -609,11 +716,15 @@ router.get("/history-wallet/:id", isAuth, async (req, res) => {
   // get user wallet account balance here..
 router.get("/user_Wallet_summary/:id", isAuth, async (req, res) => {
   let userId = req.params.id;
-  //console.log("My ID", userId);
+    //console.log("My ID", userId);
   try {
        //console.log('Balance ', userWalletBalance)
        let pendingBonus = 0;
        let allWithdraw = 0;
+       let allInflow = 0;
+       let allAccountPending = 0;
+       let allReferralPending = 0;
+       let bonusApproved = 0;
       
        // get user details
        const userDetails = await User.findOne({ tag_id: userId });
@@ -624,6 +735,12 @@ router.get("/user_Wallet_summary/:id", isAuth, async (req, res) => {
           ref_mainEmail: userDetails.email,
         });
 
+        const userBonusApproved = await Referrals.find(
+          {
+            ref_status: 'Approved',
+            ref_mainEmail: userDetails.email,
+          });
+
         // get all time withdrawal totals
        const userWithdrawalTotal = await UserWithdrawal.find(
         {
@@ -631,9 +748,28 @@ router.get("/user_Wallet_summary/:id", isAuth, async (req, res) => {
           withdrawal_tag_id :userDetails.tag_id
         });
 
+        // get all time inflow transaction with Credit status totals
+       const userInflowTotal = await fundTransfer.find(
+        {
+          transaction_status: 'Successful',
+          tran_type:'Credit',
+          acct_number :userDetails.tag_id
+        });
+
+        
+        // get all time Pending inflow transaction with Credit status Pending totals
+       const userPendingTotal = await fundTransfer.find(
+        {
+          transaction_status: 'Pending',
+          acct_number :userDetails.tag_id
+        });
+
         
         pendingBonus = userBonusPending.reduce((sum, transaction) => sum + transaction.ref_amt, 0);
+        bonusApproved = userBonusApproved.reduce((sum, approvedBonus) => sum + approvedBonus.ref_amt, 0);
         allWithdraw = userWithdrawalTotal.reduce((sum, all_transaction) => sum + all_transaction.amount, 0);
+        allInflow = userInflowTotal.reduce((sum, all_tran) => sum + all_tran.amount, 0);
+        allAccountPending = userPendingTotal.reduce((sum, all_tranPending) => sum + all_tranPending.amount, 0);
 
     // get wallet funding balance
       const userWallet = await FundUserAccount.aggregate(
@@ -641,9 +777,45 @@ router.get("/user_Wallet_summary/:id", isAuth, async (req, res) => {
       {$group: {_id: null, totalAmount: { $sum: '$amount' }}}]
       );
       
+      // get total transaction counts by individual
+      const allTransCount = await fundTransfer.find({
+        acct_number :userDetails.tag_id}).count(); 
+
+      // get total transaction counts by individual
+      const allApprovedTransCount = await fundTransfer.find({
+        transaction_status: 'Successful',
+        tran_type:'Credit',
+        acct_number :userDetails.tag_id}).count();
+
+      //get total withdraw transaction count by individual
+      const allWithdrawCount = await UserWithdrawal.find({
+        withdrawal_tag_id :userDetails.tag_id}).count();
+
+        //get total successful withdraw transaction count by individual
+      const allApproveWithdrawCount = await UserWithdrawal.find({
+        withdrawal_status: 'Approved',
+        withdrawal_tag_id :userDetails.tag_id}).count();
+
+      // get total pending transaction counts by individual
+      const allPendingCount = await fundTransfer.find({
+        transaction_status: 'Pending',
+        acct_number :userDetails.tag_id}).count();
+        
+
+      const allPendingBonusCount = await Referrals.find({
+          ref_status: 'Pending',
+          ref_mainEmail: userDetails.email}).count();
+
+          const allBonusCount = await Referrals.find({
+            ref_mainEmail: userDetails.email}).count();
+
       //console.log("wallet weekly ", userBonusPending.bonusTotalAmount)
       res.send({ msg: '201', feedback: userWallet, feedbackBonus: pendingBonus,
-        feedbackWithdraw: allWithdraw
+        bonusMoney: bonusApproved,
+        countBonusPending:allPendingBonusCount, bonusCount: allBonusCount,
+        feedbackWithdraw: allWithdraw, feedbackInflow: allInflow, feedbackPending: allAccountPending,
+        totalTransCount:allTransCount, countWithdraw:allWithdrawCount, countApproveWithdraw: allApproveWithdrawCount,
+        countPendingTrans: allPendingCount, countApproveTrans: allApprovedTransCount
       })
     } catch (err) {
     res.status(500).json(err.message);
@@ -1257,6 +1429,52 @@ return res.json({status: 500, message: 'Server error: ' })
         }
     });
 
+// get users notifications from the web portal
+router.get("/user_notification/:id", isAuth, async (req, res) => {
+      const userId = req.params.id;
+      const itemsPerPage = 10; // Number of transactions per page
+      const page = parseInt(req.query.page) || 1; // Get page number from query or default to 1
+      const skip = (page - 1) * itemsPerPage;
+      const filter = {alert_user_id: userId}
+
+      const countAll = await Notification.find({ alert_user_id: userId }).count();
+      const pageTotal = Math.ceil(countAll / itemsPerPage);
+    
+      if (countAll === 0) {
+        return res.json({ status: 401, message: 'No notifications found' });
+      }
+    
+      try {
+        // check unread notifications and update
+        const notifyDetailsRead = await Notification.find({alert_user_id: userId, alert_status: 1 })
+          if(notifyDetailsRead){
+            const updateDoc = {
+              $set: {
+                alert_status: 0,
+                },
+            }
+            const updateRead = await Notification.updateMany(filter, updateDoc);
+          }
+
+        const notify = await Notification.find({ alert_user_id: userId }) // Use the user ID in the query
+          .sort({ alert_date: -1 })
+          .skip(skip)
+          .limit(itemsPerPage);
+    
+        if (!notify || notify.length < 1) {
+          return res.json({ status: 404, message: 'No more records' });
+        }
+    
+        res.json({
+          data: notify,
+          totalPages: pageTotal,
+          currentPage: page,
+        });
+      } catch (err) {
+        res.status(500).json({ error: err.message });
+      }
+});
+
 // count user notification Message Mobile here here..
 router.get("/user_messageCount/:id", isAuth, async (req, res) => {
   let myId = req.params.id;
@@ -1290,7 +1508,7 @@ router.get("/current_rate", isAuth, async (req, res) => {
       return res.json({status: 404, msg: '404'})
     }
     else if(allRate){
-     // console.log("Rate Details ", allRate)
+     //console.log("Rate Details ", allRate)
       res.send(allRate)
     }
     else{

@@ -18,6 +18,7 @@ const userBankDetails = require('../models/UserBankDetails');
 const UserReferral = require('../models/referralUser');
 const GetRate = require('../models/businessRate');
 const TransferFund = require('../models/fundTransfer');
+const FundUserAccount = require('../models/fundAccount')
 const nodemailer = require("nodemailer");
 
 //const transporter = require('../controllers/mailSender');
@@ -421,8 +422,6 @@ router.post("/register", async (req, res, next) => {
                     function(err, result) { console.log("Delete Status ", result) })
                   }
 
-            
-                
             const updateUserNow = await User.updateOne(filterUser, updateDoc);
                 
           if(updateUserNow){
@@ -472,14 +471,15 @@ router.post("/register", async (req, res, next) => {
     //const url = req.protocol + '://' + req.get('host') // this will get the host url directly
     const url = process.env.SERVER_BASEURL;
     const filterUser = {tid: req.body.trackId };
+    const filterUserFunding = {fund_number: req.body.trackId };
     //console.log("Data submitted ", req.body)
-
        try {
             const fundDetails = await TransferFund.findOne({tid:req.body.trackId}).lean().exec()
-
+            const fundAccount = await FundUserAccount.findOne({fund_number:req.body.trackId}).lean().exec()
             if(!fundDetails){
              return res.json({status: 402, message: 'Transaction not valid'})
             }
+            
             if(fundDetails){
               //console.log(result);
               const imageUrl = req.body.image_url;
@@ -489,8 +489,14 @@ router.post("/register", async (req, res, next) => {
                     payment_proof_url: imageUrl != null? imageUrl:'', 
                     },
                 };
+                // update funding document
+                const updateFunding = {
+                      $set: {
+                      fund_payment_proof_url: imageUrl != null? imageUrl:'', 
+                      },
+                  };
                 // delete old image from cloudinary
-                if(fundDetails.payment_proof_url != null || fundDetails.payment_proof_url !=''){
+                if(fundDetails.payment_proof_url != null || fundDetails.payment_proof_url !==''){
                     const oldImage = fundDetails.payment_proof_url;
                     const imageDirectory = oldImage?.split("/")[7];
                     const public_id = oldImage?.split("/")[8]
@@ -504,6 +510,7 @@ router.post("/register", async (req, res, next) => {
                   }
                 
             const updateUserNow = await TransferFund.updateOne(filterUser, updateDoc);
+            const updateFundNow = await FundUserAccount.updateOne(filterUserFunding, updateFunding);
                 
           if(updateUserNow){
               // create log here
@@ -800,8 +807,9 @@ router.post("/complete_registration", isAuth, async (req, res) => {
                         state: req.body.state,
                         acct_type:'Virtual',
                         address: req.body.address,
-                        tag_id: userTagNumber,
                         currency_type: '$',
+                        country: req.body.country? req.body.country:'',
+                        city: req.body.city? req.body.city:'',
                         },
                     };
                     
@@ -831,7 +839,7 @@ router.post("/complete_registration", isAuth, async (req, res) => {
                         payoneer_address: req.body.payoneer_address,
                         btc_address: req.body.btc_address,
                         user_id: req.body.userId,
-                        user_tag_id: userTagNumber,
+                        user_tag_id: userInfo.tag_id,
                         user_email: userInfo.email,
                         bank_action: 'Pending',
                         bank_status: 'Pending',
@@ -955,7 +963,7 @@ router.post("/user_activate_email", isAuth, async (req, res) => {
     const url = req.protocol + '://' + req.get('host') // this will get the host url directly
     const filterUser = { _id: req.body.user_Id };
     const actionStatus = req.body.status_value;
-    //console.log("user info ", req.body)
+    //console.log("Setting info ", req.body)
          try {
             const userPro = await User.findOne({_id:req.body.user_Id}).lean().exec()
               if(!userPro){
@@ -969,7 +977,7 @@ router.post("/user_activate_email", isAuth, async (req, res) => {
                 };
             if(userPro){
             const updateUserNow = await User.updateOne(filterUser, updateDocUserYes);
-        // create log here
+             // create log here
             const addLogs = await SystemActivity.create({
                 log_username: userPro.email,
                 log_name: userPro.display_name,
@@ -985,7 +993,9 @@ router.post("/user_activate_email", isAuth, async (req, res) => {
                 log_nature:'Email notification updated',
                 })
             }
-                
+
+            const userUpdated = await User.findOne({_id:req.body.user_Id}).lean().exec()
+        
             // send email notification to user
             fetchApp().then((result) =>{
             appName = result.app_name
@@ -1007,7 +1017,7 @@ router.post("/user_activate_email", isAuth, async (req, res) => {
             // async..await is not allowed in global scope, must use a wrapper
             }).catch(console.error.bind(console))
         
-        res.status(201).json({dataPro: userPro, msg: '201'}) // success message
+        res.status(201).json({dataPro: userPro, userData: userUpdated, msg: '201'}) // success message
         } catch (error) {
         console.error(error);
         return res.json({status: 500, message: 'Server error: ' })
@@ -1019,6 +1029,7 @@ router.post("/user_activate_2fa_notice", isAuth, async (req, res) => {
     //const url = req.protocol + '://' + req.get('host') // this will get the host url directly
     const filterUser = { _id: req.body.user_Id };
     const actionStatus = req.body.status_value;
+    //console.log("2FA info ", req.body)
    
          try {
             const userPro = await User.findOne({_id:req.body.user_Id}).lean().exec()
@@ -1049,6 +1060,8 @@ router.post("/user_activate_2fa_notice", isAuth, async (req, res) => {
                 log_nature:'Email notification updated',
                 })
                 }
+            const userUpdated = await User.findOne({_id:req.body.user_Id}).lean().exec()
+        
         // send email notification to user
         fetchApp().then((result) =>{
             appName = result.app_name
@@ -1071,7 +1084,7 @@ router.post("/user_activate_2fa_notice", isAuth, async (req, res) => {
            
         }).catch(console.error.bind(console))
 
-        res.status(201).json({data2fa: userPro, msg: '201'}) // success message
+        res.status(201).json({data2fa: userPro, userData: userUpdated, msg: '201'}) // success message
         } catch (error) {
         console.error(error);
         return res.json({status: 500, message: 'Server error: ' })
@@ -1112,6 +1125,7 @@ router.post("/user_notice_request", isAuth, async (req, res) => {
                     log_nature:'In-App notification updated',
                     })
                 }
+                const userUpdated = await User.findOne({_id:req.body.user_Id}).lean().exec();
                 // send email notification to user
             fetchApp().then((result) =>{
                 appName = result.app_name
@@ -1133,7 +1147,7 @@ router.post("/user_notice_request", isAuth, async (req, res) => {
                
             }).catch(console.error.bind(console))
 
-        res.status(201).json({msg: '201'}) // success message
+        res.status(201).json({userData: userUpdated, msg: '201'}) // success message
         } catch (error) {
         console.error(error);
         return res.json({status: 500, message: 'Server error: ' })

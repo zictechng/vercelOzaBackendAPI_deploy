@@ -874,7 +874,7 @@ router.post("/approveAcctWithdrawal", isAuth, async (req, res) => {
         })
       }
 
-      console.log(currentBal)
+      //console.log(currentBal)
        // create record for approval purposes
        const createRecord = TransferFund.create({
         acct_name: userDetail.display_name,

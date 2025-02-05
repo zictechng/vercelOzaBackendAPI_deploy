@@ -85,7 +85,7 @@ router.post('/create-payment', isAuth, (req, res, next) => {
     var receiveAmt = amount;
     newAmt = receiveAmt;
     const amt = req.body.amount;
-   // console.log('body details', req.body);
+     //console.log('body details', req.body);
     passDetails = req.body;
 
     const createPaymentJson = {
@@ -132,11 +132,12 @@ paypal.payment.create(createPaymentJson, (error, payment) => {
   // success route here
 router.get('/success', (req, res) => {
     // Handle successful payment execution here
+    //console.log('Paypal Payment Successful ', res)
   const payerId = req.query.PayerID;
   const paymentId = req.query.paymentId;
   const payToken = req.query.token;
 
-//console.log("payerId",payerId, "paymentId ", paymentId, "Payment token", payToken); 
+console.log("payerId",payerId, "paymentId ", paymentId, "Payment token", payToken); 
   const execute_payment_json = {
     "payer_id": payerId,
     "transactions": [{
@@ -156,7 +157,7 @@ paypal.payment.execute(paymentId, execute_payment_json, function (error, payment
         return res.status(500).json({ error: 'Internal Server Error' });
         throw error;
     } else {
-        //console.log("success ID ", req.query)
+        console.log("success ID ", req.query)
         // the custom function to execute the payment record details creation here
         processPaymentDetails(passDetails, paymentId)
         res.send('Payment successful')
@@ -170,6 +171,81 @@ router.get('/cancel', (req, res) => {
     res.send('Payment canceled.');
   });
 
+
+const PAYPAL_CLIENT_ID = process.env.PAYPAL_KEY; 
+const PAYPAL_SECRET_KEY = process.env.PAYPAL_SECRET; 
+
+// ✅ Function to get PayPal access token from web app
+const getPayPalAccessToken = async () => {
+  //console.log('PayPal access Key ', PAYPAL_CLIENT_ID +' ', PAYPAL_SECRET_KEY)
+  try {
+    const auth = Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_SECRET_KEY}`).toString("base64");
+    //const liveEndpoint = await fetch("https://api-m.paypal.com/v1/oauth2/token") 
+    const response = await fetch("https://api-m.sandbox.paypal.com/v1/oauth2/token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: `Basic ${auth}`,
+      },
+      body: "grant_type=client_credentials",
+    });
+
+    const data = await response.json();
+
+    if (!data.access_token) {
+      throw new Error("Failed to get PayPal access token");
+    }
+
+    return data.access_token;
+  } catch (error) {
+    console.error("❌ Error fetching PayPal token:", error);
+    throw new Error("PayPal authentication failed");
+  }
+};
+
+// web app paypal payment capture
+router.post("/capture-payment", isAuth, async (req, res) => {
+  const { payerId, orderID, amount } = req.body;
+  const authToken = req.headers.authorization?.split(" ")[1];
+    paymentData = req.body;
+    //console.log("🔍 Received data :", paymentData);
+
+  if (!orderID) {
+    return res.status(400).json({ error: "Missing PayPal orderID." });
+  }
+  try {
+    const accessToken = await getPayPalAccessToken();
+    //const livePurchases = await fetch(`https://api-m.paypal.com/v2/checkout/orders/${orderID}/capture`)
+
+    const captureResponse = await fetch(`https://api-m.sandbox.paypal.com/v2/checkout/orders/${orderID}/capture`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    const captureData = await captureResponse.json();
+
+      if (captureResponse.status !== 201) {
+        console.error("PayPal Capture Error:", captureData);
+        return res.status(500).json({ error: "Failed to capture PayPal payment", details: captureData });
+      }
+      if(captureResponse.status == 201)
+      {
+        //console.log("Payment successfully captured:", captureData);
+        processPaymentDetails(paymentData, orderID)
+        res.status(201).json({msg: '201', userData: captureData})
+      }
+      else{
+        res.status(500).json({ message: "Server problem", captureData });
+      }
+  } catch (error) {
+    console.error("Error capturing payment:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
   // custom function to create payment details history record here
 const processPaymentDetails = async(data, paymentId) =>{
     const TransID = transactionID(25)
@@ -177,6 +253,7 @@ const processPaymentDetails = async(data, paymentId) =>{
     const getCurrentRate = await GetRate.findOne();
     try {
         let userFund = await User.findOne({ _id: data.myId }); // here I am checking if user exist then I will get user details
+        //console.log("User details: ", userFund)
         if (!userFund) {
           //console.log("User details: ", userDetails)
           return res.json({status: 404, message: 'User not found'})// user not found
@@ -192,7 +269,7 @@ const processPaymentDetails = async(data, paymentId) =>{
               sender_acct_number: userFund.tag_id,
               sender_currency_type: '$',
               tran_type: 'Credit',
-              transac_nature:data.serviceName+' '+data.serviceCategory,
+              transac_nature: data.serviceName+' '+data.serviceCategory,
               transac_category: data.serviceName,
               tran_desc:'Request for virtual funds exchange with '+data.serviceName+" \n "+data.sell_note,
               tr_year:'',
@@ -204,8 +281,8 @@ const processPaymentDetails = async(data, paymentId) =>{
               trans_balance: data.total_money,
               tran_service_type: data.serviceType,
               pay_tran: paymentId,
-              tran_rate: data.serviceName == 'PayPal'? getCurrentRate.paypal_selling: data.serviceName == 'Payoneer'? getCurrentRate.payooner_selling: data.serviceName=='Bitcoin'? getCurrentRate.btc_selling: ''
-              });
+              tran_rate: data.serviceName == 'PayPal' || data.serviceName =='Paypal'? getCurrentRate.paypal_buying: data.serviceName == 'Payoneer' || data.serviceName =='Payooner'? getCurrentRate.payoneer_buying: data.serviceName=='Bitcoin'? getCurrentRate.btc_buying: ''
+             });
               
             // check if user activate in-app notification and send notification
             if(userFund.receive_app_message == true) {
@@ -510,8 +587,9 @@ const processPaymentDetails = async(data, paymentId) =>{
                 // async..await is not allowed in global scope, must use a wrapper
                 }).catch(console.error.bind(console))     
              }  
+             const newUserDetail = await User.findOne({ _id:  dataReceive.userId });
          // success message
-          res.status(201).json({msg: '200'})
+          res.status(201).json({msg: '200', userData: newUserDetail})
           }
       } catch (err) {
          // err message
@@ -533,10 +611,10 @@ router.post("/userAccount_funding", isAuth, async (req, res) => {
 
           const fundingLimit = await AppSetting.find();
           if(dataReceive.amt > fundingLimit[0].app_maxi_funding ){
-            return res.json({status: 403, message: `Amount funding should not exceed \u20A6${new Intl.NumberFormat().format(fundingLimit[0].app_maxi_funding)}` })
+            return res.json({status: 403, message: `Maximum amount funding should is \u20A6${new Intl.NumberFormat().format(fundingLimit[0].app_maxi_funding)}` })
           }
           if(dataReceive.amt < fundingLimit[0].app_minim_funding ){
-            return res.json({status: 403, message: `Minimum of amount of \u20A6${new Intl.NumberFormat().format(fundingLimit[0].app_minim_funding)} accepted` })
+            return res.json({status: 403, message: `Minimum funding amount is \u20A6${new Intl.NumberFormat().format(fundingLimit[0].app_minim_funding)} accepted` })
           }
 
           //console.log("maxi ", fundingLimit[0].app_maxi_funding)
@@ -558,6 +636,7 @@ router.post("/userAccount_funding", isAuth, async (req, res) => {
                 amount: dataReceive.amt,
                 fund_email: userFund.email,
                 fund_note: dataReceive.note,
+                fund_method: dataReceive.method,
                 fund_status: 'Pending',
               });
               // check if user activate in-app notification and send notification
@@ -723,7 +802,7 @@ router.post("/userFundWithdrawal", isAuth, async (req, res) => {
             });
 
             const updateBal = await User.updateOne(filter, updateUserBalance);
-            
+            const currentUserFund = await User.findOne({ _id:  dataReceive.userId });
             // check if user activate in-app notification and send notification
             if(userFund.receive_app_message == true) {
                const userLogs = Notification.create({
@@ -752,7 +831,7 @@ router.post("/userFundWithdrawal", isAuth, async (req, res) => {
               createdBy: userFund._id,
               tid: Trans_ID,
               colorcode:'red',
-              pay_tran: req.body?.payId, 
+              pay_tran: req.body?.payId ? req.body?.payId:'', 
               currency_level: '2',
               sender_acct_number: userFund.tag_id,
               transaction_status: 'Pending',
@@ -820,8 +899,8 @@ router.post("/userFundWithdrawal", isAuth, async (req, res) => {
             // async..await is not allowed in global scope, must use a wrapper
            }).catch(console.error.bind(console))        
        // success message
-        
-        res.status(200).json({msg: '200', feedback: Trans_ID})
+       const { password, password_plain, ...others } = currentUserFund._doc;
+        res.status(200).json({msg: '200', feedback: Trans_ID, userData: others})
         }
     } catch (err) {
        // err message
@@ -968,7 +1047,7 @@ router.post("/userAccount_withdrawal", isAuth, async (req, res) => {
 // route to check funding limit before sending it for processing goes here...
 router.post("/check_fundingLimit", isAuth, async (req, res) => {
   const dataReceive = req.body;
-  //console.log("Tran ID: ", req.body)
+  console.log("Tran ID: ", req.body)
   const Trans_ID = transactionID(25)
   // get the transfer record ID here
   const filter = { _id: dataReceive.userId };
@@ -1037,7 +1116,7 @@ router.post("/fundPurchase_funding", isAuth, async (req, res) => {
                 tid: TransID,
                 tran_service_type: dataReceive.serviceType,
                 pay_tran: dataReceive.method =='Paystack Checkout'? dataReceive.payId : null,
-                tran_rate: dataReceive.serviceName == 'PayPal'? getCurrentRate.paypal_buying: dataReceive.serviceName == 'Payoneer'? getCurrentRate.payoneer_buying: dataReceive.serviceName=='Bitcoin'? getCurrentRate.btc_buying: ''
+                tran_rate: dataReceive.serviceName == 'PayPal' || dataReceive.serviceName =='Paypal'? getCurrentRate.paypal_buying: dataReceive.serviceName == 'Payoneer' || dataReceive.serviceName =='Payooner'? getCurrentRate.payoneer_buying: dataReceive.serviceName=='Bitcoin'? getCurrentRate.btc_buying: ''
                 });
                 
               // check if user activate in-app notification and send notification
@@ -1155,7 +1234,7 @@ router.post("/fundBuy_funding", isAuth, async (req, res) => {
                 tran_type: 'Debit',
                 transac_nature:dataReceive.serviceName+' '+dataReceive.serviceCategory,
                 transac_category: dataReceive.serviceName,
-                tran_desc:'Request for virtual funds exchange for '+dataReceive.serviceName+" \n "+dataReceive?.buy_note,
+                tran_desc:'Request for virtual funds exchange for '+dataReceive.serviceName+" \n "+dataReceive.buy_note? dataReceive.buy_note:'',
                 tr_year:'',
                 colorcode:'red',
                 trans_method: dataReceive.method,
@@ -1165,7 +1244,7 @@ router.post("/fundBuy_funding", isAuth, async (req, res) => {
                 tran_service_type: dataReceive.serviceType,
                 trans_balance: dataReceive.total_money,
                 pay_tran: dataReceive.method =='Paystack Checkout'? dataReceive.payId : null,
-                tran_rate: dataReceive.serviceName == 'PayPal'? getCurrentRate.paypal_selling: dataReceive.serviceName == 'Payoneer'? getCurrentRate.payoneer_selling: dataReceive.serviceName=='Bitcoin'? getCurrentRate.btc_selling: ''
+                tran_rate: dataReceive.serviceName == 'PayPal' || dataReceive.serviceName =='Paypal'? getCurrentRate.paypal_selling: dataReceive.serviceName == 'Payoneer' || dataReceive.serviceName =='Payooner'? getCurrentRate.payoneer_selling: dataReceive.serviceName=='Bitcoin'? getCurrentRate.btc_selling: ''
                 });
                 
               // check if user activate in-app notification and send notification
@@ -1206,14 +1285,14 @@ router.post("/fundBuy_funding", isAuth, async (req, res) => {
                     appName = result.app_name
                     appLogo = result.app_logo
                     const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-                    const mailBody = loginEmail(appName, 'Account Funding Notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment is received. \n Request reference / Transaction ID is ${TransID}, \n
+                    const mailBody = loginEmail(appName, 'Transaction Notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment is received. \n Request reference / Transaction ID is ${TransID}, \n
                     \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId: ''}
                     \n Thank you`, logoImage)
                     const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId:''}`);
                     let fundAcctMailOptions = {
                     from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
                     to: [{ email: userFund.email }],
-                    subject: 'Account Funding Notification!',
+                    subject: 'Transaction Notification!',
                     text: TextBody,
                     html: mailBody,
                 }
@@ -1228,14 +1307,14 @@ router.post("/fundBuy_funding", isAuth, async (req, res) => {
                 appName = result.app_name
                 appLogo = result.app_logo
                 const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-                const mailBody = loginEmail(appName, 'Account Funding Notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} made fund exchange request and it has been logged, kindly treat as soon as possible. \n Request reference / Transaction ID is ${TransID}, \n
+                const mailBody = loginEmail(appName, 'Transaction Notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} made fund exchange request and it has been logged, kindly treat as soon as possible. \n Request reference / Transaction ID is ${TransID}, \n
                 \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId: ''}
                 \n Thank you`, logoImage)
                 const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId:''}`);
                 let fundAcctMailOptions = {
                 from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
                 to: [{ email: 'hello@ozaapp.com' }],
-                subject: 'Account Funding Notification!',
+                subject: 'Transaction Notification!',
                 text: TextBody,
                 html: mailBody,
             }

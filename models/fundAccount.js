@@ -14,6 +14,11 @@ const fundAccountSchema = new Schema({
     },
     fund_email: String,
     fund_note: String,
+    fund_method: String,
+    fund_payment_proof_url:{
+        type: String,
+        default:''
+    },
     fund_type: {
         type: String,
         default:'Account Funding'
