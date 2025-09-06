@@ -9,6 +9,7 @@ const allowedOrigins = [
     'http://localhost:3500',
     'https://ozawebservice.onrender.com',
     'http://192.168.1.169:3500',
+    'http://192.168.1.83:3500',
     'https://admin.ozaapp.com',
     'https://adminoffice.ozaapp.com',
     'https://ozabackendapi.ozaapp.com',
