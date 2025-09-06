@@ -59,7 +59,7 @@ router.post("/login", async (req, res, next) => {
     
     if(!userExist){
         //console.log('Wrong username entered!');
-            return res.json({status: 401, message: ' No record found'})
+            return res.json({status: 401, message: ' Invalid details entered, try again.'})
         }
     if(userExist.acct_status != 'Active' || userExist.acct_status == ''){
         //console.log('Wrong username entered!');
