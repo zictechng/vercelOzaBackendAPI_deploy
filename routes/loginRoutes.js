@@ -3,7 +3,9 @@ const router = express.Router()
 const jwt = require("jsonwebtoken");
 const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
-const mailTransporter = require('../controllers/emailSender');
+//const mailTransporter = require('../controllers/emailSender');
+
+const sendEmail = require("../services/emailService");
 const User = require('../models/User');
 const SystemActivity = require('../models/SystemActivityLogs');
 const UserLogs = require('../models/UserLogs')
@@ -114,6 +116,8 @@ router.post("/login", async (req, res, next) => {
             login_status: 1
         });
             // send email notification
+            console.log("Loaded Mailtrap Token:", process.env.EMAIL_API_PASSWORD);
+
             fetchApp().then((result) =>{
                 appName = result.app_name
                 appLogo = result.app_logo
@@ -128,10 +132,15 @@ router.post("/login", async (req, res, next) => {
                     text: TextBody,
                     html: mailBody,
                 }
-                mailTransporter.send(loginMailOptions).then(response => {
-                    console.log("Login Email Sent Status ", response)
-                   })
-	            .catch('Email Sending Error ', console.error);
+
+                sendEmail(loginMailOptions).catch((err) => {
+                    console.error("❌ Email sending completely failed:", err.message);
+                  });
+
+                // mailTransporter.send(loginMailOptions).then(response => {
+                //     console.log("Login Email Sent Status ", response)
+                //    })
+	            // .catch('Email Sending Error ', console.error);
 
                 // async function main() {
                 //     // send mail with defined transport object

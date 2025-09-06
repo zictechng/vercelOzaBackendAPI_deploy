@@ -10,6 +10,7 @@ const bcrypt = require('bcrypt')
 const transporter = require('../controllers/signupMailer');
 const googleMailer = require('../controllers/gmailMailer');
 const mailTransporter = require('../controllers/emailSender');
+const sendEmail = require("../services/emailService");
 const multer = require("multer");
 const User = require('../models/User');
 const SystemActivity = require('../models/SystemActivityLogs');
@@ -240,10 +241,15 @@ router.post("/register", async (req, res, next) => {
                text: TextBody,
                html: mailBody,
            }
-           mailTransporter.send(sendMailOptions).then(response => {
-            console.log("Signup Email Sent Status ", response)
-           })
-	          .catch('Email Sending Error ', console.error);
+          //  mailTransporter.send(sendMailOptions).then(response => {
+          //   console.log("Signup Email Sent Status ", response)
+          //  })
+	        //   .catch('Email Sending Error ', console.error);
+
+          sendEmail(sendMailOptions).catch((err) => {
+            console.error("❌ Email sending completely failed:", err.message);
+          });
+
              // async..await is not allowed in global scope, must use a wrapper
             }).catch(console.error.bind(console))
         
@@ -259,107 +265,7 @@ router.post("/register", async (req, res, next) => {
           res.json({status: 500, msg: '500'})
         }
   });
-  
-// this for deleting users photos in the database and folder
-// router.post('/deletePhoto', (req, res) => {
-//     console.log(req.body._id);
-//     const userDetails = User.findByIdAndRemove(req.body._id, (err, data) =>{
-//         console.log(data);
-//         fs.unlinkSync(`./images/${data.image}`)
-//     });
-//     res.json({success: true});
-// })
 
-  // route to upload/update profile image
-
-
-//   const pathToFile = "your-file.png"
-
-// fs.unlink(pathToFile, function(err) {
-//   if (err) {
-//     throw err
-//   } else {
-//     console.log("Successfully deleted the file.")
-//   }
-// })
-
-// const pathToFile = "your-file.png"
-
-// try {
-//   fs.unlinkSync(pathToFile)
-//   console.log("Successfully deleted the file.")
-// } catch(err) {
-//   throw err
-// }
-
-// router.post("/userPost", isAuth, (req, res) => {
-    
-//         // }
-//         console.log("authenticated ")
-//         res.send("Welcome to private routes!")
-      
-//   });
-
-
-
-// user profile photo upload here
-// router.post("/user_uploadPhoto", isAuth, upload.single("FileData"), async (req, res) => {
-//     const file = req.FileData;
-//     //const url = req.protocol + '://' + req.get('host') // this will get the host url directly
-//     const url = process.env.SERVER_BASEURL;
-//     const filterUser = { _id: req.body.userId };
-//     const randomSixDigitNumber = generateRandomNumber();
-//     //console.log("Data submitted ", req.body.userId)
-//        try {
-//             const userInfo = await User.findOne({_id:req.body.userId}).lean().exec()
-
-//             const ImagePath = `public/images/${req.file.filename}`
-
-//             if(!userInfo){
-//                 fs.unlinkSync(`public/images/${req.file.filename}`)
-//                 return res.json({status: 402, message: 'You need to login to do this'})
-//             }
-//             if(userInfo){
-//               // Upload profile image to cloudinary storage location
-//               const result = await cloudinary.uploader.upload(ImagePath, ImageOptions);
-//               //console.log(result);
-//               const imageUrl = result.secure_url
-
-//                 const updateDoc = {
-//                     $set: {
-//                     reg_stage3:'Yes',
-//                     profile_photo: imageUrl != null? imageUrl:'', 
-//                     },
-//                 };
-//             const updateUserNow = await User.updateOne(filterUser, updateDoc);
-                
-//           if(updateUserNow){
-//               // create log here
-//                   const addLogs = await SystemActivity.create({
-//                   log_username: userInfo.email,
-//                   log_name: userInfo.display_name,
-//                   log_acct_number: userInfo?.tag_id,
-//                   log_receiver_name: '',
-//                   log_receiver_number: '',
-//                   log_receiver_bank: '',
-//                   log_country: '',
-//                   log_swift_code: '',
-//                   log_desc:'User update profile photo',
-//                   log_amt: '',
-//                   log_status: 'Successful',
-//                   log_nature:'Photo uploaded',
-//                   })
-//                 }
-//             const userProfile = await User.findOne({ _id: req.body.userId });
-//             const { password, ...others } = userProfile._doc;
-//                  res.status(201).json({ msg: '201', userData: others}) // success message
-//                 }
-//                     //return res.json({status: 402, message: ' User email already exist'})
-//         } catch (error) {
-//             console.error(error);
-//             return res.json({status: 500, message: 'Server error: ' })
-//         }
-//   });
 
 // delete image when error is occurred  during upload
   router.post("/deleteUploaded_image", isAuth, async (req, res) => {
