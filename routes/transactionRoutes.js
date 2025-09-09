@@ -5,6 +5,7 @@ const mailTransporter = require('../controllers/emailSender');
 const paypal = require('paypal-rest-sdk');
 var fetch = require('node-fetch');
 const transporterMailer = require('../controllers/signupMailer');
+const sendEmail = require("../services/emailService");
 const User = require('../models/User');
 const TransferFund = require('../models/fundTransfer');
 const AppSetting = require('../models/AppSettingDetails')
@@ -180,7 +181,8 @@ const getPayPalAccessToken = async () => {
   //console.log('PayPal access Key ', PAYPAL_CLIENT_ID +' ', PAYPAL_SECRET_KEY)
   try {
     const auth = Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_SECRET_KEY}`).toString("base64");
-    //const liveEndpoint = await fetch("https://api-m.paypal.com/v1/oauth2/token") 
+    //const liveEndpoint = await fetch("https://api-m.paypal.com/v1/oauth2/token")
+    //const demoEndpoint = await fetch("https://api-m.sandbox.paypal.com/v1/oauth2/token")  
     const response = await fetch("https://api-m.sandbox.paypal.com/v1/oauth2/token", {
       method: "POST",
       headers: {
@@ -217,6 +219,8 @@ router.post("/capture-payment", isAuth, async (req, res) => {
     const accessToken = await getPayPalAccessToken();
     //const livePurchases = await fetch(`https://api-m.paypal.com/v2/checkout/orders/${orderID}/capture`)
 
+    //const livePurchases = await fetch(`https://api-m.sandbox.paypal.com/v2/checkout/orders/${orderID}/capture`)
+
     const captureResponse = await fetch(`https://api-m.sandbox.paypal.com/v2/checkout/orders/${orderID}/capture`, {
       method: "POST",
       headers: {
@@ -225,21 +229,28 @@ router.post("/capture-payment", isAuth, async (req, res) => {
       },
     });
 
+    console.log("HTTP Status:", captureResponse.status); // 200, 201, etc
     const captureData = await captureResponse.json();
+      //console.log("PayPal Capture Response:", captureResponse.json());
 
-      if (captureResponse.status !== 201) {
-        console.error("PayPal Capture Error:", captureData);
-        return res.status(500).json({ error: "Failed to capture PayPal payment", details: captureData });
+      if (captureResponse.status !== 201 && captureResponse.status !== 200) {
+        return res.status(500).json({
+          error: "Failed to capture PayPal payment",
+          details: captureData,});
       }
-      if(captureResponse.status == 201)
-      {
-        //console.log("Payment successfully captured:", captureData);
-        processPaymentDetails(paymentData, orderID)
-        res.status(201).json({msg: '201', userData: captureData})
+      // Payment captured successfully
+      if (captureData.status !== "COMPLETED") {
+        return res.status(500).json({
+          error: "Payment not completed by PayPal",
+          status: captureStatus,
+          details: captureData,
+        });
       }
-      else{
-        res.status(500).json({ message: "Server problem", captureData });
-      }
+
+      console.log("Payment successfully captured:", captureData.status);
+      await processPaymentDetails(paymentData, orderID)
+      res.status(201).json({msg: '201', userData: captureData})
+        
   } catch (error) {
     console.error("Error capturing payment:", error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -332,8 +343,12 @@ const processPaymentDetails = async(data, paymentId) =>{
                     text: mailText,
                     html: mailBody,
                 }
-                mailTransporter.send(payPal_mailOptions).then(console.log)
-	                .catch('Email Sending Error ', console.error);
+                // mailTransporter.send(payPal_mailOptions).then(console.log)
+	              //   .catch('Email Sending Error ', console.error);
+                sendEmail(payPal_mailOptions).catch((err) => {
+                  console.error("❌ Email sending completely failed:", err.message);
+                });
+
                }).catch(console.error.bind(console))
                
             }  
@@ -352,8 +367,11 @@ const processPaymentDetails = async(data, paymentId) =>{
                   text: mailText,
                   html: mailBody,
               }
-                mailTransporter.send(payPal_mailOptions).then(console.log)
-	                .catch('Email Sending Error ', console.error);
+                // mailTransporter.send(payPal_mailOptions).then(console.log)
+	              //   .catch('Email Sending Error ', console.error);
+                sendEmail(payPal_mailOptions).catch((err) => {
+                  console.error("❌ Email sending completely failed:", err.message);
+                });
 
               }).catch(console.error.bind(console))     
             // success message
