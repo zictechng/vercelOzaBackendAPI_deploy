@@ -229,7 +229,7 @@ router.post("/capture-payment", isAuth, async (req, res) => {
       },
     });
 
-    console.log("HTTP Status:", captureResponse.status); // 200, 201, etc
+    //console.log("HTTP Status:", captureResponse.status); // 200, 201, etc
     const captureData = await captureResponse.json();
       //console.log("PayPal Capture Response:", captureResponse.json());
 
@@ -247,7 +247,6 @@ router.post("/capture-payment", isAuth, async (req, res) => {
         });
       }
 
-      console.log("Payment successfully captured:", captureData.status);
       await processPaymentDetails(paymentData, orderID)
       res.status(201).json({msg: '201', userData: captureData})
         

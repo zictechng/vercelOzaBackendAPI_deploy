@@ -651,7 +651,7 @@ router.post("/user_2fa_otpSend", isAuth, async (req, res) => {
                     log_receiver_bank: '',
                     log_country: '',
                     log_swift_code: '',
-                    log_desc:'User 2FA code send for account verification',
+                    log_desc:'User 2FA code sent for account verification',
                     log_amt: '',
                     log_status: 'Successful',
                     log_nature:'2FA code send',
@@ -673,8 +673,12 @@ router.post("/user_2fa_otpSend", isAuth, async (req, res) => {
                 text: TextBody,
                 html: mailBody,
                 }
-                mailTransporter.send(_2FAMailOptions).then(console.log)
-	                .catch('Email Sending Error ', console.error);
+
+                // mailTransporter.send(_2FAMailOptions).then(console.log)
+	              //   .catch('Email Sending Error ', console.error);
+              sendEmail(_2FAMailOptions).catch((err) => {
+                console.error("❌ 2FA OTP Code email sending completely failed:", err.message);
+              });
 
             // async..await is not allowed in global scope, must use a wrapper
                
