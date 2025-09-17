@@ -1,7 +1,6 @@
 node_modules
 logs
 .env
-env
 
 "@mongoosejs/double": "^0.3.0",
 

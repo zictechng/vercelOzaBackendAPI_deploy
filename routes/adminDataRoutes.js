@@ -3,6 +3,9 @@ const router = express.Router()
 const jwt = require("jsonwebtoken");
 const cloudinary = require('cloudinary').v2;
 const fs = require("fs")
+
+const mongoose = require('mongoose');
+
 const asyncHandler = require('express-async-handler');
 const bcrypt = require('bcrypt');
 
@@ -609,6 +612,31 @@ router.get("/pendingDocument_details", isAuth, async (req, res) => {
 });
 
 // get all user pending document list details here..
+router.get("/pendingDocument_user", isAuth, async (req, res) => {
+  let page = parseInt(req.query.pageNumber);
+  let limit = parseInt(req.query.pageLimit);
+  if(!page) page = 1;
+  if(!limit) limit = 15;
+
+  const skip = (page - 1) * limit;
+  try {
+    //get all user document count details
+    const pageCount = await DocumentUpload.find({document_status: 'Pending'}).count(); // get total records
+    const totalPageNumber = Math.ceil(pageCount / limit); // get the number of pages
+
+    //get all pending document details
+
+     const allPendingDocument = await DocumentUpload.find({document_status: 'Pending'}).sort({ createdOn: -1 }).skip(skip).limit(limit);
+      //console.log('All pending docs ', allPendingDocument)
+
+      res.send({ msg: '201', feedAll: allPendingDocument, page: page, limit: limit, totalPage: totalPageNumber, totalRecord: pageCount})
+    } catch (err) {
+    res.status(500).json(err.message);
+    console.log(err.message);
+  }
+});
+
+// get all user rejected document list details here..
 router.get("/rejectedDocument_details", isAuth, async (req, res) => {
   let page = parseInt(req.query.pageNumber);
   let limit = parseInt(req.query.pageLimit);
@@ -2132,24 +2160,49 @@ router.post("/user_ApproveAccountAction/", isAuth, async (req, res) => {
     }
 });
 
-// get user document via ID passed here..
-router.get("/adminGetUser_document/:id", isAuth, async (req, res) => {
-  let userId = req.params.id;
-  console.log("MY ID ", userId);
+router.get("/adminGet_documentDetails/:id", isAuth, async (req, res) => {
+  
   try {
-    if(userId == '' || userId == null){
-      return res.json({status: 404, message: ' User ID not found'})
+    const userId = req.params.id?.trim();
+    //console.log("MY ID ", userId);
+    if (!userId) {
+      return res.status(404).json({ status: 404, message: 'User ID not provided' });
     }
+
+    // validate ObjectId if `_id` is an ObjectId
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(404).json({ status: 404, message: 'Invalid ID format' });
+    }
+
+    // fetch single document
+    const userDocument = await DocumentUpload.findOne({
+      _id: userId
+    });
+
+    if (!userDocument) {
+      return res.status(404).json({ status: 404, message: 'Document not found' });
+    }
+    //console.log("MY doc ", userDocument);
+    res.send({ msg: '200', feedAll: userDocument})
+  
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ status: 500, message: err.message });
+  }
+});
+
+router.get("/adminGetUser_document/:id", isAuth, async (req, res) => {
+  
+  let userId = req.params.id;
+  try {
     //get all user count details
-     const userDocument = await DocumentUpload.find({owners_tag_id: userId, document_status: 'Pending'} );
-     if(userDocument){
-      //console.log(userDocument)
-      res.send({ msg: '201', feedAll: userDocument})
-     }
-     else{
-      return res.json({status: 404, message: ' Document not found'})
-     }
-     } catch (err) {
+     const userDetails = await User.findOne({_id: userId});
+     //get all user count details
+  const userDocument = await DocumentUpload.find({owners_tag_id: userDetails.tag_id} );
+  const { password, password_plain, ...others } = userDetails._doc; // this will remove password from the details send to server.
+      res.send({ msg: '201', 
+      feedAll: others, feedDoc: userDocument })
+    } catch (err) {
     res.status(500).json(err.message);
     console.log(err.message);
   }
@@ -2190,7 +2243,7 @@ router.get("/adminGet_document/:id", isAuth, async (req, res) => {
      const userDocument = await DocumentUpload.findOne({_id: userId} );
      if(userDocument){
       //console.log(userDocument)
-      res.send({ msg: '201', feedAll: userDocument})
+      res.send({ msg: '200', feedAll: userDocument})
      }
      else{
       return res.json({status: 404, message: ' Document not found'})
@@ -2211,7 +2264,7 @@ router.post("/adminApprove_document", isAuth, async (req, res) => {
           if(req.body.user_id == '' || req.body.user_id == null){
             return res.json({status: 404, message: ' User ID not found'})
           }
-        const user = await User.findOne({ tag_id: req.body.user_id})
+        const user = await User.findOne({ _id: req.body.user_id})
         const userDoc = await DocumentUpload.findOne({_id: req.body.doc_id})
         if(!user){
             return res.json({status: 404, message: ' User not found'})
@@ -2292,13 +2345,16 @@ router.post("/adminRejected_documentUpload", isAuth, async (req, res) => {
   const filterDocument = { _id: req.body.doc_id };
   const documentType = req.body.doc_type
   const documentReason = req.body.reasons
+  let uid  = req.body.user_id
   
-  const actionStatus = req.body.action_status;
-    try {
-          if(req.body.user_id == '' || req.body.user_id == null){
+      try {
+          if(!uid){
             return res.json({status: 404, message: ' User ID not found'})
           }
-        const user = await User.findOne({ tag_id: req.body.user_id})
+          if(documentReason == ''){
+            return res.json({status: 404, message: ' Please, give Reason'})
+          }
+        const user = await User.findOne({ _id: req.body.user_id})
         const userDoc = await DocumentUpload.findOne({_id: req.body.doc_id})
         if(!user){
             return res.json({status: 404, message: ' User not found'})
