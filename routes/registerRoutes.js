@@ -343,6 +343,7 @@ router.post("/register", async (req, res, next) => {
               owners_email: userInfo.email,
               owners_tag_id: userInfo.tag_id,
               document_status:'Pending',
+              document_action: 'Pending',
               track_document: Trans_ID
             })
               // create log here

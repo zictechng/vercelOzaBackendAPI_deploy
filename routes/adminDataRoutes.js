@@ -431,7 +431,7 @@ router.get("/activeUser_details", isAuth, async (req, res) => {
   let page = parseInt(req.query.pageNumber);
   let limit = parseInt(req.query.pageLimit);
   if(!page) page = 1;
-  if(!limit) limit = 10;
+  if(!limit) limit = 15;
 
   const skip = (page - 1) * limit;
   try {
@@ -455,7 +455,7 @@ router.get("/pendingUser_details", isAuth, async (req, res) => {
   let page = parseInt(req.query.pageNumber);
   let limit = parseInt(req.query.pageLimit);
   if(!page) page = 1;
-  if(!limit) limit = 10;
+  if(!limit) limit = 15;
 
   const skip = (page - 1) * limit;
 
@@ -479,7 +479,7 @@ router.get("/suspendUser_details", isAuth, async (req, res) => {
   let page = parseInt(req.query.pageNumber);
   let limit = parseInt(req.query.pageLimit);
   if(!page) page = 1;
-  if(!limit) limit = 10;
+  if(!limit) limit = 15;
 
   const skip = (page - 1) * limit;
   try {
@@ -502,7 +502,7 @@ router.get("/deletedUser_details", isAuth, async (req, res) => {
   let page = parseInt(req.query.pageNumber);
   let limit = parseInt(req.query.pageLimit);
   if(!page) page = 1;
-  if(!limit) limit = 10;
+  if(!limit) limit = 15;
 
   const skip = (page - 1) * limit;
   try {
@@ -563,7 +563,7 @@ router.get("/pendingDocument_details", isAuth, async (req, res) => {
   let page = parseInt(req.query.pageNumber);
   let limit = parseInt(req.query.pageLimit);
   if(!page) page = 1;
-  if(!limit) limit = 10;
+  if(!limit) limit = 15;
 
   const skip = (page - 1) * limit;
   try {
@@ -636,7 +636,7 @@ router.get("/userBank_details", isAuth, async (req, res) => {
   let page = parseInt(req.query.pageNumber);
   let limit = parseInt(req.query.pageLimit);
   if(!page) page = 1;
-  if(!limit) limit = 10;
+  if(!limit) limit = 15;
 
   const skip = (page - 1) * limit;
   try {
@@ -659,7 +659,7 @@ router.get("/userAcctFunding_details", isAuth, async (req, res) => {
   let page = parseInt(req.query.pageNumber);
   let limit = parseInt(req.query.pageLimit);
   if(!page) page = 1;
-  if(!limit) limit = 10;
+  if(!limit) limit = 15;
 
   const skip = (page - 1) * limit;
   try {
@@ -667,7 +667,7 @@ router.get("/userAcctFunding_details", isAuth, async (req, res) => {
     const pageCount = await FundUserAccount.find().count(); // get total records
     const totalPageNumber = Math.ceil(pageCount / limit); // get the number of pages
 
-    //get all user count details
+    //get all data count details
      const allFundDocument = await FundUserAccount.find().sort({ createdOn: -1 }).skip(skip).limit(limit);
 
       res.send({ msg: '201', feedAll: allFundDocument, page: page, limit: limit, totalPage: totalPageNumber, totalRecord: pageCount})
@@ -682,7 +682,7 @@ router.get("/userSales_details", isAuth, async (req, res) => {
   let page = parseInt(req.query.pageNumber);
   let limit = parseInt(req.query.pageLimit);
   if(!page) page = 1;
-  if(!limit) limit = 10;
+  if(!limit) limit = 15;
 
   const skip = (page - 1) * limit;
   try {
@@ -705,7 +705,7 @@ router.get("/userBuyOrder_details", isAuth, async (req, res) => {
   let page = parseInt(req.query.pageNumber);
   let limit = parseInt(req.query.pageLimit);
   if(!page) page = 1;
-  if(!limit) limit = 10;
+  if(!limit) limit = 15;
 
   const skip = (page - 1) * limit;
   try {
@@ -727,7 +727,7 @@ router.get("/userWithdrawalApproved_details", isAuth, async (req, res) => {
   let page = parseInt(req.query.pageNumber);
   let limit = parseInt(req.query.pageLimit);
   if(!page) page = 1;
-  if(!limit) limit = 10;
+  if(!limit) limit = 15;
 
   const skip = (page - 1) * limit;
   try {
@@ -749,7 +749,7 @@ router.get("/userWithdrawal_details", isAuth, async (req, res) => {
   let page = parseInt(req.query.pageNumber);
   let limit = parseInt(req.query.pageLimit);
   if(!page) page = 1;
-  if(!limit) limit = 10;
+  if(!limit) limit = 15;
 
   const skip = (page - 1) * limit;
   try {
@@ -1082,7 +1082,7 @@ router.get("/proof_payment_transaction", isAuth, async (req, res) => {
   let page = parseInt(req.query.pageNumber);
   let limit = parseInt(req.query.pageLimit);
   if(!page) page = 1;
-  if(!limit) limit = 10;
+  if(!limit) limit = 15;
 
   const skip = (page - 1) * limit;
   try {
@@ -1181,7 +1181,7 @@ router.get("/allUser_transaction", isAuth, async (req, res) => {
   let page = parseInt(req.query.pageNumber);
   let limit = parseInt(req.query.pageLimit);
   if(!page) page = 1;
-  if(!limit) limit = 10;
+  if(!limit) limit = 15;
 
   const skip = (page - 1) * limit;
   try {
@@ -1752,7 +1752,7 @@ router.get("/adminActiveUser_details", isAuth, async (req, res) => {
   let page = parseInt(req.query.pageNumber);
   let limit = parseInt(req.query.pageLimit);
   if(!page) page = 1;
-  if(!limit) limit = 10;
+  if(!limit) limit = 15;
 
   const skip = (page - 1) * limit;
   try {
@@ -1776,7 +1776,7 @@ router.get("/adminPendingUser_details", isAuth, async (req, res) => {
   let page = parseInt(req.query.pageNumber);
   let limit = parseInt(req.query.pageLimit);
   if(!page) page = 1;
-  if(!limit) limit = 10;
+  if(!limit) limit = 15;
 
   const skip = (page - 1) * limit;
   try {
@@ -1799,7 +1799,7 @@ router.get("/adminSuspendedUser_details", isAuth, async (req, res) => {
   let page = parseInt(req.query.pageNumber);
   let limit = parseInt(req.query.pageLimit);
   if(!page) page = 1;
-  if(!limit) limit = 10;
+  if(!limit) limit = 15;
 
   const skip = (page - 1) * limit;
   try {
@@ -1821,7 +1821,7 @@ router.get("/adminDeletedUser_details", isAuth, async (req, res) => {
   let page = parseInt(req.query.pageNumber);
   let limit = parseInt(req.query.pageLimit);
   if(!page) page = 1;
-  if(!limit) limit = 10;
+  if(!limit) limit = 15;
 
   const skip = (page - 1) * limit;
   try {
@@ -3605,7 +3605,7 @@ router.get("/fetchAll_log", isAuth, async (req, res) => {
   let page = parseInt(req.query.pageNumber);
   let limit = parseInt(req.query.pageLimit);
   if(!page) page = 1;
-  if(!limit) limit = 10;
+  if(!limit) limit = 15;
 
   // const startIndex = (page -1) * limit;
   // const endIndex = page * limit;
@@ -3694,7 +3694,7 @@ router.get("/fetchAll_systemLog", isAuth, async (req, res) => {
   let page = parseInt(req.query.pageNumber);
   let limit = parseInt(req.query.pageLimit);
   if(!page) page = 1;
-  if(!limit) limit = 10;
+  if(!limit) limit = 15;
 
   const skip = (page - 1) * limit;
 
@@ -3851,7 +3851,7 @@ router.get("/search_systemLogs_pagination", isAuth, async (req, res) => {
 //   let page = parseInt(req.query.pageNumber);
 //   let limit = parseInt(req.query.pageLimit);
 //   if(!page) page = 1;
-//   if(!limit) limit = 10;
+//   if(!limit) limit = 15;
 
 //   const skip = (page - 1) * limit;
 
@@ -3876,7 +3876,7 @@ router.get("/fetchAll_referral", isAuth, async (req, res) => {
   let page = parseInt(req.query.pageNumber);
   let limit = parseInt(req.query.pageLimit);
   if (!page) page = 1;
-  if (!limit) limit = 10;
+  if (!limit) limit = 15;
   
   const skip = (page - 1) * limit;
   

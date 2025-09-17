@@ -12,7 +12,7 @@ async function sendEmail(options) {
       // Fallback to Nodemailer SMTP
       try {
         const smtpResponse = await nodemailerTransporter.sendMail({
-          from: `${options.from.name} <${options.from.email}>`,
+          from: `${options.from.name} ${options.from.email}`,
           to: options.to.map((r) => r.email).join(","),
           subject: options.subject,
           text: options.text,
