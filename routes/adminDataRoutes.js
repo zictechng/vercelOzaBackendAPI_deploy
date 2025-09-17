@@ -2287,7 +2287,7 @@ router.post("/adminApprove_document", isAuth, async (req, res) => {
             if(updateUserNow){
               // create log here
            const addLogs = await SystemActivity.create({
-            log_username: user.username,
+            log_username: user.username || 'Admin',
             log_name: user.display_name,
             log_acct_number: user.tag_id,
             log_receiver_name: '',
@@ -2411,7 +2411,7 @@ router.post("/adminRejected_documentUpload", isAuth, async (req, res) => {
             if(updateUserNow){
               // create log here
            const addLogs = await SystemActivity.create({
-            log_username: user.username,
+            log_username: user.username || 'Admin',
             log_name: user.display_name,
             log_acct_number: user.tag_id,
             log_receiver_name: '',
@@ -2552,7 +2552,7 @@ router.post("/approveAcctFunding", isAuth, async (req, res) => {
       const updateGeneral = await TransferFund.updateOne(filterGeneral, updateGeneralStatus);
 
       const addLogs = await SystemActivity.create({
-        log_username: '',
+        log_username: userDetail.username || 'Admin',
         log_name: userDetail.display_name,
         log_acct_number: userDetail.tag_id,
         log_receiver_name: '',
@@ -2682,7 +2682,7 @@ router.post("/rejectApproveAcctFunding", isAuth, async (req, res) => {
         })
       }
       const addLogs = await SystemActivity.create({
-        log_username: '',
+        log_username: userDetail.username || 'Admin',
         log_name: userDetail.display_name,
         log_acct_number: userDetail.tag_id,
         log_receiver_name: '',
@@ -3003,7 +3003,7 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
             const updateUserBalBonus = await User.updateOne(filterUser, updateUserBonus);
           
             // create history record
-            console.log('my name: ', userDetail.display_name)
+            //console.log('my name: ', userDetail.display_name)
             const createRecord = TransferFund.create({
               acct_name: userDetailBonus.display_name,
               acct_number: userDetail.tag_id,
@@ -3177,7 +3177,7 @@ router.post("/rejectSaleFunding", isAuth, async (req, res) => {
         })
       }
       const addLogs = await SystemActivity.create({
-        log_username: '',
+        log_username: userDetail.username || 'Admin',
         log_name: userDetail.display_name,
         log_acct_number: userDetail.tag_id,
         log_receiver_name: '',
