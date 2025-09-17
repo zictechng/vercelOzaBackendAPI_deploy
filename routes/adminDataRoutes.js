@@ -12,6 +12,7 @@ const mailTransporter = require('../controllers/emailSender')
 const transporterMailer = require('../controllers/signupMailer');
 const nodemailer = require("nodemailer");
 const googleMailer = require('../controllers/gmailMailer');
+const sendEmail = require("../services/emailService");
 
 const User = require('../models/User');
 const TransferFund = require('../models/fundTransfer');
@@ -922,8 +923,10 @@ router.post("/approveAcctWithdrawal", isAuth, async (req, res) => {
               text: mailText,
               html: mailBody,
             }
-            mailTransporter.send(account_issueEMail).then(console.log)
-            .catch('Email Sending Error ', console.error);
+
+            sendEmail(account_issueEMail).catch((err) => {
+              console.error("❌ Email sending completely failed:", err.message);
+            });
            
             }).catch(console.error.bind(console))
 
@@ -1034,8 +1037,9 @@ router.post("/rejectAccountWithdrawal", isAuth, async (req, res) => {
           text: mailText,
           html: mailBody,
         }
-        mailTransporter.send(account_issueEMail).then(console.log)
-        .catch('Email Sending Error ', console.error);
+        sendEmail(account_issueEMail).catch((err) => {
+          console.error("❌ Email sending completely failed:", err.message);
+        });
 
         }).catch(console.error.bind(console))
 
@@ -1951,22 +1955,16 @@ router.post("/user_accountAction/", isAuth, async (req, res) => {
             const mailText = loginText(user.display_name, ` ${actionStatus ==`Active` ? `this is to notify you that your account has been activated after been carefully reviewed,
             thank you for choosing ${appName} and we hope you will continue to enjoy our services`:`this is to notify you that your account has been flashed with an issue. Kindly contact support for more details and possible resolution.
             Thank you` }`)
-            let account_issueEMail = {
+            let account_ownerEMail = {
               from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
               to: [{ email: user.email }],
               subject: 'Account Notification!',
               text: mailText,
               html: mailBody,
             }
-              mailTransporter
-              .send(account_issueEMail)
-              .then(console.log)
-              .catch(console.error);
-
-            // async function main() {
-            // const info = await transporterMailer.sendMail(account_issueEMail);
-            //     }
-            // main().catch('Message Error', console.error);
+              sendEmail(account_ownerEMail).catch((err) => {
+                console.error("❌ Email sending completely failed:", err.message);
+              });
 
             }).catch(console.error.bind(console))
            res.status(201).json({msg: '201'}) // success message
@@ -2032,15 +2030,17 @@ router.post("/user_accountStateAction/", isAuth, async (req, res) => {
                 const mailText = loginText(user.display_name, ` ${actionStatus ==`Active` ? `this is to notify you that your account has been activated after been carefully reviewed,
                 thank you for choosing ${appName} and we hope you will continue to enjoy our services`:`this is to notify you that your account has been flashed with an issue. Kindly contact support for more details and possible resolution.
                 Thank you` }`)
-                let account_issueEMail = {
+                let account_ownerEMail = {
                   from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
                   to: [{ email: user.email }],
                   subject: 'Account Notification!',
                   text: mailText,
                   html: mailBody,
                 }
-              mailTransporter.send(account_issueEMail).then(console.log)
-              .catch('Email Sending Error ', console.error);
+
+              sendEmail(account_ownerEMail).catch((err) => {
+                console.error("❌ Email sending completely failed:", err.message);
+                });
 
                 }).catch(console.error.bind(console))
 
@@ -2113,8 +2113,9 @@ router.post("/user_ApproveAccountAction/", isAuth, async (req, res) => {
                   text: mailText,
                   html: mailBody,
                 }
-                mailTransporter.send(account_issueEMail).then(console.log)
-                .catch('Email Sending Error ', console.error);
+                sendEmail(account_issueEMail).catch((err) => {
+                  console.error("❌ Email sending completely failed:", err.message);
+                  });
 
                 }).catch(console.error.bind(console))
 
@@ -2266,8 +2267,9 @@ router.post("/adminApprove_document", isAuth, async (req, res) => {
                   text: mailText,
                   html: mailBody,
                 }
-                mailTransporter.send(account_issueEMail).then(console.log)
-                .catch('Email Sending Error ', console.error);
+                sendEmail(account_issueEMail).catch((err) => {
+                  console.error("❌ Email sending completely failed:", err.message);
+                  });
 
                 }).catch(console.error.bind(console))
 
@@ -2384,8 +2386,9 @@ router.post("/adminRejected_documentUpload", isAuth, async (req, res) => {
                   text: mailText,
                   html: mailBody,
                 }
-                mailTransporter.send(account_issueEMail).then(console.log)
-                .catch('Email Sending Error ', console.error);
+                sendEmail(account_issueEMail).catch((err) => {
+                  console.error("❌ Email sending completely failed:", err.message);
+                  });
 
                 }).catch(console.error.bind(console))
 
@@ -2546,8 +2549,9 @@ router.post("/approveAcctFunding", isAuth, async (req, res) => {
               text: mailText,
               html: mailBody,
             }
-            mailTransporter.send(account_issueEMail).then(console.log)
-            .catch('Email Sending Error ', console.error);
+            sendEmail(account_issueEMail).catch((err) => {
+              console.error("❌ Email sending completely failed:", err.message);
+              });
            
             }).catch(console.error.bind(console))
 
@@ -2658,8 +2662,9 @@ router.post("/rejectApproveAcctFunding", isAuth, async (req, res) => {
           text: mailText,
           html: mailBody,
         }
-        mailTransporter.send(account_issueEMail).then(console.log)
-        .catch('Email Sending Error ', console.error);
+        sendEmail(account_issueEMail).catch((err) => {
+          console.error("❌ Email sending completely failed:", err.message);
+          });
 
         }).catch(console.error.bind(console))
 
@@ -2809,12 +2814,11 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
                       text: mailText,
                       html: mailBody,
                     }
-                     mailTransporter
-                      .send(account_issueEMail)
-                      .then(console.log)
-                      .catch(console.error);
+                  sendEmail(account_issueEMail).catch((err) => {
+                    console.error("❌ Email sending completely failed:", err.message);
+                    });
       
-                    }).catch(console.error.bind(console))
+                  }).catch(console.error.bind(console))
                 }
           }
 
@@ -2917,8 +2921,9 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
             text: mailText,
             html: mailBody,
           }
-          mailTransporter.send(account_issueEMail).then(console.log)
-          .catch('Email Sending Error ', console.error);
+          sendEmail(account_issueEMail).catch((err) => {
+            console.error("❌ Email sending completely failed:", err.message);
+            });
 
           }).catch(console.error.bind(console))
           }
@@ -3048,14 +3053,10 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
                 text: mailText,
                 html: mailBody,
               }
-              // async function main() {
-              // const info = await transporterMailer.sendMail(account_issueEMail);
-              //     }
-              // main().catch('Message Error', console.error);
-                mailTransporter
-                .send(account_issueEMail)
-                .then(console.log)
-                .catch(console.error);
+               
+            sendEmail(account_issueEMail).catch((err) => {
+              console.error("❌ Email sending completely failed:", err.message);
+              });
 
               }).catch(console.error.bind(console))
           }
@@ -3156,9 +3157,9 @@ router.post("/rejectSaleFunding", isAuth, async (req, res) => {
               text: mailText,
               html: mailBody,
             }
-            mailTransporter.send(account_issueEMail).then(console.log)
-            .catch('Email Sending Error ', console.error);
-
+            sendEmail(account_issueEMail).catch((err) => {
+              console.error("❌ Email sending completely failed:", err.message);
+              });
             }).catch(console.error.bind(console))
 
         res.status(201).json({msg: '201'}) // success message
@@ -3175,12 +3176,12 @@ router.post("/rejectSaleFunding", isAuth, async (req, res) => {
 // Search funding details with transaction ID here..
 router.post("/searchFunding_database", isAuth, async (req, res) => {
   let searchData = req.body.queryData;
-  console.log("MY ID ", searchData);
+  //console.log("MY ID ", searchData);
         if(searchData.searchValue == '' || searchData == null || req.body.dataInfo ==''){
           return res.json({status: 404, message: ' Query parameters is empty!'})
         }
   try {
-    //get all user count details
+    //get all user count details here
      const userQuery = await FundUserAccount.findOne({fund_number: searchData} );
      if(!userQuery){
       return res.json({ status: 404, message: ' No results matching your query'})
@@ -3451,8 +3452,9 @@ router.post("/messageFeedback_send", isAuth, async (req, res) => {
               text: mailText,
               html: mailBody,
             }
-            mailTransporter.send(account_issueEMail).then(console.log)
-            .catch('Email Sending Error ', console.error);
+            sendEmail(account_issueEMail).catch((err) => {
+            console.error("❌ Email sending completely failed:", err.message);
+          });
 
             }).catch(console.error.bind(console))
 
@@ -3579,8 +3581,10 @@ router.post("/closeUserTicket_message", isAuth, async (req, res) => {
               text: mailText,
               html: mailBody,
             }
-            mailTransporter.send(account_issueEMail).then(console.log)
-	          .catch('Email Sending Error ', console.error);
+
+            sendEmail(ticket_issueEMail).catch((err) => {
+              console.error("❌ Email sending completely failed:", err.message);
+            });
             
             }).catch(console.error.bind(console))
 

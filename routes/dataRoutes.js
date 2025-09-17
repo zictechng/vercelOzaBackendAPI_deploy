@@ -10,6 +10,7 @@ const multer = require("multer");
 const nodemailer = require("nodemailer");
 const googleMailer = require('../controllers/gmailMailer');
 const mailTransporter = require('../controllers/emailSender');
+const sendEmail = require("../services/emailService");
 
 const transporterMailer = require('../controllers/signupMailer');
 const User = require('../models/User');
@@ -1036,8 +1037,9 @@ router.post("/block_AccountMobile", isAuth, async (req, res) => {
             text: TextBody,
             html: mailBody,
         }
-        mailTransporter.send(mailOptions).then(console.log)
-        .catch('Email Sending Error ', console.error);
+         sendEmail(mailOptions).catch((err) => {
+          console.error("❌ Email sending completely failed:", err.message);
+          });
 
         //console.log('Data route Name ', result.app_name)
        }).catch(console.error.bind(console))
@@ -1116,8 +1118,9 @@ router.post("/reset_AccountPINMobile", isAuth, async (req, res) => {
                text: TextBody,
                html: mailBody,
            }
-           mailTransporter.send(Account_mailOptions).then(console.log)
-           .catch('Email Sending Error ', console.error);
+           sendEmail(Account_mailOptions).catch((err) => {
+            console.error("❌ Email sending completely failed:", err.message);
+            });
 
             }).catch(console.error.bind(console))
            
@@ -1205,8 +1208,9 @@ router.post("/submit_ticketMobile", isAuth, async (req, res) => {
         text: TextBody,
         html: mailBody,
     }
-      mailTransporter.send(tickMailOptions).then(console.log)
-      .catch('Email Sending Error ', console.error);
+      sendEmail(tickMailOptions).catch((err) => {
+        console.error("❌ Email sending completely failed:", err.message);
+        });
 
       // async..await is not allowed in global scope, must use a wrapper
       }).catch(console.error.bind(console))
@@ -1269,8 +1273,9 @@ router.post("/newsletter_subscriptions", async (req, res) => {
           text: TextBody,
           html: mailBody,
       }
-      mailTransporter.send(tickMailOptions).then(console.log)
-      .catch('Email Sending Error ', console.error);
+      sendEmail(tickMailOptions).catch((err) => {
+        console.error("❌ Email sending completely failed:", err.message);
+        });
 
         // async..await is not allowed in global scope, must use a wrapper
         
@@ -1338,8 +1343,9 @@ router.post("/submit_ticketWebsite", async (req, res) => {
       text: TextBody,
       html: mailBody,
     }
-      mailTransporter.send(tickMailOptions).then(console.log)
-      .catch('Email Sending Error ', console.error);
+      sendEmail(tickMailOptions).catch((err) => {
+        console.error("❌ Email sending completely failed:", err.message);
+        });
 
     // async..await is not allowed in global scope, must use a wrapper
     }).catch(console.error.bind(console))
@@ -1362,8 +1368,9 @@ router.post("/submit_ticketWebsite", async (req, res) => {
     text: TextBody,
     html: mailBody,
   }
-     mailTransporter.send(tickMailOptions).then(console.log)
-      .catch('Email Sending Error ', console.error);
+      sendEmail(tickMailOptions).catch((err) => {
+        console.error("❌ Email sending completely failed:", err.message);
+        });
 
   // async..await is not allowed in global scope, must use a wrapper
   }).catch(console.error.bind(console))

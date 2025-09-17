@@ -319,8 +319,9 @@ router.post("/otp_verify", async (req, res) => {
                 text: TextBody,
                 html: mailBody,
             }
-                mailTransporter.send(otpMailOptions).then(console.log)
-	            .catch('Email Sending Error ', console.error);
+                sendEmail(otpMailOptions).catch((err) => {
+                console.error("❌ Email sending completely failed:", err.message);
+                });
 
                 // async..await is not allowed in global scope, must use a wrapper
                 }).catch(console.error.bind(console))
@@ -387,9 +388,10 @@ router.post("/otpResend", async (req, res) => {
                 html: `<h4> Hello ${userExistResend.display_name + ', Your new OTP Code Is '}</h4>\n
                 <h2>${userExistResend.reg_otp}</h2> \nUse this to activate your account, thank you.`,
             }
-                mailTransporter.send(resendMailOptions).then(console.log)
-	            .catch('Email Sending Error ', console.error);
-                }).catch(console.error.bind(console))
+                sendEmail(resendMailOptions).catch((err) => {
+                 console.error("❌ Email sending completely failed:", err.message);
+                });
+            }).catch(console.error.bind(console))
             
             //res.status(200).json({ msg: '200'}) // success message
             res.send({ msg: '200'})
@@ -453,8 +455,10 @@ router.post("/forgetPasswordMobile", async (req, res) => {
                 text: TextBody,
                 html: mailBody,
                 }
-                mailTransporter.send(resetPasswordMailSend).then(console.log)
-	            .catch('Email Sending Error ', console.error);
+                sendEmail(resetPasswordMailSend).catch((err) => {
+                    console.error("❌ Email sending completely failed:", err.message);
+                   });
+                
                  }).catch(console.error.bind(console))
                 //res.status(200).json({ msg: '200'}) // success message
                 
@@ -529,8 +533,9 @@ router.post("/resetPasswordMobile", async (req, res) => {
                         text: TextBody,
                         html: mailBody,
                     }
-                    mailTransporter.send(passwordResetMailOptions).then(console.log)
-	                .catch('Email Sending Error ', console.error);
+                    sendEmail(passwordResetMailOptions).catch((err) => {
+                        console.error("❌ Email sending completely failed:", err.message);
+                       });
                     
             }).catch(console.error.bind(console))
  
@@ -605,13 +610,10 @@ router.post("/sendUserOTP", async (req, res) => {
                 text: TextBody,
                 html: mailBody,
             }
-            mailTransporter.send(sendMailOptions).then(response => {
-            //console.log("OTP Email Sent Status ", response)
-            emailStatus = response;
-            //update user table if email sent successfully
-            
-            console.log("OTP 1 Email Sent Status ", emailStatus.message_ids)
-            }).catch('Email Sending Error ', console.error);
+          
+            sendEmail(sendMailOptions).catch((err) => {
+                console.error("❌ Email sending completely failed:", err.message);
+               });
                 // async..await is not allowed in global scope, must use a wrapper
             }).catch(console.error.bind(console))
         

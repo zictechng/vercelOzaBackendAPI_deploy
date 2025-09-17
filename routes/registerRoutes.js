@@ -277,7 +277,8 @@ router.post("/register", async (req, res, next) => {
       }
           // delete old image from cloudinary
           const deleteImage = req.body.delete_url;
-          //console.log("Delete Route Called ", req.body.delete_url)
+          console.log("Delete Route Called data", req.body.delete_url)
+
           await cloudinary.uploader.destroy(deleteImage, 
           function(err, result) { console.log("Delete Status ", result) })
 
@@ -496,6 +497,8 @@ router.post("/register", async (req, res, next) => {
                       owners_tag_id: userInfo.tag_id,
                       document_url: imageUrl != null || imageUrl != undefined ? imageUrl : '',
                       user_id: req.body.userId,
+                      owners_name: userInfo.display_name,
+                      owners_email: userInfo.email,
                       document_action: "Pending",
                       document_status: "Pending",
                       track_document: TransID,
@@ -921,8 +924,9 @@ router.post("/user_activate_email", isAuth, async (req, res) => {
             text: TextBody,
             html: mailBody,
             }
-            mailTransporter.send(_2FAMailOptions).then(console.log)
-	            .catch('Email Sending Error ', console.error);
+              sendEmail(_2FAMailOptions).catch((err) => {
+              console.error("❌ Email sending completely failed:", err.message);
+            });
 
             // async..await is not allowed in global scope, must use a wrapper
             }).catch(console.error.bind(console))
@@ -987,8 +991,10 @@ router.post("/user_activate_2fa_notice", isAuth, async (req, res) => {
             text: TextBody,
             html: mailBody,
             }
-            mailTransporter.send(_2FAAuthMailOptions).then(console.log)
-	            .catch('Email Sending Error ', console.error);
+
+            sendEmail(_2FAAuthMailOptions).catch((err) => {
+              console.error("❌ Email sending completely failed:", err.message);
+            });
 
             // async..await is not allowed in global scope, must use a wrapper
            
@@ -1051,8 +1057,9 @@ router.post("/user_notice_request", isAuth, async (req, res) => {
                 text: TextBody,
                 html: mailBody,
                 }
-                mailTransporter.send(_2FAAuthMailOptions).then(console.log)
-	                .catch('Email Sending Error ', console.error);
+            sendEmail(_2FAAuthMailOptions).catch((err) => {
+              console.error("❌ Email sending completely failed:", err.message);
+            });
                 // async..await is not allowed in global scope, must use a wrapper
                
             }).catch(console.error.bind(console))

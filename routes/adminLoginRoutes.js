@@ -10,6 +10,7 @@ const bcrypt = require('bcrypt')
 // const TOKEN = process.env.EMAIL_API_PASSWORD;
 // const client = new MailtrapClient({ token: TOKEN });
 const mailTransporter = require('../controllers/emailSender');
+const sendEmail = require("../services/emailService");
 
 const transporterMailer = require('../controllers/signupMailer');
 const User = require('../models/User');
@@ -114,10 +115,10 @@ const { fetchApp } = require('../middleware/appDetails');
                     text: TextBody,
                     html: mailBody,
                 }
-                mailTransporter
-                .send(mailOptions)
-                .then(console.log)
-                .catch(console.error);
+
+                sendEmail(mailOptions).catch((err) => {
+                console.error("❌ Email sending completely failed:", err.message);
+                });
     
                }).catch(console.error.bind(console))
             res.send({ msg: '200', token: token, userData: others, appData: getAppSetting})
