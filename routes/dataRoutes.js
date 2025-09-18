@@ -829,17 +829,11 @@ router.get("/chart_transactions/:id", isAuth, async (req, res) => {
   let userId = req.params.id;
   //console.log("My ID", userId);
 
-  const dateStart = moment().format('YYYY-MM-DD hh:mm:ss');
-  const dateLast = moment().subtract(7,'d').format('YYYY-MM-DD hh:mm:ss');
-
-  const startMonth = moment().startOf('month').format('YYYY-MM-DD hh:mm:ss');
-  const endMonth = moment().endOf('month').format('YYYY-MM-DD hh:mm:ss');
-
-  const startYear = moment().startOf('year').format('YYYY-MM-DD hh:mm:ss');
-  const endYear = moment().endOf('year').format('YYYY-MM-DD hh:mm:ss');
+  const monthAgo = moment().subtract(1, 'months').toDate();
+  const yearAgo = moment().subtract(1, 'years').toDate();
+  const weekAgo = moment().subtract(7, 'days').toDate();
 
   try {
-       //console.log('Balance ', userWalletBalance)
        // paypal chart total report
     const payPalChartWallet = await TransferFund.aggregate(
       [{$match: {createdBy: userId, transaction_status: 'Successful', transac_category:'PayPal'} },
@@ -858,39 +852,49 @@ router.get("/chart_transactions/:id", isAuth, async (req, res) => {
           {$group: {_id: null, totalAmount: { $sum: '$amount' }}}]
           );
 
-          const userDetails = await User.findOne({_id: userId })
+      const userDetails = await User.findOne({_id: userId })
           
-      // annually chart total report
-        let yearTotal = 0;
-        const chartYear = await FundUserAccount.find(
-          {
-            fund_tag_id: userDetails.tag_id, fund_status: 'Approved',
-            creditOn: {$gte: startYear, $lt: endYear}, 
-          });
-          yearTotal = chartYear.reduce((sum, transaction) => sum + transaction.amount, 0);
-
-      // monthly chart total report
-        let monthlyTotal = 0;
-        const chartMonthly = await FundUserAccount.find(
-          {
-            fund_tag_id: userDetails.tag_id, fund_status: 'Approved',
-            creditOn: {$gte: startMonth, $lt: endMonth}, 
-          });
-          monthlyTotal = chartMonthly.reduce((sum, transaction) => sum + transaction.amount, 0);
-      
-      // weekly chart total report
-      let weeklyAmount = 0;
-      const chartWeekly = await FundUserAccount.find({
-        fund_tag_id: userDetails.tag_id, fund_status: 'Approved',
-        creditOn: {$gte: dateLast}
-      });
-      weeklyAmount = chartWeekly.reduce((sum, transaction) => sum + transaction.amount, 0);
+     // get weekly, monthly and yearly
+      const totals = await FundUserAccount.aggregate([
+        {
+          $match: {
+            fund_tag_id: userDetails.tag_id,
+            fund_status: 'Approved'
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            weeklyTotal: {
+              $sum: {
+                $cond: [{ $gte: ['$creditOn', weekAgo] }, '$amount', 0]
+              }
+            },
+            monthlyTotal: {
+              $sum: {
+                $cond: [{ $gte: ['$creditOn', monthAgo] }, '$amount', 0]
+              }
+            },
+            yearlyTotal: {
+              $sum: {
+                $cond: [{ $gte: ['$creditOn', yearAgo] }, '$amount', 0]
+              }
+            }
+          }
+        }
+      ]);
+  
+      const weeklyAmount = totals[0]?.weeklyTotal || 0;
+      const monthlyTotal = totals[0]?.monthlyTotal || 0;
+      const yearTotal = totals[0]?.yearlyTotal || 0;
 
       //console.log("Weekly", weeklyAmount)
-      // console.log("Monthly ", monthlyTotal)
+      //console.log("Monthly ", monthlyTotal)
       //console.log("All Year ", yearTotal)
       //console.log("Monthly Total ", monthlyTotal)
-      res.send({ msg: '201', paypal: payPalChartWallet, 
+
+      res.send({ msg: '201', 
+      paypal: payPalChartWallet, 
       payoneer:payoneerChartWallet, 
       bitcoin: bitCoinChartWallet,
       weekly: weeklyAmount,
