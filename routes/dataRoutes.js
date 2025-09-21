@@ -186,7 +186,6 @@ router.get("/bonus_rate", async (req, res) => {
   // get users bank details via Mobile 
 router.get("/user_bankDetails/:id", isAuth, async (req, res) => {
   let userId = req.params.id;
-  //console.log(" userId: " + userId)
   if(req.params.id === undefined) {
     return res.json({status: 403, message: 'Access denied'});
     }
@@ -205,7 +204,6 @@ router.get("/user_bankDetails/:id", isAuth, async (req, res) => {
   
 // get company name details here..
 router.get("/company_name", async (req, res) => {
- 
   try {
     const comp = await AppSetting.findOne();
     //.sort({field_name: sort order})
@@ -499,7 +497,6 @@ router.get("/all_userHistory/:id", isAuth, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 
 
 // history base on paypal transaction
@@ -1300,7 +1297,6 @@ return res.json({status: 500, message: 'Server error: ' })
 router.post("/submit_ticketWebsite", async (req, res) => {
   //console.log("Backend Data receive ", req.body)
   const ticketNumber = generateTagID();
-
  try {
    if (req.body){
     //console.log("Ticket Inserting ", req.body.createdBy);

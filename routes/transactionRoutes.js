@@ -138,7 +138,8 @@ router.get('/success', (req, res) => {
   const paymentId = req.query.paymentId;
   const payToken = req.query.token;
 
-console.log("payerId",payerId, "paymentId ", paymentId, "Payment token", payToken); 
+//console.log("payerId",payerId, "paymentId ", paymentId, "Payment token", payToken);
+
   const execute_payment_json = {
     "payer_id": payerId,
     "transactions": [{
@@ -171,7 +172,6 @@ router.get('/cancel', (req, res) => {
     // Handle canceled payment here
     res.send('Payment canceled.');
   });
-
 
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_KEY; 
 const PAYPAL_SECRET_KEY = process.env.PAYPAL_SECRET; 
@@ -206,55 +206,55 @@ const getPayPalAccessToken = async () => {
 };
 
 // web app paypal payment capture
-router.post("/capture-payment", isAuth, async (req, res) => {
-  const { payerId, orderID, amount } = req.body;
-  const authToken = req.headers.authorization?.split(" ")[1];
-    paymentData = req.body;
-    //console.log("🔍 Received data :", paymentData);
+  router.post("/capture-payment", isAuth, async (req, res) => {
+    const { payerId, orderID, amount } = req.body;
+    const authToken = req.headers.authorization?.split(" ")[1];
+      paymentData = req.body;
+      //console.log("🔍 Received data :", paymentData);
 
-  if (!orderID) {
-    return res.status(400).json({ error: "Missing PayPal orderID." });
-  }
-  try {
-    const accessToken = await getPayPalAccessToken();
-    //const livePurchases = await fetch(`https://api-m.paypal.com/v2/checkout/orders/${orderID}/capture`)
+    if (!orderID) {
+      return res.status(400).json({ error: "Missing PayPal orderID." });
+    }
+    try {
+      const accessToken = await getPayPalAccessToken();
+      //const livePurchases = await fetch(`https://api-m.paypal.com/v2/checkout/orders/${orderID}/capture`)
 
-    //const livePurchases = await fetch(`https://api-m.sandbox.paypal.com/v2/checkout/orders/${orderID}/capture`)
+      //const livePurchases = await fetch(`https://api-m.sandbox.paypal.com/v2/checkout/orders/${orderID}/capture`)
 
-    const captureResponse = await fetch(`https://api-m.sandbox.paypal.com/v2/checkout/orders/${orderID}/capture`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+      const captureResponse = await fetch(`https://api-m.sandbox.paypal.com/v2/checkout/orders/${orderID}/capture`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
 
-    //console.log("HTTP Status:", captureResponse.status); // 200, 201, etc
-    const captureData = await captureResponse.json();
-      //console.log("PayPal Capture Response:", captureResponse.json());
+      //console.log("HTTP Status:", captureResponse.status); // 200, 201, etc
+      const captureData = await captureResponse.json();
+        //console.log("PayPal Capture Response:", captureResponse.json());
 
-      if (captureResponse.status !== 201 && captureResponse.status !== 200) {
-        return res.status(500).json({
-          error: "Failed to capture PayPal payment",
-          details: captureData,});
-      }
-      // Payment captured successfully
-      if (captureData.status !== "COMPLETED") {
-        return res.status(500).json({
-          error: "Payment not completed by PayPal",
-          status: captureStatus,
-          details: captureData,
-        });
-      }
+        if (captureResponse.status !== 201 && captureResponse.status !== 200) {
+          return res.status(500).json({
+            error: "Failed to capture PayPal payment",
+            details: captureData,});
+        }
+        // Payment captured successfully
+        if (captureData.status !== "COMPLETED") {
+          return res.status(500).json({
+            error: "Payment not completed by PayPal",
+            status: captureStatus,
+            details: captureData,
+          });
+        }
 
-      await processPaymentDetails(paymentData, orderID)
-      res.status(201).json({msg: '201', userData: captureData})
-        
-  } catch (error) {
-    console.error("Error capturing payment:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-});
+        await processPaymentDetails(paymentData, orderID)
+        res.status(201).json({msg: '201', userData: captureData})
+          
+    } catch (error) {
+      console.error("Error capturing payment:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  });
 
   // custom function to create payment details history record here
 const processPaymentDetails = async(data, paymentId) =>{
@@ -619,49 +619,214 @@ const processPaymentDetails = async(data, paymentId) =>{
   });
 
     // user request route to fund account goes here...
-router.post("/userAccount_funding", isAuth, async (req, res) => {
+  router.post("/userAccount_funding", isAuth, async (req, res) => {
+      const dataReceive = req.body;
+      //console.log("Tran ID: ", req.body)
+      const Trans_ID = transactionID(25)
+      // get the transfer record ID here
+      const filter = { _id: dataReceive.userId };
+          if (dataReceive.userId == "" || dataReceive.userId == null) {
+          return res.status(401).send({ message: "Invalid user access" }); // cot code required
+          }
+
+            const fundingLimit = await AppSetting.find();
+            if(dataReceive.amt > fundingLimit[0].app_maxi_funding ){
+              return res.json({status: 403, message: `Maximum amount funding should is \u20A6${new Intl.NumberFormat().format(fundingLimit[0].app_maxi_funding)}` })
+            }
+            if(dataReceive.amt < fundingLimit[0].app_minim_funding ){
+              return res.json({status: 403, message: `Minimum funding amount is \u20A6${new Intl.NumberFormat().format(fundingLimit[0].app_minim_funding)} accepted` })
+            }
+
+            //console.log("maxi ", fundingLimit[0].app_maxi_funding)
+      try {
+            //console.log("All App ", fundingLimit)
+
+            let userFund = await User.findOne({ _id:  dataReceive.userId }); // here I am checking if user exist then I will get user details
+            if (!userFund) {
+              //console.log("User details: ", userDetails)
+              res.status(404).send({ message: 'User not found' }); // user not found
+            } 
+            else if (userFund){
+          
+                // create record for funding purposes
+                const fundAccount = FundUserAccount.create({
+                  fund_name: userFund.display_name,
+                  fund_number: Trans_ID,
+                  fund_tag_id: userFund.tag_id,
+                  amount: dataReceive.amt,
+                  fund_email: userFund.email,
+                  fund_note: dataReceive.note,
+                  fund_method: dataReceive.method,
+                  fund_status: 'Pending',
+                });
+                // check if user activate in-app notification and send notification
+                if(userFund.receive_app_message == true) {
+                  const userLogs = Notification.create({
+                    alert_username: userFund.display_name,
+                    alert_name: userFund.display_name,
+                    alert_user_ip: '',
+                    alert_country: '',
+                    alert_browser: '',
+                    alert_date: Date.now(),
+                    alert_user_id: userFund._id,
+                    alert_nature: 'Account funding request submitted! Your wallet will be funded once confirmed payment!',
+                    alert_status: 1,
+                    alert_read_date: ''
+                    })
+                }
+                // create record for sender history purposes
+                const TransfersHistory = TransferFund.create({
+                  acct_name: userFund.display_name,
+                  acct_number: userFund.tag_id,
+                  amount: req.body.amt,
+                  sender_name: userFund.display_name,
+                  transac_category:'Account Funding',
+                  tran_type: 'Credit',
+                  transac_nature: 'In-app funding',
+                  tran_desc: req.body.note,
+                  createdBy: userFund._id,
+                  tid: Trans_ID,
+                  colorcode:'green',
+                  pay_tran: req.body.payId,
+                  sender_acct_number: userFund.tag_id,
+                  transaction_status: 'Pending',
+                  createdOn: Date.now(),
+                });
+
+                // create log here
+                const addLogs = await SystemActivity.create({
+                  log_username: userFund.email,
+                  log_name: userFund.display_name,
+                  log_acct_number: userFund?.tag_id,
+                  log_receiver_name: '',
+                  log_receiver_number: '',
+                  log_receiver_bank: '',
+                  log_country: '',
+                  log_swift_code: '',
+                  log_desc:'Account funding request made',
+                  log_amt: '',
+                  log_status: 'Successful',
+                  log_nature:'Funding request',
+                  })
+                // check if the user activate email notification and send notification
+                if(userFund.receive_email_notification == true){
+                  // send email notification to user
+                  fetchApp().then((result) =>{
+                      appName = result.app_name
+                      appLogo = result.app_logo
+                      const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                      const mailBody = loginEmail(appName, 'Account Funding Notification', userFund.display_name, `this is to notify you that your account funding request has been logged and we will treat as soon as we confirm your payment status. \n Account funding Transaction ID is ${Trans_ID}, \n 
+                      Transaction Reference ID ${req.body.payId ? req.body.payId: 'None. ' } \n Thank you`, logoImage)
+                      const TextBody = loginText(userFund.display_name, `this is to notify you that your account funding request has been logged and we will treat as soon as your payment received. \n Transaction ID is ${Trans_ID} \n
+                      Transaction Reference ID ${req.body.payId? req.body.payId: 'None.'}`);
+                      let fundAcctMailOptions = {
+                      from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
+                      to: [{ email: userFund.email }],
+                      subject: 'Account Funding Notification!',
+                      text: TextBody,
+                      html: mailBody,
+                    }
+                      sendEmail(fundAcctMailOptions).catch((err) => {
+                        console.error("❌ Email sending completely failed:", err.message);
+                      });
+
+                    // async..await is not allowed in global scope, must use a wrapper
+                      }).catch(console.error.bind(console))    
+                }   
+                // send email notification to admin
+                fetchApp().then((result) =>{
+                  appName = result.app_name
+                  appLogo = result.app_logo
+                  const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                  const mailBody = loginEmail(appName, 'Account Funding Notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} has made account funding request and it has been logged! kindly treat as soon as possible. \n Account funding Transaction ID is ${Trans_ID}, \n 
+                  Transaction Reference ID ${req.body.payId ? req.body.payId: 'None. ' } \n Thank you`, logoImage)
+                  const TextBody = loginText(userFund.display_name, `this is to notify you that your account funding request has been logged and we will treat as soon as your payment received. \n Transaction ID is ${Trans_ID} \n
+                  Transaction Reference ID ${req.body.payId? req.body.payId: 'None.'}`);
+                  let fundAcctMailOptions = {
+                  from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
+                  to: [{ email: 'hello@ozaapp.com' }],
+                  subject: 'Account Funding Notification!',
+                  text: TextBody,
+                  html: mailBody,
+                }
+                sendEmail(fundAcctMailOptions).catch((err) => {
+                  console.error("❌ Email sending completely failed:", err.message);
+                });
+                // async..await is not allowed in global scope, must use a wrapper
+              }).catch(console.error.bind(console))        
+          // success message
+            
+            res.status(200).json({msg: '200', feedback: Trans_ID})
+            }
+        } catch (err) {
+          // err message
+        console.log(err)
+          return res.json({status: 500, message: 'Technical issues occurred' })
+      }
+    });
+
+   // This route for user funds withdrawal request...
+  router.post("/userFundWithdrawal", isAuth, async (req, res) => {
     const dataReceive = req.body;
     //console.log("Tran ID: ", req.body)
     const Trans_ID = transactionID(25)
     // get the transfer record ID here
     const filter = { _id: dataReceive.userId };
         if (dataReceive.userId == "" || dataReceive.userId == null) {
-         return res.status(401).send({ message: "Invalid user access" }); // cot code required
+        return res.status(401).send({ message: "Invalid user access" }); // cot code required
         }
 
           const fundingLimit = await AppSetting.find();
-          if(dataReceive.amt > fundingLimit[0].app_maxi_funding ){
-            return res.json({status: 403, message: `Maximum amount funding should is \u20A6${new Intl.NumberFormat().format(fundingLimit[0].app_maxi_funding)}` })
+          let userFund = await User.findOne({ _id:  dataReceive.userId }); // here I am checking if user exist then I will get user details
+          
+          if(dataReceive.amt < fundingLimit[0]?.app_mini_withdrawal ){
+            return res.json({status: 403, message: `Minimum withdrawal amount of \$${new Intl.NumberFormat().format(fundingLimit[0].app_mini_withdrawal)} accepted` })
           }
-          if(dataReceive.amt < fundingLimit[0].app_minim_funding ){
-            return res.json({status: 403, message: `Minimum funding amount is \u20A6${new Intl.NumberFormat().format(fundingLimit[0].app_minim_funding)} accepted` })
+          if(dataReceive.amt > fundingLimit[0]?.app_maxi_withdrawal ){
+            return res.json({status: 403, message: `Withdrawal amount should not exceed \$${new Intl.NumberFormat().format(fundingLimit[0].app_maxi_withdrawal)}` })
           }
-
-          //console.log("maxi ", fundingLimit[0].app_maxi_funding)
+          
     try {
           //console.log("All App ", fundingLimit)
-
-          let userFund = await User.findOne({ _id:  dataReceive.userId }); // here I am checking if user exist then I will get user details
+          
           if (!userFund) {
             //console.log("User details: ", userDetails)
-            res.status(404).send({ message: 'User not found' }); // user not found
+            return res.json({status: 404, message: 'User not found' }); // user not found
           } 
+          if (userFund.all_bonus_acct < dataReceive.amt) {
+            //console.log("User details: ", userDetails)
+            return res.json({status: 403, message: 'insufficient  balance '})
+            
+          }
           else if (userFund){
-        
+            // check user bonus balance
+            const currentBal = (userFund.all_bonus_acct - dataReceive.amt)
+            
+            const currentAllWithdrawal = (userFund.all_withdraw_acct+ +dataReceive.amt)
+                // update balance
+                const updateUserBalance = {
+                  $set: {
+                    all_bonus_acct: currentBal,
+                    last_transaction: dataReceive.amt,
+                    all_withdraw_acct: currentAllWithdrawal,
+                  },
+                };   
               // create record for funding purposes
-              const fundAccount = FundUserAccount.create({
-                fund_name: userFund.display_name,
-                fund_number: Trans_ID,
-                fund_tag_id: userFund.tag_id,
+              const fundAccount = UserWithdrawal.create({
+                withdrawal_name: userFund.display_name,
+                withdrawal_tid: Trans_ID,
+                withdrawal_tag_id: userFund.tag_id,
                 amount: dataReceive.amt,
-                fund_email: userFund.email,
-                fund_note: dataReceive.note,
-                fund_method: dataReceive.method,
-                fund_status: 'Pending',
+                withdrawal_email: userFund.email,
+                withdrawal_note: dataReceive.note,
+                addeby: userFund._id,
               });
+
+              const updateBal = await User.updateOne(filter, updateUserBalance);
+              const currentUserFund = await User.findOne({ _id:  dataReceive.userId });
               // check if user activate in-app notification and send notification
               if(userFund.receive_app_message == true) {
-                 const userLogs = Notification.create({
+                const userLogs = Notification.create({
                   alert_username: userFund.display_name,
                   alert_name: userFund.display_name,
                   alert_user_ip: '',
@@ -669,7 +834,7 @@ router.post("/userAccount_funding", isAuth, async (req, res) => {
                   alert_browser: '',
                   alert_date: Date.now(),
                   alert_user_id: userFund._id,
-                  alert_nature: 'Account funding request submitted! Your wallet will be funded once confirmed payment!',
+                  alert_nature: 'Withdrawal request submitted! Your account will be credited once approved!',
                   alert_status: 1,
                   alert_read_date: ''
                   })
@@ -680,14 +845,15 @@ router.post("/userAccount_funding", isAuth, async (req, res) => {
                 acct_number: userFund.tag_id,
                 amount: req.body.amt,
                 sender_name: userFund.display_name,
-                transac_category:'Account Funding',
-                tran_type: 'Credit',
-                transac_nature: 'In-app funding',
+                transac_category:'Withdraw',
+                tran_type: 'Debit',
+                transac_nature: 'Funds Withdrawal',
                 tran_desc: req.body.note,
                 createdBy: userFund._id,
                 tid: Trans_ID,
-                colorcode:'green',
-                pay_tran: req.body.payId,
+                colorcode:'red',
+                pay_tran: req.body?.payId ? req.body?.payId:'', 
+                currency_level: '2',
                 sender_acct_number: userFund.tag_id,
                 transaction_status: 'Pending',
                 createdOn: Date.now(),
@@ -703,34 +869,170 @@ router.post("/userAccount_funding", isAuth, async (req, res) => {
                 log_receiver_bank: '',
                 log_country: '',
                 log_swift_code: '',
-                log_desc:'Account funding request made',
+                log_desc:'Withdrawal request made',
                 log_amt: '',
                 log_status: 'Successful',
-                log_nature:'Funding request',
+                log_nature:'Withdrawal request',
                 })
               // check if the user activate email notification and send notification
               if(userFund.receive_email_notification == true){
-                 // send email notification to user
-                 fetchApp().then((result) =>{
+                // send email notification to user
+                fetchApp().then((result) =>{
                     appName = result.app_name
                     appLogo = result.app_logo
                     const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-                    const mailBody = loginEmail(appName, 'Account Funding Notification', userFund.display_name, `this is to notify you that your account funding request has been logged and we will treat as soon as we confirm your payment status. \n Account funding Transaction ID is ${Trans_ID}, \n 
-                    Transaction Reference ID ${req.body.payId ? req.body.payId: 'None. ' } \n Thank you`, logoImage)
-                    const TextBody = loginText(userFund.display_name, `this is to notify you that your account funding request has been logged and we will treat as soon as your payment received. \n Transaction ID is ${Trans_ID} \n
-                    Transaction Reference ID ${req.body.payId? req.body.payId: 'None.'}`);
+                    const mailBody = loginEmail(appName, 'Withdrawal Notification', userFund.display_name, `this is to notify you that your funds withdrawal request has been logged and we will treat as soon as possible. \n Transaction ID is ${Trans_ID}, \n 
+                    ${req.body.payId ? 'Transaction Reference ID '+ req.body.payId: 'None. ' } \n Thank you`, logoImage)
+                    const TextBody = loginText(userFund.display_name, `this is to notify you that your withdrawal request has been logged and we will treat as soon as possible. \n Transaction ID is ${Trans_ID} \n
+                    ${req.body.payId? 'Transaction Reference ID ' +req.body.payId: 'None.'}`);
                     let fundAcctMailOptions = {
-                    from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
+                    from: { name: `${appName + ' Withdrawal'}`, email: '<noreply@ozaapp.com>' },
                     to: [{ email: userFund.email }],
-                    subject: 'Account Funding Notification!',
+                    subject: 'Funds Withdrawal Notification!',
                     text: TextBody,
                     html: mailBody,
-                   }
+                  }
                     sendEmail(fundAcctMailOptions).catch((err) => {
                       console.error("❌ Email sending completely failed:", err.message);
                     });
+                
+                }).catch(console.error.bind(console))    
+              }   
+              // send email notification to admin
+              fetchApp().then((result) =>{
+                appName = result.app_name
+                appLogo = result.app_logo
+                const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                const mailBody = loginEmail(appName, 'Withdrawal Notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} has made fund withdrawal request and it has been logged! kindly treat as soon as possible. \n Transaction ID is ${Trans_ID}, \n 
+                ${req.body.payId ? 'Transaction Reference ID '+ req.body.payId: 'None. ' } \n Thank you`, logoImage)
+                const TextBody = loginText(userFund.display_name, `this is to notify you that withdrawal request has been logged, treat as soon as possible. \n Transaction ID is ${Trans_ID} \n
+                ${req.body.payId? 'Transaction Reference ID '+req.body.payId: 'None.'}`);
+                let acct_withdrawalMail = {
+                from: { name: `${appName + ' Withdrawal'}`, email: '<noreply@ozaapp.com>' },
+                to: [{ email: 'hello@ozaapp.com' }],
+                subject: 'Funds Withdrawal Notification!',
+                text: TextBody,
+                html: mailBody,
+              }
+              sendEmail(acct_withdrawalMail).catch((err) => {
+                console.error("❌ Email sending completely failed:", err.message);
+              });
+            }).catch(console.error.bind(console))        
+        // success message
+        const { password, password_plain, ...others } = currentUserFund._doc;
+          res.status(200).json({msg: '200', feedback: Trans_ID, userData: others})
+          }
+      } catch (err) {
+        // err message
+      console.log(err)
+        return res.json({status: 500, message: 'Technical issues occurred' })
+    }
+  });
 
-                   // async..await is not allowed in global scope, must use a wrapper
+    // user route to make a withdrawal request goes here...
+  router.post("/userAccount_withdrawal", isAuth, async (req, res) => {
+    const dataReceive = req.body;
+    //console.log("Tran ID: ", req.body)
+    const Trans_ID = transactionID(25)
+    // get the transfer record ID here
+    const filter = { _id: dataReceive.userId };
+        if (dataReceive.userId == "" || dataReceive.userId == null) {
+        return res.status(401).send({ message: "Invalid user access" }); // cot code required
+        }
+
+          //console.log("maxi ", fundingLimit[0].app_maxi_funding)
+    try {
+          //console.log("All App ", fundingLimit)
+
+          let userWithdrawal = await User.findOne({ _id:  dataReceive.userId }); // here I am checking if user exist then I will get user details
+          if (!userWithdrawal) {
+            //console.log("User details: ", userDetails)
+            res.status(404).send({ message: 'User not found' }); // user not found
+          } 
+          else if (userWithdrawal){
+        
+              // create record for funding purposes
+              const fundAccount = UserWithdrawal.create({
+                withdrawal_name: userFund.display_name,
+                withdrawal_tid: Trans_ID,
+                withdrawal_tag_id: userFund.tag_id,
+                amount: dataReceive.amt,
+                withdrawal_email: userFund.email,
+                withdrawal_note: dataReceive.note,
+                });
+              // check if user activate in-app notification and send notification
+              if(userWithdrawal.receive_app_message == true) {
+                const userLogs = Notification.create({
+                  alert_username: userWithdrawal.display_name,
+                  alert_name: userWithdrawal.display_name,
+                  alert_user_ip: '',
+                  alert_country: '',
+                  alert_browser: '',
+                  alert_date: Date.now(),
+                  alert_user_id: userWithdrawal._id,
+                  alert_nature: 'Withdrawal request submitted! Your bank account will be credited when approved!',
+                  alert_status: 1,
+                  alert_read_date: ''
+                  })
+              }
+              // create record for sender history purposes
+              const TransfersHistory = TransferFund.create({
+                acct_name: userWithdrawal.display_name,
+                acct_number: userWithdrawal.tag_id,
+                amount: req.body.amt,
+                sender_name: userWithdrawal.display_name,
+                tran_type: 'Debit',
+                transac_nature: 'Withdrawal',
+                tran_desc: req.body.note,
+                createdBy: userWithdrawal._id,
+                currency_level: '2',
+                tid: Trans_ID,
+                colorcode:'red',
+                pay_tran: req.body?.payId,
+                sender_acct_number: userWithdrawal.tag_id,
+                transaction_status: 'Pending',
+                createdOn: Date.now(),
+              });
+
+              // create log here
+              const addLogs = await SystemActivity.create({
+                log_username: userWithdrawal.email,
+                log_name: userWithdrawal.display_name,
+                log_acct_number: userWithdrawal?.tag_id,
+                log_receiver_name: '',
+                log_receiver_number: '',
+                log_receiver_bank: '',
+                log_country: '',
+                log_swift_code: '',
+                log_desc:'Withdrawal request made',
+                log_amt: '',
+                log_status: 'Successful',
+                log_nature:'Withdrawal request',
+                })
+              // check if the user activate email notification and send notification
+              if(userWithdrawal.receive_email_notification == true){
+                // send email notification to user
+                fetchApp().then((result) =>{
+                    appName = result.app_name
+                    appLogo = result.app_logo
+                    const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                    const mailBody = loginEmail(appName, 'Withdrawal Notification', userWithdrawal.display_name, `this is to notify you that your withdrawal request has been logged and we will treat as soon as possible. \n Transaction ID is ${Trans_ID}, \n 
+                    Transaction Reference ID ${req.body.payId ? req.body.payId: 'None. ' } \n`, logoImage)
+                    const TextBody = loginText(userWithdrawal.display_name, `this is to notify you that your withdrawal request has been logged and we will treat as soon as possible. \n Transaction ID is ${Trans_ID} \n
+                    Transaction Reference ID ${req.body.payId? req.body.payId: 'None.'}`);
+                    let acct_withdrawal = {
+                    from: { name: `${appName + ' Team'}`, email: '<noreply@ozaapp.com>' },
+                    to: [{ email: userWithdrawal.email }],
+                    subject: 'Withdrawal Notification!',
+                    text: TextBody,
+                    html: mailBody,
+                  }
+
+                    sendEmail(acct_withdrawal).catch((err) => {
+                      console.error("❌ Email sending completely failed:", err.message);
+                    });
+
+                  // async..await is not allowed in global scope, must use a wrapper
                     }).catch(console.error.bind(console))    
               }   
               // send email notification to admin
@@ -738,782 +1040,480 @@ router.post("/userAccount_funding", isAuth, async (req, res) => {
                 appName = result.app_name
                 appLogo = result.app_logo
                 const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-                const mailBody = loginEmail(appName, 'Account Funding Notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} has made account funding request and it has been logged! kindly treat as soon as possible. \n Account funding Transaction ID is ${Trans_ID}, \n 
-                Transaction Reference ID ${req.body.payId ? req.body.payId: 'None. ' } \n Thank you`, logoImage)
-                const TextBody = loginText(userFund.display_name, `this is to notify you that your account funding request has been logged and we will treat as soon as your payment received. \n Transaction ID is ${Trans_ID} \n
-                Transaction Reference ID ${req.body.payId? req.body.payId: 'None.'}`);
-                let fundAcctMailOptions = {
+                const mailBody = loginEmail(appName, 'Withdrawal Notification', 'Hello Admin', `this is to notify you that ${userWithdrawal.display_name} has made withdrawal request and it has been logged! kindly treat as soon as possible. \n withdrawal Transaction ID is ${Trans_ID}, \n 
+                ${req.body.payId ? 'Transaction Reference ID '+req.body.payId: 'None. ' } \n Thank you`, logoImage)
+                const TextBody = loginText(userWithdrawal.display_name, `this is to notify you that withdrawal request has been logged treat as soon as possible. \n Transaction ID is ${Trans_ID} \n
+                ${req.body.payId? 'Transaction Reference ID '+ req.body.payId: 'None.'}`);
+                let fundAcctMailOptionAdmin = {
+                from: { name: `${appName + ' Team'}`, email: '<noreply@ozaapp.com>' },
+                to: [{ email: 'hello@ozaapp.com' }],
+                subject: 'Withdrawal Notification!',
+                text: TextBody,
+                html: mailBody,
+              }
+              sendEmail(fundAcctMailOptionAdmin).catch((err) => {
+                console.error("❌ Email sending completely failed:", err.message);
+              });
+              // async..await is not allowed in global scope, must use a wrapper
+            }).catch(console.error.bind(console))        
+        // success message
+          res.status(200).json({msg: '200'})
+          }
+      } catch (err) {
+        // err message
+      console.log(err)
+        return res.json({status: 500, message: 'Technical issues occurred' })
+    }
+  });
+
+// route to check funding limit before sending it for processing goes here...
+  router.post("/check_fundingLimit", isAuth, async (req, res) => {
+    const dataReceive = req.body;
+    console.log("Tran ID: ", req.body)
+    const Trans_ID = transactionID(25)
+    // get the transfer record ID here
+    const filter = { _id: dataReceive.userId };
+        if (dataReceive.userId == "" || dataReceive.userId == null) {
+        return res.status(401).send({ message: "Invalid user access" }); // cot code required
+        }
+      try {
+          //console.log("All App ", fundingLimit)
+          const fundingLimit = await AppSetting.find();
+          if(dataReceive.amt > fundingLimit[0].app_maxi_funding ){
+            return res.json({status: 403, message: `Amount funding should not exceed \u20A6${new Intl.NumberFormat().format(fundingLimit[0].app_maxi_funding)}` })
+          }
+          if(dataReceive.amt < fundingLimit[0].app_minim_funding ){
+            return res.json({status: 403, message: `Minimum of amount of \u20A6${new Intl.NumberFormat().format(fundingLimit[0].app_minim_funding)} accepted` })
+          }
+          
+          else{       
+        // success message
+          res.status(200).json({msg: '200'})
+          }
+        } catch (err) {
+        // err message
+      console.log(err)
+        return res.json({status: 500, message: 'Technical issues occurred' })
+    }
+  });
+
+// process user sales/purchase request fund goes here...
+  router.post("/fundPurchase_funding", isAuth, async (req, res) => {
+      const dataReceive = req.body;
+      //console.log("My data: ", req.body)
+      const TransID = transactionID(25)
+      // get the transfer record ID here
+      const filter = { _id: dataReceive.myId };
+          if (dataReceive.myId == "" || dataReceive.myId == null) {
+          return res.json({status: 401, message: 'Invalid user access'})
+          }
+          const getCurrentRate = await GetRate.findOne();
+      try {
+            let userFund = await User.findOne({ _id:  dataReceive.myId }); // here I am checking if user exist then I will get user details
+            if (!userFund) {
+              //console.log("User details: ", userDetails)
+              return res.json({status: 404, message: 'User not found'})// user not found
+            } 
+          else if (userFund){
+          
+                // create record for funding purposes
+                const createRecord = TransferFund.create({
+                  acct_name: userFund.display_name,
+                  acct_number: userFund.tag_id,
+                  amount: dataReceive.sell_amt,
+                  bank_name: '',
+                  sender_name: userFund.display_name,
+                  sender_acct_number: userFund.tag_id,
+                  sender_currency_type: '$',
+                  tran_type: 'Credit',
+                  transac_nature:dataReceive.serviceName+' '+dataReceive.serviceCategory,
+                  transac_category: dataReceive.serviceName,
+                  tran_desc:'Request for virtual funds exchange for '+dataReceive.serviceName+" \n "+dataReceive?.sell_note,
+                  tr_year:'',
+                  colorcode:'green',
+                  trans_method: dataReceive.method,
+                  currency_level:'2',
+                  createdBy: dataReceive.myId,
+                  trans_balance: dataReceive.total_money,
+                  tid: TransID,
+                  tran_service_type: dataReceive.serviceType,
+                  pay_tran: dataReceive.method =='Paystack Checkout'? dataReceive.payId : null,
+                  tran_rate: dataReceive.serviceName == 'PayPal' || dataReceive.serviceName =='Paypal'? getCurrentRate.paypal_buying: dataReceive.serviceName == 'Payoneer' || dataReceive.serviceName =='Payooner'? getCurrentRate.payoneer_buying: dataReceive.serviceName=='Bitcoin'? getCurrentRate.btc_buying: ''
+                  });
+                  
+                // check if user activate in-app notification and send notification
+                if(userFund.receive_app_message == true) {
+                  const userLogs = Notification.create({
+                    alert_username: userFund.display_name,
+                    alert_name: userFund.display_name,
+                    alert_user_ip: '',
+                    alert_country: '',
+                    alert_browser: '',
+                    alert_date:  Date.now(),
+                    alert_user_id: userFund._id,
+                    alert_nature: 'Request for virtual funds exchange for '+dataReceive.serviceName+ ' was successful, your account with be credited once approved',
+                    alert_status: 1,
+                    alert_read_date: ''
+                    })
+                }
+    
+                // create log here
+                const addLogs = await SystemActivity.create({
+                  log_username: userFund.email,
+                  log_name: userFund.display_name,
+                  log_acct_number: userFund?.tag_id,
+                  log_receiver_name: '',
+                  log_receiver_number: '',
+                  log_receiver_bank: '',
+                  log_country: '',
+                  log_swift_code: '',
+                  log_desc:'Funds exchange request made',
+                  log_amt: '',
+                  log_status: 'Successful',
+                  log_nature:'Fund exchange request',
+                  })
+                // check if the user activate email notification and send notification
+                if(userFund.receive_email_notification == true){
+                  // send email notification to user
+                  fetchApp().then((result) =>{
+                      appName = result.app_name
+                      appLogo = result.app_logo
+                      const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                      const mailBody = loginEmail(appName, 'Account Funding Notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment received. \n Request reference / Transaction ID is ${TransID}, \nThank you`, logoImage)
+                      const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID}`);
+                      let fundAcctMailOptionUser = {
+                      from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
+                      to: [{ email: userFund.email }],
+                      subject: 'Account Funding Notification!',
+                      text: TextBody,
+                      html: mailBody,
+                  }
+                    sendEmail(fundAcctMailOptionUser).catch((err) => {
+                      console.error("❌ Email sending completely failed:", err.message);
+                    });
+                  // async..await is not allowed in global scope, must use a wrapper
+                  }).catch(console.error.bind(console))
+                  
+                } 
+              // send email notification to admin
+              fetchApp().then((result) =>{
+                appName = result.app_name
+                appLogo = result.app_logo
+                const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                const mailBody = loginEmail(appName, 'Account Funding Notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} made fund exchange request and it has been logged, kindly treat as soon as possible. \n Request reference / Transaction ID is ${TransID}, \nThank you`, logoImage)
+                const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID}`);
+                let fundAcctMailOptionsAdmin = {
                 from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
                 to: [{ email: 'hello@ozaapp.com' }],
                 subject: 'Account Funding Notification!',
                 text: TextBody,
                 html: mailBody,
+            }
+              sendEmail(fundAcctMailOptionsAdmin).catch((err) => {
+                console.error("❌ Email sending completely failed:", err.message);
+              });
+            // async..await is not allowed in global scope, must use a wrapper
+            }).catch(console.error.bind(console))
+          // success message
+            res.status(201).json({msg: '200', feedback: TransID})
+            }
+        } catch (err) {
+          // err message
+        console.log(err)
+          return res.json({status: 500, message: 'Technical issues occurred' })
+      }
+    });
+
+  // process user sales/purchase request fund goes here...
+  router.post("/fundBuy_funding", isAuth, async (req, res) => {
+      const dataReceive = req.body;
+      //console.log("My data: ", req.body)
+      const TransID = transactionID(25)
+      const nowRate = '';
+      // get the transfer record ID here
+      const filter = { _id: dataReceive.myId };
+          if (dataReceive.myId == "" || dataReceive.myId == null) {
+          return res.json({status: 401, message: 'Invalid user access'})
+          }
+          const getCurrentRate = await GetRate.findOne();
+          
+      try {
+            let userFund = await User.findOne({ _id:  dataReceive.myId }); // here I am checking if user exist then I will get user details
+            if (!userFund) {
+              //console.log("User details: ", userDetails)
+              return res.json({status: 404, message: 'User not found'})// user not found
+            } 
+            else if (userFund){
+                // create record for funding purposes
+                const createRecord = TransferFund.create({
+                  acct_name: userFund.display_name,
+                  acct_number: userFund.tag_id,
+                  amount: dataReceive.buy_amt,
+                  bank_name: '',
+                  sender_name: userFund.display_name,
+                  sender_acct_number: userFund.tag_id,
+                  sender_currency_type: '$',
+                  tran_type: 'Debit',
+                  transac_nature:dataReceive.serviceName+' '+dataReceive.serviceCategory,
+                  transac_category: dataReceive.serviceName,
+                  tran_desc:'Request for virtual funds exchange for '+dataReceive.serviceName+" \n "+dataReceive.buy_note? dataReceive.buy_note:'',
+                  tr_year:'',
+                  colorcode:'red',
+                  trans_method: dataReceive.method,
+                  currency_level:'2',
+                  createdBy: dataReceive.myId,
+                  tid: TransID,
+                  tran_service_type: dataReceive.serviceType,
+                  trans_balance: dataReceive.total_money,
+                  pay_tran: dataReceive.method =='Paystack Checkout'? dataReceive.payId : null,
+                  tran_rate: dataReceive.serviceName == 'PayPal' || dataReceive.serviceName =='Paypal'? getCurrentRate.paypal_selling: dataReceive.serviceName == 'Payoneer' || dataReceive.serviceName =='Payooner'? getCurrentRate.payoneer_selling: dataReceive.serviceName=='Bitcoin'? getCurrentRate.btc_selling: ''
+                  });
+                  
+                // check if user activate in-app notification and send notification
+                if(userFund.receive_app_message == true) {
+                  const userLogs = Notification.create({
+                    alert_username: userFund.display_name,
+                    alert_name: userFund.display_name,
+                    alert_user_ip: '',
+                    alert_country: '',
+                    alert_browser: '',
+                    alert_date:  Date.now(),
+                    alert_user_id: userFund._id,
+                    alert_nature: 'Request for virtual funds exchange for '+dataReceive.serviceName + ' was successful, your account with be credited once approved',
+                    alert_status: 1,
+                    alert_read_date: ''
+                    })
+                }
+    
+                // create log here
+                const addLogs = await SystemActivity.create({
+                  log_username: userFund.email,
+                  log_name: userFund.display_name,
+                  log_acct_number: userFund?.tag_id,
+                  log_receiver_name: '',
+                  log_receiver_number: '',
+                  log_receiver_bank: '',
+                  log_country: '',
+                  log_swift_code: '',
+                  log_desc:'Funds exchange request made',
+                  log_amt: '',
+                  log_status: 'Successful',
+                  log_nature:'Fund exchange request',
+                  })
+                // check if the user activate email notification and send notification
+                if(userFund.receive_email_notification == true){
+                  // send email notification to user
+                  fetchApp().then((result) =>{
+                      appName = result.app_name
+                      appLogo = result.app_logo
+                      const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                      const mailBody = loginEmail(appName, 'Transaction Notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment is received. \n Request reference / Transaction ID is ${TransID}, \n
+                      \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId: ''}
+                      \n Thank you`, logoImage)
+                      const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId:''}`);
+                      let fundAcctMailUserBuy = {
+                      from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
+                      to: [{ email: userFund.email }],
+                      subject: 'Transaction Notification!',
+                      text: TextBody,
+                      html: mailBody,
+                  }
+                    sendEmail(fundAcctMailUserBuy).catch((err) => {
+                      console.error("❌ Email sending completely failed:", err.message);
+                    });
+                    
+                    }).catch(console.error.bind(console))
+                } 
+                
+              // send email notification to admin
+                fetchApp().then((result) =>{
+                  appName = result.app_name
+                  appLogo = result.app_logo
+                  const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                  const mailBody = loginEmail(appName, 'Transaction Notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} made fund exchange request and it has been logged, kindly treat as soon as possible. \n Request reference / Transaction ID is ${TransID}, \n
+                  \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId: ''}
+                  \n Thank you`, logoImage)
+                  const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId:''}`);
+                  let fundAcctMailBuyAdmin = {
+                  from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
+                  to: [{ email: 'hello@ozaapp.com' }],
+                  subject: 'Transaction Notification!',
+                  text: TextBody,
+                  html: mailBody,
               }
-              sendEmail(fundAcctMailOptions).catch((err) => {
+              sendEmail(fundAcctMailBuyAdmin).catch((err) => {
                 console.error("❌ Email sending completely failed:", err.message);
               });
               // async..await is not allowed in global scope, must use a wrapper
-             }).catch(console.error.bind(console))        
-         // success message
-          
-          res.status(200).json({msg: '200', feedback: Trans_ID})
-          }
-      } catch (err) {
-         // err message
-       console.log(err)
-        return res.json({status: 500, message: 'Technical issues occurred' })
-     }
-  });
-
-   // This route for user funds withdrawal request...
-router.post("/userFundWithdrawal", isAuth, async (req, res) => {
-  const dataReceive = req.body;
-  //console.log("Tran ID: ", req.body)
-  const Trans_ID = transactionID(25)
-  // get the transfer record ID here
-  const filter = { _id: dataReceive.userId };
-      if (dataReceive.userId == "" || dataReceive.userId == null) {
-       return res.status(401).send({ message: "Invalid user access" }); // cot code required
-      }
-
-        const fundingLimit = await AppSetting.find();
-        let userFund = await User.findOne({ _id:  dataReceive.userId }); // here I am checking if user exist then I will get user details
-        
-        if(dataReceive.amt < fundingLimit[0]?.app_mini_withdrawal ){
-          return res.json({status: 403, message: `Minimum withdrawal amount of \$${new Intl.NumberFormat().format(fundingLimit[0].app_mini_withdrawal)} accepted` })
-        }
-        if(dataReceive.amt > fundingLimit[0]?.app_maxi_withdrawal ){
-          return res.json({status: 403, message: `Withdrawal amount should not exceed \$${new Intl.NumberFormat().format(fundingLimit[0].app_maxi_withdrawal)}` })
-        }
-        
-  try {
-        //console.log("All App ", fundingLimit)
-        
-        if (!userFund) {
-          //console.log("User details: ", userDetails)
-          return res.json({status: 404, message: 'User not found' }); // user not found
-        } 
-        if (userFund.all_bonus_acct < dataReceive.amt) {
-          //console.log("User details: ", userDetails)
-          return res.json({status: 403, message: 'insufficient  balance '})
-          
-        }
-        else if (userFund){
-          // check user bonus balance
-          const currentBal = (userFund.all_bonus_acct - dataReceive.amt)
-          
-          const currentAllWithdrawal = (userFund.all_withdraw_acct+ +dataReceive.amt)
-              // update balance
-              const updateUserBalance = {
-                $set: {
-                  all_bonus_acct: currentBal,
-                  last_transaction: dataReceive.amt,
-                  all_withdraw_acct: currentAllWithdrawal,
-                },
-              };   
-            // create record for funding purposes
-            const fundAccount = UserWithdrawal.create({
-              withdrawal_name: userFund.display_name,
-              withdrawal_tid: Trans_ID,
-              withdrawal_tag_id: userFund.tag_id,
-              amount: dataReceive.amt,
-              withdrawal_email: userFund.email,
-              withdrawal_note: dataReceive.note,
-              addeby: userFund._id,
-            });
-
-            const updateBal = await User.updateOne(filter, updateUserBalance);
-            const currentUserFund = await User.findOne({ _id:  dataReceive.userId });
-            // check if user activate in-app notification and send notification
-            if(userFund.receive_app_message == true) {
-               const userLogs = Notification.create({
-                alert_username: userFund.display_name,
-                alert_name: userFund.display_name,
-                alert_user_ip: '',
-                alert_country: '',
-                alert_browser: '',
-                alert_date: Date.now(),
-                alert_user_id: userFund._id,
-                alert_nature: 'Withdrawal request submitted! Your account will be credited once approved!',
-                alert_status: 1,
-                alert_read_date: ''
-                })
-            }
-            // create record for sender history purposes
-            const TransfersHistory = TransferFund.create({
-              acct_name: userFund.display_name,
-              acct_number: userFund.tag_id,
-              amount: req.body.amt,
-              sender_name: userFund.display_name,
-              transac_category:'Withdraw',
-              tran_type: 'Debit',
-              transac_nature: 'Funds Withdrawal',
-              tran_desc: req.body.note,
-              createdBy: userFund._id,
-              tid: Trans_ID,
-              colorcode:'red',
-              pay_tran: req.body?.payId ? req.body?.payId:'', 
-              currency_level: '2',
-              sender_acct_number: userFund.tag_id,
-              transaction_status: 'Pending',
-              createdOn: Date.now(),
-            });
-
-            // create log here
-            const addLogs = await SystemActivity.create({
-              log_username: userFund.email,
-              log_name: userFund.display_name,
-              log_acct_number: userFund?.tag_id,
-              log_receiver_name: '',
-              log_receiver_number: '',
-              log_receiver_bank: '',
-              log_country: '',
-              log_swift_code: '',
-              log_desc:'Withdrawal request made',
-              log_amt: '',
-              log_status: 'Successful',
-              log_nature:'Withdrawal request',
-              })
-            // check if the user activate email notification and send notification
-            if(userFund.receive_email_notification == true){
-               // send email notification to user
-               fetchApp().then((result) =>{
-                  appName = result.app_name
-                  appLogo = result.app_logo
-                  const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-                  const mailBody = loginEmail(appName, 'Withdrawal Notification', userFund.display_name, `this is to notify you that your funds withdrawal request has been logged and we will treat as soon as possible. \n Transaction ID is ${Trans_ID}, \n 
-                   ${req.body.payId ? 'Transaction Reference ID '+ req.body.payId: 'None. ' } \n Thank you`, logoImage)
-                  const TextBody = loginText(userFund.display_name, `this is to notify you that your withdrawal request has been logged and we will treat as soon as possible. \n Transaction ID is ${Trans_ID} \n
-                   ${req.body.payId? 'Transaction Reference ID ' +req.body.payId: 'None.'}`);
-                  let fundAcctMailOptions = {
-                  from: { name: `${appName + ' Withdrawal'}`, email: '<noreply@ozaapp.com>' },
-                  to: [{ email: userFund.email }],
-                  subject: 'Funds Withdrawal Notification!',
-                  text: TextBody,
-                  html: mailBody,
-                 }
-                  sendEmail(fundAcctMailOptions).catch((err) => {
-                    console.error("❌ Email sending completely failed:", err.message);
-                  });
+              }).catch(console.error.bind(console))
               
-              }).catch(console.error.bind(console))    
-            }   
-            // send email notification to admin
-            fetchApp().then((result) =>{
-              appName = result.app_name
-              appLogo = result.app_logo
-              const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-              const mailBody = loginEmail(appName, 'Withdrawal Notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} has made fund withdrawal request and it has been logged! kindly treat as soon as possible. \n Transaction ID is ${Trans_ID}, \n 
-               ${req.body.payId ? 'Transaction Reference ID '+ req.body.payId: 'None. ' } \n Thank you`, logoImage)
-              const TextBody = loginText(userFund.display_name, `this is to notify you that withdrawal request has been logged, treat as soon as possible. \n Transaction ID is ${Trans_ID} \n
-               ${req.body.payId? 'Transaction Reference ID '+req.body.payId: 'None.'}`);
-              let acct_withdrawalMail = {
-              from: { name: `${appName + ' Withdrawal'}`, email: '<noreply@ozaapp.com>' },
-              to: [{ email: 'hello@ozaapp.com' }],
-              subject: 'Funds Withdrawal Notification!',
-              text: TextBody,
-              html: mailBody,
+          // success message
+            res.status(201).json({msg: '200', feedback: TransID})
             }
-            sendEmail(acct_withdrawalMail).catch((err) => {
-              console.error("❌ Email sending completely failed:", err.message);
-            });
-          }).catch(console.error.bind(console))        
-       // success message
-       const { password, password_plain, ...others } = currentUserFund._doc;
-        res.status(200).json({msg: '200', feedback: Trans_ID, userData: others})
-        }
-    } catch (err) {
-       // err message
-     console.log(err)
-      return res.json({status: 500, message: 'Technical issues occurred' })
-   }
-});
-
-    // user route to make a withdrawal request goes here...
-router.post("/userAccount_withdrawal", isAuth, async (req, res) => {
-  const dataReceive = req.body;
-  //console.log("Tran ID: ", req.body)
-  const Trans_ID = transactionID(25)
-  // get the transfer record ID here
-  const filter = { _id: dataReceive.userId };
-      if (dataReceive.userId == "" || dataReceive.userId == null) {
-       return res.status(401).send({ message: "Invalid user access" }); // cot code required
+        } catch (err) {
+          // err message
+        console.log(err)
+          return res.json({status: 500, message: 'Technical issues occurred' })
       }
+    });
 
-        //console.log("maxi ", fundingLimit[0].app_maxi_funding)
-  try {
-        //console.log("All App ", fundingLimit)
-
-        let userWithdrawal = await User.findOne({ _id:  dataReceive.userId }); // here I am checking if user exist then I will get user details
-        if (!userWithdrawal) {
-          //console.log("User details: ", userDetails)
-          res.status(404).send({ message: 'User not found' }); // user not found
-        } 
-        else if (userWithdrawal){
-      
-            // create record for funding purposes
-            const fundAccount = UserWithdrawal.create({
-              withdrawal_name: userFund.display_name,
-              withdrawal_tid: Trans_ID,
-              withdrawal_tag_id: userFund.tag_id,
-              amount: dataReceive.amt,
-              withdrawal_email: userFund.email,
-              withdrawal_note: dataReceive.note,
-              });
-            // check if user activate in-app notification and send notification
-            if(userWithdrawal.receive_app_message == true) {
-               const userLogs = Notification.create({
-                alert_username: userWithdrawal.display_name,
-                alert_name: userWithdrawal.display_name,
-                alert_user_ip: '',
-                alert_country: '',
-                alert_browser: '',
-                alert_date: Date.now(),
-                alert_user_id: userWithdrawal._id,
-                alert_nature: 'Withdrawal request submitted! Your bank account will be credited when approved!',
-                alert_status: 1,
-                alert_read_date: ''
-                })
-            }
-            // create record for sender history purposes
-            const TransfersHistory = TransferFund.create({
-              acct_name: userWithdrawal.display_name,
-              acct_number: userWithdrawal.tag_id,
-              amount: req.body.amt,
-              sender_name: userWithdrawal.display_name,
-              tran_type: 'Debit',
-              transac_nature: 'Withdrawal',
-              tran_desc: req.body.note,
-              createdBy: userWithdrawal._id,
-              currency_level: '2',
-              tid: Trans_ID,
-              colorcode:'red',
-              pay_tran: req.body?.payId,
-              sender_acct_number: userWithdrawal.tag_id,
-              transaction_status: 'Pending',
-              createdOn: Date.now(),
-            });
-
-            // create log here
-            const addLogs = await SystemActivity.create({
-              log_username: userWithdrawal.email,
-              log_name: userWithdrawal.display_name,
-              log_acct_number: userWithdrawal?.tag_id,
-              log_receiver_name: '',
-              log_receiver_number: '',
-              log_receiver_bank: '',
-              log_country: '',
-              log_swift_code: '',
-              log_desc:'Withdrawal request made',
-              log_amt: '',
-              log_status: 'Successful',
-              log_nature:'Withdrawal request',
-              })
-            // check if the user activate email notification and send notification
-            if(userWithdrawal.receive_email_notification == true){
-               // send email notification to user
-               fetchApp().then((result) =>{
-                  appName = result.app_name
-                  appLogo = result.app_logo
-                  const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-                  const mailBody = loginEmail(appName, 'Withdrawal Notification', userWithdrawal.display_name, `this is to notify you that your withdrawal request has been logged and we will treat as soon as possible. \n Transaction ID is ${Trans_ID}, \n 
-                  Transaction Reference ID ${req.body.payId ? req.body.payId: 'None. ' } \n`, logoImage)
-                  const TextBody = loginText(userWithdrawal.display_name, `this is to notify you that your withdrawal request has been logged and we will treat as soon as possible. \n Transaction ID is ${Trans_ID} \n
-                  Transaction Reference ID ${req.body.payId? req.body.payId: 'None.'}`);
-                  let acct_withdrawal = {
-                  from: { name: `${appName + ' Team'}`, email: '<noreply@ozaapp.com>' },
-                  to: [{ email: userWithdrawal.email }],
-                  subject: 'Withdrawal Notification!',
-                  text: TextBody,
-                  html: mailBody,
-                 }
-
-                  sendEmail(acct_withdrawal).catch((err) => {
-                    console.error("❌ Email sending completely failed:", err.message);
-                  });
-
-                 // async..await is not allowed in global scope, must use a wrapper
-                  }).catch(console.error.bind(console))    
-            }   
-            // send email notification to admin
-            fetchApp().then((result) =>{
-              appName = result.app_name
-              appLogo = result.app_logo
-              const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-              const mailBody = loginEmail(appName, 'Withdrawal Notification', 'Hello Admin', `this is to notify you that ${userWithdrawal.display_name} has made withdrawal request and it has been logged! kindly treat as soon as possible. \n withdrawal Transaction ID is ${Trans_ID}, \n 
-               ${req.body.payId ? 'Transaction Reference ID '+req.body.payId: 'None. ' } \n Thank you`, logoImage)
-              const TextBody = loginText(userWithdrawal.display_name, `this is to notify you that withdrawal request has been logged treat as soon as possible. \n Transaction ID is ${Trans_ID} \n
-               ${req.body.payId? 'Transaction Reference ID '+ req.body.payId: 'None.'}`);
-              let fundAcctMailOptionAdmin = {
-              from: { name: `${appName + ' Team'}`, email: '<noreply@ozaapp.com>' },
-              to: [{ email: 'hello@ozaapp.com' }],
-              subject: 'Withdrawal Notification!',
-              text: TextBody,
-              html: mailBody,
-            }
-            sendEmail(fundAcctMailOptionAdmin).catch((err) => {
-              console.error("❌ Email sending completely failed:", err.message);
-            });
-            // async..await is not allowed in global scope, must use a wrapper
-           }).catch(console.error.bind(console))        
-       // success message
-        res.status(200).json({msg: '200'})
-        }
-    } catch (err) {
-       // err message
-     console.log(err)
-      return res.json({status: 500, message: 'Technical issues occurred' })
-   }
-});
-
-// route to check funding limit before sending it for processing goes here...
-router.post("/check_fundingLimit", isAuth, async (req, res) => {
-  const dataReceive = req.body;
-  console.log("Tran ID: ", req.body)
-  const Trans_ID = transactionID(25)
-  // get the transfer record ID here
-  const filter = { _id: dataReceive.userId };
-      if (dataReceive.userId == "" || dataReceive.userId == null) {
-       return res.status(401).send({ message: "Invalid user access" }); // cot code required
-      }
-    try {
-        //console.log("All App ", fundingLimit)
-        const fundingLimit = await AppSetting.find();
-        if(dataReceive.amt > fundingLimit[0].app_maxi_funding ){
-          return res.json({status: 403, message: `Amount funding should not exceed \u20A6${new Intl.NumberFormat().format(fundingLimit[0].app_maxi_funding)}` })
-        }
-        if(dataReceive.amt < fundingLimit[0].app_minim_funding ){
-          return res.json({status: 403, message: `Minimum of amount of \u20A6${new Intl.NumberFormat().format(fundingLimit[0].app_minim_funding)} accepted` })
-        }
-        
-        else{       
-       // success message
-        res.status(200).json({msg: '200'})
-        }
-      } catch (err) {
-       // err message
-     console.log(err)
-      return res.json({status: 500, message: 'Technical issues occurred' })
-   }
-});
-
-// process user sales/purchase request fund goes here...
-router.post("/fundPurchase_funding", isAuth, async (req, res) => {
+  // process user sales/purchase request fund goes here...
+  router.post("/fetch_AccountDetailsMobile", async (req, res) => {
     const dataReceive = req.body;
-    //console.log("My data: ", req.body)
-    const TransID = transactionID(25)
     // get the transfer record ID here
     const filter = { _id: dataReceive.myId };
-        if (dataReceive.myId == "" || dataReceive.myId == null) {
-        return res.json({status: 401, message: 'Invalid user access'})
+        if (dataReceive == "" || dataReceive == null) {
+        return res.json({status: 404, message: 'Invalid data'})
         }
-        const getCurrentRate = await GetRate.findOne();
+        
     try {
-          let userFund = await User.findOne({ _id:  dataReceive.myId }); // here I am checking if user exist then I will get user details
-          if (!userFund) {
+      let receiverUser = await User.findOne({ tag_id:  req.body.data }); // here I am checking if user exist then I will get user details
+      
+      if (!receiverUser) {
             //console.log("User details: ", userDetails)
             return res.json({status: 404, message: 'User not found'})// user not found
           } 
-        else if (userFund){
-        
-              // create record for funding purposes
-              const createRecord = TransferFund.create({
-                acct_name: userFund.display_name,
-                acct_number: userFund.tag_id,
-                amount: dataReceive.sell_amt,
-                bank_name: '',
-                sender_name: userFund.display_name,
-                sender_acct_number: userFund.tag_id,
-                sender_currency_type: '$',
-                tran_type: 'Credit',
-                transac_nature:dataReceive.serviceName+' '+dataReceive.serviceCategory,
-                transac_category: dataReceive.serviceName,
-                tran_desc:'Request for virtual funds exchange for '+dataReceive.serviceName+" \n "+dataReceive?.sell_note,
-                tr_year:'',
-                colorcode:'green',
-                trans_method: dataReceive.method,
-                currency_level:'2',
-                createdBy: dataReceive.myId,
-                trans_balance: dataReceive.total_money,
-                tid: TransID,
-                tran_service_type: dataReceive.serviceType,
-                pay_tran: dataReceive.method =='Paystack Checkout'? dataReceive.payId : null,
-                tran_rate: dataReceive.serviceName == 'PayPal' || dataReceive.serviceName =='Paypal'? getCurrentRate.paypal_buying: dataReceive.serviceName == 'Payoneer' || dataReceive.serviceName =='Payooner'? getCurrentRate.payoneer_buying: dataReceive.serviceName=='Bitcoin'? getCurrentRate.btc_buying: ''
-                });
-                
-              // check if user activate in-app notification and send notification
-              if(userFund.receive_app_message == true) {
-                 const userLogs = Notification.create({
-                  alert_username: userFund.display_name,
-                  alert_name: userFund.display_name,
-                  alert_user_ip: '',
-                  alert_country: '',
-                  alert_browser: '',
-                  alert_date:  Date.now(),
-                  alert_user_id: userFund._id,
-                  alert_nature: 'Request for virtual funds exchange for '+dataReceive.serviceName+ ' was successful, your account with be credited once approved',
-                  alert_status: 1,
-                  alert_read_date: ''
-                  })
-              }
-  
-              // create log here
-              const addLogs = await SystemActivity.create({
-                log_username: userFund.email,
-                log_name: userFund.display_name,
-                log_acct_number: userFund?.tag_id,
-                log_receiver_name: '',
-                log_receiver_number: '',
-                log_receiver_bank: '',
-                log_country: '',
-                log_swift_code: '',
-                log_desc:'Funds exchange request made',
-                log_amt: '',
-                log_status: 'Successful',
-                log_nature:'Fund exchange request',
-                })
-              // check if the user activate email notification and send notification
-              if(userFund.receive_email_notification == true){
-                 // send email notification to user
-                 fetchApp().then((result) =>{
-                    appName = result.app_name
-                    appLogo = result.app_logo
-                    const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-                    const mailBody = loginEmail(appName, 'Account Funding Notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment received. \n Request reference / Transaction ID is ${TransID}, \nThank you`, logoImage)
-                    const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID}`);
-                    let fundAcctMailOptionUser = {
-                    from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
-                    to: [{ email: userFund.email }],
-                    subject: 'Account Funding Notification!',
-                    text: TextBody,
-                    html: mailBody,
-                }
-                  sendEmail(fundAcctMailOptionUser).catch((err) => {
-                    console.error("❌ Email sending completely failed:", err.message);
-                  });
-                // async..await is not allowed in global scope, must use a wrapper
-                }).catch(console.error.bind(console))
-                 
-              } 
-            // send email notification to admin
-            fetchApp().then((result) =>{
-              appName = result.app_name
-              appLogo = result.app_logo
-              const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-              const mailBody = loginEmail(appName, 'Account Funding Notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} made fund exchange request and it has been logged, kindly treat as soon as possible. \n Request reference / Transaction ID is ${TransID}, \nThank you`, logoImage)
-              const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID}`);
-              let fundAcctMailOptionsAdmin = {
-              from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
-              to: [{ email: 'hello@ozaapp.com' }],
-              subject: 'Account Funding Notification!',
-              text: TextBody,
-              html: mailBody,
-          }
-            sendEmail(fundAcctMailOptionsAdmin).catch((err) => {
-              console.error("❌ Email sending completely failed:", err.message);
-            });
-          // async..await is not allowed in global scope, must use a wrapper
-          }).catch(console.error.bind(console))
-         // success message
-          res.status(201).json({msg: '200', feedback: TransID})
+          else if (receiverUser){
+            console.log("User details: ", receiverUser.display_name)
+        // success message
+          res.json({msg: '200', userData: receiverUser.display_name})
           }
       } catch (err) {
-         // err message
-       console.log(err)
+        // err message
+      console.log(err)
         return res.json({status: 500, message: 'Technical issues occurred' })
-     }
+    }
   });
 
   // process user sales/purchase request fund goes here...
-router.post("/fundBuy_funding", isAuth, async (req, res) => {
-    const dataReceive = req.body;
-    //console.log("My data: ", req.body)
-    const TransID = transactionID(25)
-    const nowRate = '';
-    // get the transfer record ID here
-    const filter = { _id: dataReceive.myId };
-        if (dataReceive.myId == "" || dataReceive.myId == null) {
-        return res.json({status: 401, message: 'Invalid user access'})
-        }
-        const getCurrentRate = await GetRate.findOne();
-        
-    try {
-          let userFund = await User.findOne({ _id:  dataReceive.myId }); // here I am checking if user exist then I will get user details
-          if (!userFund) {
-            //console.log("User details: ", userDetails)
-            return res.json({status: 404, message: 'User not found'})// user not found
-          } 
-          else if (userFund){
-              // create record for funding purposes
-              const createRecord = TransferFund.create({
-                acct_name: userFund.display_name,
-                acct_number: userFund.tag_id,
-                amount: dataReceive.buy_amt,
-                bank_name: '',
-                sender_name: userFund.display_name,
-                sender_acct_number: userFund.tag_id,
-                sender_currency_type: '$',
-                tran_type: 'Debit',
-                transac_nature:dataReceive.serviceName+' '+dataReceive.serviceCategory,
-                transac_category: dataReceive.serviceName,
-                tran_desc:'Request for virtual funds exchange for '+dataReceive.serviceName+" \n "+dataReceive.buy_note? dataReceive.buy_note:'',
-                tr_year:'',
-                colorcode:'red',
-                trans_method: dataReceive.method,
-                currency_level:'2',
-                createdBy: dataReceive.myId,
-                tid: TransID,
-                tran_service_type: dataReceive.serviceType,
-                trans_balance: dataReceive.total_money,
-                pay_tran: dataReceive.method =='Paystack Checkout'? dataReceive.payId : null,
-                tran_rate: dataReceive.serviceName == 'PayPal' || dataReceive.serviceName =='Paypal'? getCurrentRate.paypal_selling: dataReceive.serviceName == 'Payoneer' || dataReceive.serviceName =='Payooner'? getCurrentRate.payoneer_selling: dataReceive.serviceName=='Bitcoin'? getCurrentRate.btc_selling: ''
-                });
-                
-              // check if user activate in-app notification and send notification
-              if(userFund.receive_app_message == true) {
-                 const userLogs = Notification.create({
-                  alert_username: userFund.display_name,
-                  alert_name: userFund.display_name,
-                  alert_user_ip: '',
-                  alert_country: '',
-                  alert_browser: '',
-                  alert_date:  Date.now(),
-                  alert_user_id: userFund._id,
-                  alert_nature: 'Request for virtual funds exchange for '+dataReceive.serviceName + ' was successful, your account with be credited once approved',
-                  alert_status: 1,
-                  alert_read_date: ''
-                  })
-              }
-  
-              // create log here
-              const addLogs = await SystemActivity.create({
-                log_username: userFund.email,
-                log_name: userFund.display_name,
-                log_acct_number: userFund?.tag_id,
-                log_receiver_name: '',
-                log_receiver_number: '',
-                log_receiver_bank: '',
-                log_country: '',
-                log_swift_code: '',
-                log_desc:'Funds exchange request made',
-                log_amt: '',
-                log_status: 'Successful',
-                log_nature:'Fund exchange request',
-                })
-              // check if the user activate email notification and send notification
-              if(userFund.receive_email_notification == true){
-                 // send email notification to user
-                 fetchApp().then((result) =>{
-                    appName = result.app_name
-                    appLogo = result.app_logo
-                    const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-                    const mailBody = loginEmail(appName, 'Transaction Notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment is received. \n Request reference / Transaction ID is ${TransID}, \n
-                    \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId: ''}
-                    \n Thank you`, logoImage)
-                    const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId:''}`);
-                    let fundAcctMailUserBuy = {
-                    from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
-                    to: [{ email: userFund.email }],
-                    subject: 'Transaction Notification!',
-                    text: TextBody,
-                    html: mailBody,
-                }
-                   sendEmail(fundAcctMailUserBuy).catch((err) => {
-                    console.error("❌ Email sending completely failed:", err.message);
+  router.post("/paypal_checkout", isAuth, async (req, res) => {
+      const dataReceive = req.body;
+      //console.log("My data: ", req.body)
+      const TransID = transactionID(25)
+      const nowRate = '';
+      // get the transfer record ID here
+      const filter = { _id: dataReceive.myId };
+          if (dataReceive.myId == "" || dataReceive.myId == null) {
+          return res.json({status: 401, message: 'Invalid user access'})
+          }
+          const getCurrentRate = await GetRate.findOne();
+          
+      try {
+            let userFund = await User.findOne({ _id:  dataReceive.myId }); // here I am checking if user exist then I will get user details
+            if (!userFund) {
+              //console.log("User details: ", userDetails)
+              return res.json({status: 404, message: 'User not found'})// user not found
+            } 
+            else if (userFund){
+                // create record for funding purposes
+                const createRecord = TransferFund.create({
+                  acct_name: userFund.display_name,
+                  acct_number: userFund.tag_id,
+                  amount: dataReceive.amt,
+                  bank_name: '',
+                  sender_name: userFund.display_name,
+                  sender_acct_number: userFund.tag_id,
+                  sender_currency_type: '$',
+                  tran_type: 'Credit',
+                  transac_nature:dataReceive.serviceName+' '+dataReceive.serviceCategory,
+                  transac_category: dataReceive.serviceName,
+                  tran_desc:'Request for virtual funds exchange with '+dataReceive.serviceName+" \n "+dataReceive.sell_note,
+                  tr_year:'',
+                  colorcode:'green',
+                  trans_method: dataReceive.method,
+                  currency_level:'2',
+                  createdBy: dataReceive.myId,
+                  tid: TransID,
+                  pay_tran: dataReceive.orderId,
+                  tran_rate: dataReceive.serviceName == 'PayPal'? getCurrentRate.paypal_selling: dataReceive.serviceName == 'Payoneer'? getCurrentRate.payooner_selling: dataReceive.serviceName=='Bitcoin'? getCurrentRate.btc_selling: ''
                   });
                   
+                // check if user activate in-app notification and send notification
+                if(userFund.receive_app_message == true) {
+                  const userLogs = Notification.create({
+                    alert_username: userFund.display_name,
+                    alert_name: userFund.display_name,
+                    alert_user_ip: '',
+                    alert_country: '',
+                    alert_browser: '',
+                    alert_date:  Date.now(),
+                    alert_user_id: userFund._id,
+                    alert_nature: 'Request for virtual funds exchange with '+dataReceive.serviceName,
+                    alert_status: 1,
+                    alert_read_date: ''
+                    })
+                }
+    
+                // create log here
+                const addLogs = await SystemActivity.create({
+                  log_username: userFund.email,
+                  log_name: userFund.display_name,
+                  log_acct_number: userFund?.tag_id,
+                  log_receiver_name: '',
+                  log_receiver_number: '',
+                  log_receiver_bank: '',
+                  log_country: '',
+                  log_swift_code: '',
+                  log_desc:'Funds exchange request made',
+                  log_amt: '',
+                  log_status: 'Successful',
+                  log_nature:'Fund exchange request',
+                  })
+                // check if the user activate email notification and send notification
+                if(userFund.receive_email_notification == true){
+                  // send email notification to user
+                  fetchApp().then((result) =>{
+                  appName = result.app_name
+                  appLogo = result.app_logo
+                  const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+
+                  const mailBody = loginEmail(appName, 'Account Funding Notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment received. \n Request reference / Transaction ID is ${TransID}, \n 
+                  Order ID is ${dataReceive.orderId} Thank you`, logoImage)
+                  const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n Order ID is ${dataReceive.orderId}`);
+                  let fundAcctUser = {
+                  from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                  to: [{ email: userFund.email }],
+                  subject: 'Account Funding Notification!',
+                  text: TextBody,
+                  html: mailBody,
+              }
+                  sendEmail(fundAcctUser).catch((err) => {
+                    console.error("❌ Email sending completely failed:", err.message);
+                  });
+              // async..await is not allowed in global scope, must use a wrapper
+              
                   }).catch(console.error.bind(console))
-               } 
-               
-            // send email notification to admin
+              } 
+              // send email notification to admin
               fetchApp().then((result) =>{
                 appName = result.app_name
                 appLogo = result.app_logo
                 const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-                const mailBody = loginEmail(appName, 'Transaction Notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} made fund exchange request and it has been logged, kindly treat as soon as possible. \n Request reference / Transaction ID is ${TransID}, \n
-                \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId: ''}
-                \n Thank you`, logoImage)
-                const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId:''}`);
-                let fundAcctMailBuyAdmin = {
+
+                const mailBody = loginEmail(appName, 'Account Funding Notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} made fund exchange request and it has been logged, kindly treat as soon as possible. \n Request reference / Transaction ID is ${TransID}, \n 
+                Order ID is ${dataReceive.orderId} Thank you`, logoImage)
+                const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n Order ID is ${dataReceive.orderId}`);
+                let fundAcctUserAdmin = {
                 from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
                 to: [{ email: 'hello@ozaapp.com' }],
-                subject: 'Transaction Notification!',
+                subject: 'Account Funding Notification!',
                 text: TextBody,
                 html: mailBody,
             }
-            sendEmail(fundAcctMailBuyAdmin).catch((err) => {
-              console.error("❌ Email sending completely failed:", err.message);
-            });
+              sendEmail(fundAcctUserAdmin).catch((err) => {
+                console.error("❌ Email sending completely failed:", err.message);
+              });
             // async..await is not allowed in global scope, must use a wrapper
-            }).catch(console.error.bind(console))
             
-         // success message
-          res.status(201).json({msg: '200', feedback: TransID})
-          }
-      } catch (err) {
-         // err message
-       console.log(err)
-        return res.json({status: 500, message: 'Technical issues occurred' })
-     }
-  });
-
-  // process user sales/purchase request fund goes here...
-router.post("/fetch_AccountDetailsMobile", async (req, res) => {
-  const dataReceive = req.body;
-  // get the transfer record ID here
-  const filter = { _id: dataReceive.myId };
-      if (dataReceive == "" || dataReceive == null) {
-      return res.json({status: 404, message: 'Invalid data'})
+                }).catch(console.error.bind(console))     
+          // success message
+            res.status(201).json({msg: '200'})
+            }
+        } catch (err) {
+          // err message
+        console.log(err)
+          return res.json({status: 500, message: 'Technical issues occurred' })
       }
-      
-  try {
-    let receiverUser = await User.findOne({ tag_id:  req.body.data }); // here I am checking if user exist then I will get user details
-    
-    if (!receiverUser) {
-          //console.log("User details: ", userDetails)
-          return res.json({status: 404, message: 'User not found'})// user not found
-        } 
-        else if (receiverUser){
-          console.log("User details: ", receiverUser.display_name)
-       // success message
-        res.json({msg: '200', userData: receiverUser.display_name})
-        }
-    } catch (err) {
-       // err message
-     console.log(err)
-      return res.json({status: 500, message: 'Technical issues occurred' })
-   }
-});
-
-  // process user sales/purchase request fund goes here...
-router.post("/paypal_checkout", isAuth, async (req, res) => {
-    const dataReceive = req.body;
-    //console.log("My data: ", req.body)
-    const TransID = transactionID(25)
-    const nowRate = '';
-    // get the transfer record ID here
-    const filter = { _id: dataReceive.myId };
-        if (dataReceive.myId == "" || dataReceive.myId == null) {
-        return res.json({status: 401, message: 'Invalid user access'})
-        }
-        const getCurrentRate = await GetRate.findOne();
-        
-    try {
-          let userFund = await User.findOne({ _id:  dataReceive.myId }); // here I am checking if user exist then I will get user details
-          if (!userFund) {
-            //console.log("User details: ", userDetails)
-            return res.json({status: 404, message: 'User not found'})// user not found
-          } 
-          else if (userFund){
-              // create record for funding purposes
-              const createRecord = TransferFund.create({
-                acct_name: userFund.display_name,
-                acct_number: userFund.tag_id,
-                amount: dataReceive.amt,
-                bank_name: '',
-                sender_name: userFund.display_name,
-                sender_acct_number: userFund.tag_id,
-                sender_currency_type: '$',
-                tran_type: 'Credit',
-                transac_nature:dataReceive.serviceName+' '+dataReceive.serviceCategory,
-                transac_category: dataReceive.serviceName,
-                tran_desc:'Request for virtual funds exchange with '+dataReceive.serviceName+" \n "+dataReceive.sell_note,
-                tr_year:'',
-                colorcode:'green',
-                trans_method: dataReceive.method,
-                currency_level:'2',
-                createdBy: dataReceive.myId,
-                tid: TransID,
-                pay_tran: dataReceive.orderId,
-                tran_rate: dataReceive.serviceName == 'PayPal'? getCurrentRate.paypal_selling: dataReceive.serviceName == 'Payoneer'? getCurrentRate.payooner_selling: dataReceive.serviceName=='Bitcoin'? getCurrentRate.btc_selling: ''
-                });
-                
-              // check if user activate in-app notification and send notification
-              if(userFund.receive_app_message == true) {
-                 const userLogs = Notification.create({
-                  alert_username: userFund.display_name,
-                  alert_name: userFund.display_name,
-                  alert_user_ip: '',
-                  alert_country: '',
-                  alert_browser: '',
-                  alert_date:  Date.now(),
-                  alert_user_id: userFund._id,
-                  alert_nature: 'Request for virtual funds exchange with '+dataReceive.serviceName,
-                  alert_status: 1,
-                  alert_read_date: ''
-                  })
-              }
-  
-              // create log here
-              const addLogs = await SystemActivity.create({
-                log_username: userFund.email,
-                log_name: userFund.display_name,
-                log_acct_number: userFund?.tag_id,
-                log_receiver_name: '',
-                log_receiver_number: '',
-                log_receiver_bank: '',
-                log_country: '',
-                log_swift_code: '',
-                log_desc:'Funds exchange request made',
-                log_amt: '',
-                log_status: 'Successful',
-                log_nature:'Fund exchange request',
-                })
-              // check if the user activate email notification and send notification
-              if(userFund.receive_email_notification == true){
-                 // send email notification to user
-                 fetchApp().then((result) =>{
-                appName = result.app_name
-                appLogo = result.app_logo
-                const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-
-                const mailBody = loginEmail(appName, 'Account Funding Notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment received. \n Request reference / Transaction ID is ${TransID}, \n 
-                 Order ID is ${dataReceive.orderId} Thank you`, logoImage)
-                 const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n Order ID is ${dataReceive.orderId}`);
-                 let fundAcctUser = {
-                 from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
-                 to: [{ email: userFund.email }],
-                 subject: 'Account Funding Notification!',
-                 text: TextBody,
-                 html: mailBody,
-             }
-                sendEmail(fundAcctUser).catch((err) => {
-                  console.error("❌ Email sending completely failed:", err.message);
-                });
-             // async..await is not allowed in global scope, must use a wrapper
-             
-                }).catch(console.error.bind(console))
-             } 
-            // send email notification to admin
-             fetchApp().then((result) =>{
-              appName = result.app_name
-              appLogo = result.app_logo
-              const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-
-              const mailBody = loginEmail(appName, 'Account Funding Notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} made fund exchange request and it has been logged, kindly treat as soon as possible. \n Request reference / Transaction ID is ${TransID}, \n 
-               Order ID is ${dataReceive.orderId} Thank you`, logoImage)
-               const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n Order ID is ${dataReceive.orderId}`);
-               let fundAcctUserAdmin = {
-               from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
-               to: [{ email: 'hello@ozaapp.com' }],
-               subject: 'Account Funding Notification!',
-               text: TextBody,
-               html: mailBody,
-           }
-            sendEmail(fundAcctUserAdmin).catch((err) => {
-              console.error("❌ Email sending completely failed:", err.message);
-            });
-           // async..await is not allowed in global scope, must use a wrapper
-           
-              }).catch(console.error.bind(console))     
-         // success message
-          res.status(201).json({msg: '200'})
-          }
-      } catch (err) {
-         // err message
-       console.log(err)
-        return res.json({status: 500, message: 'Technical issues occurred' })
-     }
-  });
+    });
 
 module.exports = router;
