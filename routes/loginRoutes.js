@@ -116,13 +116,12 @@ router.post("/login", async (req, res, next) => {
             login_status: 1
         });
             // send email notification
-            console.log("Loaded Mailtrap Token:", process.env.EMAIL_API_PASSWORD);
+            //console.log("Loaded Mailtrap Token:", process.env.EMAIL_API_PASSWORD);
 
             fetchApp().then((result) =>{
                 appName = result.app_name
                 appLogo = result.app_logo
                 const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-
                 const mailBody = loginEmail(appName, 'Login Authentication', userExist.display_name, 'this is to notify you that your account has just been logged into successfully, If this is not you, contact support for immediate intervention, thank you.', logoImage);
                 const TextBody = loginText(userExist.display_name,);
                 let loginMailOptions = {
@@ -152,38 +151,13 @@ router.post("/login", async (req, res, next) => {
                }).catch(console.error.bind(console))
 
             res.send({ msg: '200', token: token, userData: others, appData: getAppSetting})
-        //res.json({msg: 200, token: token, userData: others})
-        //console.log('Environment data!', process.env.SECRET_KEY);
+        
         }
     });
         } catch (err) {
         res.status(500).send({ msg: "500", message: ' Server error occurred' });
         }
     });
-
-    // route to login user
-// router.post("/google_login", passport.authenticate('google'), async (req, res, next) => {
-//     const file = req.file;
-//     const filter = req.body;
-//             //console.log("Login Data ", req.body);
-//          //check in input fields is empty
-//     if(filter.username == '' || filter.password == ''){
-//         return res.json({status: 400, message: ' All fields are required'})
-//         //return res.status(400).json({msg: '400'}) //Fields required
-//     } 
-//     try {
-//     // Check if user exist
-//     const userExist = await User.findOne({email: filter.username})
-//     const getAppSetting = await AppSetting.findOne();
-   
-//             res.send({ msg: '200', token: token, userData: others, appData: getAppSetting})
-//         //res.json({msg: 200, token: token, userData: others})
-//         //console.log('Environment data!', process.env.SECRET_KEY);
-//         }
-//          catch (err) {
-//         res.status(500).send({ msg: "500" });
-//         }
-//     });
     
     // route to logout user
 router.get("/user_logout/:id", async (req, res, next) => {
@@ -191,9 +165,9 @@ router.get("/user_logout/:id", async (req, res, next) => {
 
     var today = new Date();
     var month = today.toLocaleString('default', { month: 'long' });
-       // console.log("User ID", req.params.id);
+       console.log("User ID", req.params.id);
         try {
-            const userData = await User.find({_id: req.params.id });
+            const userData = await User.findOne({_id: req.params.id });
             const userLogs = await UserLogs.find({user_log_id: req.params.id });
             //console.log("User log Details ", userLogs)
             const filter = { user_log_id: req.params.id, login_status: 1 };
@@ -201,10 +175,12 @@ router.get("/user_logout/:id", async (req, res, next) => {
             res.status(404).json({ msg: '404' })
             }
             else if(userLogs){
+                const now = new Date();
+                const formattedDate = now.toLocaleString();
             const addLogs = SystemActivity.create({
-                log_username: userData.username,
-                log_name: userData.surname+' '+userData.first_name,
-                log_acct_number: userData.acct_number,
+                log_username: userData.email,
+                log_name: userData.display_name,
+                log_acct_number: userData.tag_id,
                 log_receiver_name: '',
                 log_receiver_number: '',
                 log_receiver_bank: '',
@@ -214,6 +190,7 @@ router.get("/user_logout/:id", async (req, res, next) => {
                 log_amt: '',
                 log_status: 'Successful',
                 log_nature:'User logout',
+                createdOn: formattedDate,
             });
             // update user logs details
                 const updateDoc = {

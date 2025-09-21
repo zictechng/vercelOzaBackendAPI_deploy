@@ -95,7 +95,7 @@ router.get("/fetchApp_info", async (req, res) => {
       return res.json({status: 404, message: 'No record found'})
     }
     else if(getAppSetting){
-      //console.log(getAppSetting.app_name)
+      //console.log(getAppSetting.app_launch_title)
      
       res.status(200).json({msg: '200', infoData: getAppSetting}) // success message
     }
