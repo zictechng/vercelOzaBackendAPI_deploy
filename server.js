@@ -9,6 +9,9 @@ const adminUpdateData = require("./routes/updateRoute");
 const dataAdminRoute = require("./routes/adminDataRoutes")
 const adminTransactionUrlRoute = require("./routes/adminTransactionRoutes");
 const adminLogin = require("./routes/adminLoginRoutes");
+const billsRoutes = require("./routes/billsRoutes");
+const rewardsRoutes = require("./routes/rewardsRoutes");
+const providerRoutes = require("./routes/providerRoutes");
 
 const app = express()
 const path = require('path')
@@ -62,6 +65,9 @@ app.use("/api", adminUpdateData)
 app.use("/api", dataAdminRoute)
 app.use("/api", adminTransactionUrlRoute)
 app.use("/api", adminLogin)
+app.use("/api", billsRoutes)
+app.use("/api", rewardsRoutes)
+app.use("/api", providerRoutes)
 
 // this will handle any request/routes that is not found in the server
 // and then send 404 error page to the users
