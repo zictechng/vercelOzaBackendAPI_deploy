@@ -44,6 +44,14 @@ const billsProviderNetworkSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    // Provider mode
+    // managed = provider handles everything, earn commission
+    // api_key = bring your own provider account
+    mode: {
+      type: String,
+      enum: ['managed', 'api_key'],
+      default: 'managed',
+    },
     // Extra provider-specific data
     // e.g. data_type (sme/gifting), disco code etc
     extra_params: {

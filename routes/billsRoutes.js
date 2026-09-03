@@ -74,6 +74,7 @@ router.get('/bills/config', async (req, res) => {
           id: n.network_name,
           name: n.display_name,
           service_id: n.service_id,
+          mode: n.mode,
           extra: n.extra_params,
         })),
       };
@@ -103,6 +104,7 @@ router.get('/bills/networks/:service_type', async (req, res) => {
         id: n.network_name,
         name: n.display_name,
         service_id: n.service_id,
+        mode: n.mode,
         extra: n.extra_params,
         commission_value: n.commission_value,
       })),
