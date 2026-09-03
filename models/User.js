@@ -90,6 +90,10 @@ const userSchema = new mongoose.Schema({
         type: Number,
         default: 0.0,
     },
+     coins: {
+        type: Number,
+        default: 0,
+    },
     acct_balance: {
         type: Number,
         default: 0.0,

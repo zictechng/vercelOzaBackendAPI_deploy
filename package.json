@@ -4,7 +4,6 @@
   "description": "Oza App web service application for mobile applications management.",
   "main": "server.js",
   "dependencies": {
-    "-": "^0.0.1",
     "@sendgrid/mail": "^8.1.1",
     "@types/passport": "^1.0.16",
     "@types/passport-google-oauth": "^1.0.45",
