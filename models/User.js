@@ -94,6 +94,18 @@ const userSchema = new mongoose.Schema({
         type: Number,
         default: 0,
     },
+    // Tag ID of the business promoter who referred this user
+    // Empty if no promoter
+    promoter_tag_id: {
+        type: String,
+        default: '',
+    },
+    // User role — User | Admin | Promoter
+    // Promoter earns ongoing commission on referred users
+    business_promoter: {
+        type: Boolean,
+        default: false,
+    },
     acct_balance: {
         type: Number,
         default: 0.0,

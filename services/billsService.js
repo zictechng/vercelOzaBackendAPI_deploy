@@ -11,6 +11,7 @@ const BillsTransaction = require('../models/BillsTransaction');
 const BillsServiceStatus = require('../models/BillsServiceStatus');
 const FundTransfer = require('../models/fundTransfer');
 const { creditCoins } = require('./rewardsService');
+const { processReferralBonus, processPromoterBonus } = require('./referralService');
 const sendEmail = require('./emailService');
 const { getAppSettings } = require('./appSettingService');
 
@@ -472,7 +473,33 @@ const finalizeBillTransaction = async ({
     console.log('Process rewards error:', coinsError.message);
   }
 
-  // 4. Send email notification — non-blocking
+  // 4. Process one-time referral bonus — non-blocking
+  try {
+    await processReferralBonus({
+      buyerUserId: userId,
+      buyerTagId: tag_id,
+      purchaseAmount: amount,
+      serviceTitle: service_title,
+      reference,
+    });
+  } catch (referralError) {
+    console.log('Referral bonus error:', referralError.message);
+  }
+
+  // 5. Process promoter commission — non-blocking
+  try {
+    await processPromoterBonus({
+      buyerUserId: userId,
+      buyerTagId: tag_id,
+      purchaseAmount: amount,
+      serviceTitle: service_title,
+      reference,
+    });
+  } catch (promoterError) {
+    console.log('Promoter bonus error:', promoterError.message);
+  }
+
+  // 6. Send email notification — non-blocking
   try {
     if (user?.email) {
       await sendBillPaymentEmail({

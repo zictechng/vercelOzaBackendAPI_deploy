@@ -112,6 +112,20 @@ const systemSettingSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+        app_operation_status:{
+        type: Boolean,
+        default: false,
+    },
+    // Ongoing purchase rewards toggle
+    app_purchase_reward:{
+        type: Boolean,
+        default: false,
+    },
+    // Business promoter commission toggle
+    app_promoter_bonus:{
+        type: Boolean,
+        default: false,
+    },
     createdBy: String,
 
     createdOn: {type: Date, default: Date.now},

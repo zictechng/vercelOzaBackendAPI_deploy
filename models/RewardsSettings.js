@@ -49,6 +49,23 @@ const rewardsSettingsSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    // Tier thresholds — coins needed per tier
+    tier_bronze: { type: Number, default: 1 },
+    tier_silver: { type: Number, default: 1000 },
+    tier_gold: { type: Number, default: 5000 },
+    tier_platinum: { type: Number, default: 20000 },
+    tier_diamond: { type: Number, default: 100000 },
+
+    // Quarterly and annual reward toggles
+    quarterly_reward_active: { type: Boolean, default: false },
+    annual_reward_active: { type: Boolean, default: false },
+    quarterly_reward_desc: { type: String, default: '' },
+    annual_reward_desc: { type: String, default: '' },
+
+    last_updated_by: {
+      type: String,
+      default: 'system',
+    },
     last_updated_by: {
       type: String,
       default: 'system',

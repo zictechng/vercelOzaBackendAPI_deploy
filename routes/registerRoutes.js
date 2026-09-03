@@ -267,6 +267,7 @@ router.post("/register", async (req, res, next) => {
   });
 
 
+
 // delete image when error is occurred  during upload
   router.post("/deleteUploaded_image", isAuth, async (req, res) => {
     try {
@@ -536,7 +537,7 @@ router.post("/register", async (req, res, next) => {
   });
 
   // upload user document verifications route
-router.post("/user_upload2fa", isAuth, async (req, res) => {
+  router.post("/user_upload2fa", isAuth, async (req, res) => {
     const TransID = transactionID(25)
     //const baseURL = process.env.BASEURL; // this one get url link from .env variable
     //const url = req.protocol + '://' + req.get('host') // this will get the host url directly
@@ -624,7 +625,7 @@ router.post("/user_upload2fa", isAuth, async (req, res) => {
   });
 
   // send 2FA OTP code when get started is click route
-router.post("/user_2fa_otpSend", isAuth, async (req, res) => {
+  router.post("/user_2fa_otpSend", isAuth, async (req, res) => {
     //const url = req.protocol + '://' + req.get('host') // this will get the host url directly
     const url = process.env.SERVER_BASEURL;
     const filterUser = { _id: req.body.userId };
@@ -788,8 +789,9 @@ router.post("/complete_registration", isAuth, async (req, res) => {
     }
   });
 
+  
   // upload proof of address here
-router.post("/user_uploadProof_address", isAuth, upload.single("FileAddress"), multerErrorHandling, async (req, res) => {
+  router.post("/user_uploadProof_address", isAuth, upload.single("FileAddress"), multerErrorHandling, async (req, res) => {
     const file = req.documentData;
     const TransID = transactionID(25)
     
