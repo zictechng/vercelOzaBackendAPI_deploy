@@ -118,6 +118,8 @@ router.get('/bills/networks/:service_type', async (req, res) => {
 // Get data plans for a network service_id
 // Calls active provider dynamically
 // ------------------------------------------------
+// GET /api/bills/plans/data/:service_id
+// Get data plans by service_id directly
 router.get('/bills/plans/data/:service_id', async (req, res) => {
   try {
     const { service_id } = req.params;
@@ -136,6 +138,73 @@ router.get('/bills/plans/data/:service_id', async (req, res) => {
   } catch (error) {
     console.log('Get data plans error:', error.message);
     return res.json({ msg: '400', message: 'Could not fetch data plans.' });
+  }
+});
+
+// GET /api/bills/plans/:service_type/:network
+// Get plans by network name and optional data type
+// e.g. /api/bills/plans/data/mtn?type=sme
+// Mobile app uses this — no service_id needed
+router.get('/bills/plans/:service_type/:network', async (req, res) => {
+  try {
+    const { service_type, network } = req.params;
+    const { type } = req.query;
+
+    // Build network key to match DB
+    const networkKey = type
+      ? `${network.toLowerCase()}_${type.toLowerCase()}`
+      : network.toLowerCase();
+
+    // Get provider for this service
+    const { adapter, provider } = await resolveAdapter(service_type);
+
+    // Find matching network in DB
+    const BillsProviderNetwork = require('../models/BillsProviderNetwork');
+    const query = {
+      service_type,
+      status: 'active',
+    };
+    if (provider?._id) query.provider_id = provider._id;
+
+    // Try exact match first
+    let networkConfig = await BillsProviderNetwork.findOne({
+      ...query,
+      network_name: networkKey,
+    });
+
+    // If no exact match try just network name
+    if (!networkConfig) {
+      networkConfig = await BillsProviderNetwork.findOne({
+        ...query,
+        network_name: network.toLowerCase(),
+      });
+    }
+
+    if (!networkConfig) {
+      return res.json({
+        msg: '404',
+        message: `No plans found for ${network}${type ? ` (${type})` : ''}.`,
+      });
+    }
+
+    // Fetch live plans from provider
+    const result = await adapter.fetchDataPlans(networkConfig.service_id);
+
+    if (!result.success) {
+      return res.json({ msg: '400', message: result.message });
+    }
+
+    return res.json({
+      msg: '200',
+      status: '200',
+      network,
+      type: type || null,
+      service_id: networkConfig.service_id,
+      plans: result.plans,
+    });
+  } catch (error) {
+    console.log('Get plans error:', error.message);
+    return res.json({ msg: '400', message: 'Could not fetch plans.' });
   }
 });
 

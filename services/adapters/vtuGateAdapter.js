@@ -91,13 +91,18 @@ class VTUGateAdapter extends BaseAdapter {
   // -----------------------------------------------
   // Fetch data plans for a service_id
   // -----------------------------------------------
-  async fetchDataPlans(service_id) {
+    async fetchDataPlans(service_id) {
     try {
       const res = await this.client.post(
         '/api/v1/fetchdataplans',
         this.form({ service_id })
       );
-      return this.success({ plans: res.data?.data || [] });
+      if (res.data?.status !== true) {
+        return this.error(res.data?.message || 'Failed to fetch data plans');
+      }
+      // Extract data_plans array from response
+      const plans = res.data?.data?.data_plans || res.data?.data || [];
+      return this.success({ plans });
     } catch (error) {
       return this.error(
         error.response?.data?.message || 'Failed to fetch data plans',
