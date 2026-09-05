@@ -747,5 +747,53 @@ router.get('/bills/history/:userId', isAuth, async (req, res) => {
   }
 });
 
+// GET /api/admin/bills/transactions
+// Admin view of all bills transactions with filters
+router.get('/admin/bills/transactions', isAuth, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 15;
+    const skip = (page - 1) * limit;
+    const { service_type, search } = req.query;
+
+    const query = {};
+    if (service_type) query.service_type = service_type;
+    if (search) {
+      query.$or = [
+        { reference: { $regex: search, $options: 'i' } },
+        { phone_number: { $regex: search, $options: 'i' } },
+        { tag_id: { $regex: search, $options: 'i' } },
+        { meter_number: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const [transactions, total] = await Promise.all([
+      BillsTransaction.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      BillsTransaction.countDocuments(query),
+    ]);
+
+    return res.json({
+      msg: '200',
+      status: '200',
+      transactions,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+        hasMore: page * limit < total,
+      },
+    });
+  } catch (error) {
+    console.log('Admin bills transactions error:', error.message);
+    return res.json(response.error('Could not fetch transactions.'));
+  }
+});
+
+
 module.exports = router;
 

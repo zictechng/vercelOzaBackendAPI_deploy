@@ -1340,11 +1340,13 @@ router.post('/updateAbout_us', isAuth, async (req, res, next) =>{
       $set: {
         company_name: req.body.company_name,
         company_regId: req.body.company_regId,
-        company_desc: req.body.description,
-        company_email: req.body.company_email
-        },
+        company_desc: req.body.company_desc,
+        company_email: req.body.company_email,
+        company_phone: req.body.company_phone,
+        company_address: req.body.company_address,
+      },
     }
-    const updateRead = await CompanyDetails.updateOne(updateDoc);
+    const updateRead = await CompanyDetails.updateOne({}, updateDoc);
 
     res.send({ msg: '201'})
   } catch (error) {
@@ -1634,31 +1636,32 @@ router.post("/update_appStatus", isAuth, async (req, res, next) => {
         }
     else if(checkData.length > 0){
      // update the details
-     const updateDoc = {
-      $set: {
-        app_paypal_sale: req.body.paypalSale,
-        app_payoneer_sale: req.body.payoneerSale,
-        app_bitcoin_buy: req.body.bitcoinBuy,
-        app_bitcoin_sale: req.body.bitcoinSale,
-        app_payoneer_buy: req.body.payoneerBuy,
-        app_paypal_buy: req.body.paypalBuy,
-        app_state: req.body.appStatus,
-        app_baseurl: req.body.baseUrl,
-        app_paypayKey: req.body.payPayToken,
-        app_minim_funding: req.body.mini_funding,
-        app_maxi_funding: req.body.maxi_funding,
-        app_payStack_btn: req.body.payStack_btn,
-        app_paypal_bnt: req.body.paypal_btn,
-        app_referral_bonus: req.body.referral_bonus_status,
-        app_signup_bonus: req.body.signup_bonus_status,
-        app_new_signup_status: req.body.newSignup_status,
-        app_operation_status: req.body.appMode_status,
-        app_stop_login_status: req.body.appLogin_status,
-        app_mode_message: req.body.appMode_message,
-        app_referral_percent: req.body.referral_percent,
-          },
+      const updateDoc = {
+        $set: {
+          app_paypal_sale: req.body.paypalSale,
+          app_payoneer_sale: req.body.payoneerSale,
+          app_bitcoin_buy: req.body.bitcoinBuy,
+          app_bitcoin_sale: req.body.bitcoinSale,
+          app_payoneer_buy: req.body.payoneerBuy,
+          app_paypal_buy: req.body.paypalBuy,
+          app_state: req.body.appStatus,
+          app_baseurl: req.body.baseUrl,
+          app_paypayKey: req.body.payPayToken,
+          app_textEditor_key: req.body.textEditorKey,
+          app_minim_funding: req.body.mini_funding,
+          app_maxi_funding: req.body.maxi_funding,
+          app_payStack_btn: req.body.payStack_btn,
+          app_paypal_bnt: req.body.paypal_btn,
+          app_referral_bonus: req.body.referral_bonus_status,
+          app_signup_bonus: req.body.signup_bonus_status,
+          app_new_signup_status: req.body.newSignup_status,
+          app_operation_status: req.body.appMode_status,
+          app_stop_login_status: req.body.appLogin_status,
+          app_mode_message: req.body.appMode_message,
+          app_referral_percent: req.body.referral_percent,
+        },
       }
-      const updateRead = await AppSetting.updateOne(updateDoc);
+      const updateRead = await AppSetting.updateOne({}, updateDoc);
       if(updateRead.modifiedCount == 1) {
           res.send({ msg: '201', message: ' Record updated successfully'})
         }
@@ -1680,19 +1683,21 @@ router.post("/update_companyBankStatus", isAuth, async (req, res, next) => {
     const checkData = await CompanyBank.find();
 
         if (checkData.length < 1) {
-        const addNew = await CompanyBank.create({
-        company_bank1: req.body.zenith_bankName,
-        company_acct_number1: req.body.zenith_number,
-        company_acct_name1: req.body.zenith_acctName,
-        company_bank2: req.body.fidelity_bankName,
-        company_acct_number2: req.body.fidelityNumber,
-        company_acct_name2: req.body.fidelityAcctName,
-        company_desc: '',
-        company_btc_address: req.body.bitcoin_address,
-        company_paypal_address: req.body.paypal_address,
-        company_payoneer_address: req.body.payoneer_address,
-        company_momoAccount: req.body.momo_number,
-        //user_policy
+          const addNew = await CompanyBank.create({
+          company_bank1: req.body.zenith_bankName,
+          company_acct_number1: req.body.zenith_number,
+          company_acct_name1: req.body.zenith_acctName,
+          company_bank2: req.body.fidelity_bankName,
+          company_acct_number2: req.body.fidelityNumber,
+          company_acct_name2: req.body.fidelityAcctName,
+          company_bank3: req.body.bank3_bankName,
+          company_acct_number3: req.body.bank3_number,
+          company_acct_name3: req.body.bank3_acctName,
+          company_desc: '',
+          company_btc_address: req.body.bitcoin_address,
+          company_paypal_address: req.body.paypal_address,
+          company_payoneer_address: req.body.payoneer_address,
+          company_momoAccount: req.body.momo_number,
         });
        
         //console.log(' res ', addNew)
@@ -1706,18 +1711,21 @@ router.post("/update_companyBankStatus", isAuth, async (req, res, next) => {
      // update the details
      const updateDoc = {
       $set: {
-        company_bank1: req.body.zenith_bankName,
-        company_acct_number1: req.body.zenith_number,
-        company_acct_name1: req.body.zenith_acctName,
-        company_bank2: req.body.fidelity_bankName,
-        company_acct_number2: req.body.fidelityNumber,
-        company_acct_name2: req.body.fidelityAcctName,
-        company_desc: '',
-        company_btc_address: req.body.bitcoin_address,
-        company_paypal_address: req.body.paypal_address,
-        company_payoneer_address: req.body.payoneer_address,
-        company_momoAccount: req.body.momo_number,
-          },
+          company_bank1: req.body.zenith_bankName,
+          company_acct_number1: req.body.zenith_number,
+          company_acct_name1: req.body.zenith_acctName,
+          company_bank2: req.body.fidelity_bankName,
+          company_acct_number2: req.body.fidelityNumber,
+          company_acct_name2: req.body.fidelityAcctName,
+          company_bank3: req.body.bank3_bankName,
+          company_acct_number3: req.body.bank3_number,
+          company_acct_name3: req.body.bank3_acctName,
+          company_desc: '',
+          company_btc_address: req.body.bitcoin_address,
+          company_paypal_address: req.body.paypal_address,
+          company_payoneer_address: req.body.payoneer_address,
+          company_momoAccount: req.body.momo_number,
+        },
       }
       const updateRead = await CompanyBank.updateOne(updateDoc);
       if(updateRead.modifiedCount == 1) {
@@ -2649,9 +2657,10 @@ router.post("/rejectApproveAcctFunding", isAuth, async (req, res) => {
 
      if(userDetail){
 
-      const updateUserFundStatus = {
+       const updateUserFundStatus = {
         $set: {
           fund_status: 'Rejected',
+          fund_note: req.body.reject_note || 'Funding request rejected by admin.',
         },
       };
 
@@ -2695,34 +2704,56 @@ router.post("/rejectApproveAcctFunding", isAuth, async (req, res) => {
         log_status: 'Successful',
         log_nature:'Funding Rejected ',
        })
-      // send email to the account owner
-      fetchApp().then((result) => {
-        appName = result.app_name
-        appLogo = result.app_logo
-        const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+      // Send rejection email — non-blocking
+      try {
+        const appSettings = await fetchApp()
+        const appName = appSettings.app_name || 'Support'
+        const appLogo = appSettings.app_logo || ''
+        const logoImage = `<img src="${appLogo}" width="100" height="100" alt="${appName}"/>`
+        const rejectReason = req.body.reject_note || 'We were unable to verify that the transaction was valid and successful.'
 
-        const mailBody = loginEmail(appName, 'Account Funding Issue', userDetail.display_name, `this is to notify you that your account funding request has been rejected or cancelled after been review your transaction details.
-        <br> Amount Funding: <b>\u20A6${new Intl.NumberFormat().format(userFund.amount)}</b> <br>
-        With transaction ID <b>${userFund.fund_number}</b><br> 
-        We are unable to verify that the transaction was valid and successful! Please you can contact support for more details and possible resolutions.<br><br>
-        Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`, logoImage)
-        const mailText = loginText(userDetail.display_name, `this is to notify you that your account funding request has been rejected or cancelled after been review your transaction details.
-        <br> Amount Funding: <b>\u20A6${new Intl.NumberFormat().format(userFund.amount)}</b> <br>
-        With transaction ID <b>${userFund.fund_number}</b><br> 
-        We are unable to verify that the transaction was valid and successful! Please you can contact support for more details and possible resolutions.<br><br>
-        Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
-        let account_issueEMail = {
-          from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+        const mailBody = loginEmail(appName, 'Account Funding Rejected', userDetail.display_name, `
+          <p>Your account funding request has been reviewed and unfortunately could not be approved.</p>
+          <br/>
+          <table style="width:100%;border-collapse:collapse;border-radius:8px;overflow:hidden;">
+            <tr style="background:#f9f9f9;">
+              <td style="padding:10px 14px;color:#666;font-weight:500;">Amount</td>
+              <td style="padding:10px 14px;font-weight:700;">&#8358;${new Intl.NumberFormat().format(userFund.amount)}</td>
+            </tr>
+            <tr>
+              <td style="padding:10px 14px;color:#666;font-weight:500;">Transaction ID</td>
+              <td style="padding:10px 14px;font-weight:700;">${userFund.fund_number}</td>
+            </tr>
+            <tr style="background:#f9f9f9;">
+              <td style="padding:10px 14px;color:#666;font-weight:500;">Status</td>
+              <td style="padding:10px 14px;font-weight:700;color:#e53935;">Rejected</td>
+            </tr>
+            <tr>
+              <td style="padding:10px 14px;color:#666;font-weight:500;">Reason</td>
+              <td style="padding:10px 14px;">${rejectReason}</td>
+            </tr>
+          </table>
+          <br/>
+          <p style="color:#555;">If you believe this is an error or need further clarification, please contact our support team via your account dashboard.</p>
+          <p>Thank you for choosing ${appName}.</p>
+        `, logoImage)
+
+        const mailText = loginText(userDetail.display_name, `Your account funding of ₦${new Intl.NumberFormat().format(userFund.amount)} with transaction ID ${userFund.fund_number} has been rejected. Reason: ${rejectReason}. Please contact support via your account dashboard for assistance. Thank you for choosing ${appName}.`)
+
+        const rejectionEmail = {
+          from: { name: `${appName} Support`, email: 'noreply@ozaapp.com' },
           to: [{ email: userDetail.email }],
-          subject: 'Account Funding Notification!',
+          subject: `Account Funding Rejected — ₦${new Intl.NumberFormat().format(userFund.amount)}`,
           text: mailText,
           html: mailBody,
         }
-        sendEmail(account_issueEMail).catch((err) => {
-          console.error("❌ Email sending completely failed:", err.message);
-          });
 
-        }).catch(console.error.bind(console))
+        sendEmail(rejectionEmail).catch(err => {
+          console.error('❌ Funding rejection email failed:', err.message)
+        })
+      } catch (emailError) {
+        console.error('❌ Funding rejection email error:', emailError.message)
+      }
 
         res.status(201).json({msg: '201'}) // success message
      }
@@ -3190,34 +3221,60 @@ router.post("/rejectSaleFunding", isAuth, async (req, res) => {
         log_status: 'Successful',
         log_nature:'Funds Sales Rejected ',
        })
-      // send email to the account owner
-      fetchApp().then((result) => {
-        appName = result.app_name
-        appLogo = result.app_logo
-        const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-        const mailBody = loginEmail(appName, 'Funds Sales Issue', userDetail.display_name, `this is to notify you that your recent ${allTranSales.transac_category} funds sales/exchange request was not approved or cancelled after been review your transaction details.
-        <br> Amount: <b>\$${new Intl.NumberFormat().format(allTranSales.amount)}</b> <br>
-        With transaction ID <b>${allTranSales.tid}</b><br> 
-        We are unable to verify that the transaction was valid and successful! Please you can contact support for more details and possible resolutions.<br><br>
-        Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`, logoImage)
+      // Send rejection email — non-blocking
+      try {
+        const appSettings = await fetchApp()
+        const appName = appSettings.app_name || 'Support'
+        const appLogo = appSettings.app_logo || ''
+        const logoImage = `<img src="${appLogo}" width="100" height="100" alt="${appName}"/>`
+        const rejectReason = req.body.reject_note || 'We were unable to verify that the transaction was valid and successful.'
 
-            const mailText = loginText(userDetail.display_name, `this is to notify you that your recent ${allTranSales.transac_category} funds sales/exchange request was not approved or cancelled after been review your transaction details.
-            <br> Amount: <b>\$${new Intl.NumberFormat().format(allTranSales.amount)}</b> <br>
-            With transaction ID <b>${allTranSales.tid}</b><br> 
-            We are unable to verify that the transaction was valid and successful! Please you can contact support for more details and possible resolutions.<br><br>
-            Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
-            let account_issueEMail = {
-              from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
-              to: [{ email: userDetail.email }],
-              subject: 'Funding Sales Notification!',
-              text: mailText,
-              html: mailBody,
-            }
-            sendEmail(account_issueEMail).catch((err) => {
-              console.error("❌ Email sending completely failed:", err.message);
-              });
-            }).catch(console.error.bind(console))
+        const mailBody = loginEmail(appName, 'Funds Sale Rejected', userDetail.display_name, `
+          <p>Your recent <strong>${allTranSales.transac_category}</strong> funds sale/exchange request has been reviewed and could not be approved.</p>
+          <br/>
+          <table style="width:100%;border-collapse:collapse;">
+            <tr style="background:#f9f9f9;">
+              <td style="padding:10px 14px;color:#666;font-weight:500;">Amount</td>
+              <td style="padding:10px 14px;font-weight:700;">$${new Intl.NumberFormat().format(allTranSales.amount)}</td>
+            </tr>
+            <tr>
+              <td style="padding:10px 14px;color:#666;font-weight:500;">Transaction ID</td>
+              <td style="padding:10px 14px;font-weight:700;">${allTranSales.tid}</td>
+            </tr>
+            <tr style="background:#f9f9f9;">
+              <td style="padding:10px 14px;color:#666;font-weight:500;">Category</td>
+              <td style="padding:10px 14px;font-weight:700;">${allTranSales.transac_category}</td>
+            </tr>
+            <tr>
+              <td style="padding:10px 14px;color:#666;font-weight:500;">Status</td>
+              <td style="padding:10px 14px;font-weight:700;color:#e53935;">Rejected</td>
+            </tr>
+            <tr style="background:#f9f9f9;">
+              <td style="padding:10px 14px;color:#666;font-weight:500;">Reason</td>
+              <td style="padding:10px 14px;">${rejectReason}</td>
+            </tr>
+          </table>
+          <br/>
+          <p style="color:#555;">If you believe this is an error, please contact our support team via your account dashboard.</p>
+          <p>Thank you for choosing ${appName}.</p>
+        `, logoImage)
 
+        const mailText = loginText(userDetail.display_name, `Your ${allTranSales.transac_category} sale of $${new Intl.NumberFormat().format(allTranSales.amount)} with transaction ID ${allTranSales.tid} has been rejected. Reason: ${rejectReason}. Contact support via your account dashboard. Thank you for choosing ${appName}.`)
+
+        const rejectionEmail = {
+          from: { name: `${appName} Support`, email: 'noreply@ozaapp.com' },
+          to: [{ email: userDetail.email }],
+          subject: `Funds Sale Rejected — $${new Intl.NumberFormat().format(allTranSales.amount)}`,
+          text: mailText,
+          html: mailBody,
+        }
+
+        sendEmail(rejectionEmail).catch(err => {
+          console.error('❌ Sale rejection email failed:', err.message)
+        })
+      } catch (emailError) {
+        console.error('❌ Sale rejection email error:', emailError.message)
+      }
         res.status(201).json({msg: '201'}) // success message
      }
      else{
@@ -3428,7 +3485,7 @@ router.get("/getUser_message/:id", isAuth, async (req, res) => {
 // Send/reply message/ticket to user  here..
 router.post("/messageFeedback_send", isAuth, async (req, res) => {
   let recordId = req.body.tran_id;
-  const responseMessage = req.body.sendMessage;
+  const responseMessage = req.body.sendMessage || req.body.feedback_message;
   //console.log("Message Reply  ", req.body);
   try {
     if(recordId == '' || recordId == null){
@@ -3451,8 +3508,16 @@ router.post("/messageFeedback_send", isAuth, async (req, res) => {
       const updateUserTicketStatus = {
         $set: {
           ticket_status: 'Replied',
-          ticket_closed:'Replied',
-          tick_response_date: Date.now()
+          ticket_closed: 'Replied',
+          tick_response_date: Date.now(),
+        },
+        $push: {
+          replies: {
+            sender: 'admin',
+            sender_name: 'Admin Support',
+            message: responseMessage,
+            sent_at: new Date(),
+          }
         },
       };
 
@@ -3489,32 +3554,56 @@ router.post("/messageFeedback_send", isAuth, async (req, res) => {
         })
       }
 
-      // send email to the account owner
-      fetchApp().then((result) => {
-        appName = result.app_name
-        appLogo = result.app_logo
-        const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-        const mailBody = loginEmail(appName, 'Ticket Feedback', userDetail.display_name, `${responseMessage}
-        <b>Ticket ID: ${ticketMessage?.tick_id}</b> <br><br> 
-        thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
-            const mailText = loginText(userDetail.display_name, `${responseMessage}
-            <b>Ticket ID: ${ticketMessage?.tick_id}</b><br>
-      
-            thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`, logoImage)
-            let account_issueEMail = {
-              from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
-              to: [{ email: userDetail.email }],
-              subject: 'Account Funding Notification!',
-              text: mailText,
-              html: mailBody,
-            }
-            sendEmail(account_issueEMail).catch((err) => {
-            console.error("❌ Email sending completely failed:", err.message);
-          });
+      // Send email notification to user — non-blocking
+      try {
+        const appSettings = await fetchApp();
+        const appName = appSettings.app_name || 'Support';
+        const appLogo = appSettings.app_logo || '';
+        const logoImage = `<img src="${appLogo}" width="100" height="100" alt="${appName}"/>`;
 
-            }).catch(console.error.bind(console))
+        const emailBody = loginEmail(
+          appName,
+          'Support Ticket Reply',
+          userDetail.display_name,
+          `
+            <p>${responseMessage}</p>
+            <p><b>Ticket ID: #${ticketMessage?.tick_id}</b></p>
+            <br/>
+            <hr style="border:none;border-top:1px solid #eee;"/>
+            <p style="color:#888;font-size:12px;">
+              ⚠️ <b>Please do not reply to this email.</b><br/>
+              To continue this conversation, please log in to your account 
+              and reply via the Support section.
+            </p>
+            <p>Thank you for choosing ${appName}.</p>
+          `,
+          logoImage
+        );
 
-        res.status(201).json({msg: '201'}) // success message
+        const emailText = loginText(
+          userDetail.display_name,
+          `${responseMessage} — Ticket ID: #${ticketMessage?.tick_id}. 
+          Please do not reply to this email. Log in to your account to continue this conversation. 
+          Thank you for choosing ${appName}.`,
+          logoImage
+        );
+
+        const mailOptions = {
+          from: { name: `${appName} Support`, email: 'noreply@ozaapp.com' },
+          to: [{ email: userDetail.email }],
+          subject: `Support Ticket Reply — Ticket #${ticketMessage?.tick_id}`,
+          text: emailText,
+          html: emailBody,
+        };
+
+        sendEmail(mailOptions).catch(err => {
+          console.error('❌ Ticket reply email failed:', err.message);
+        });
+      } catch (emailError) {
+        console.error('❌ Ticket reply email error:', emailError.message);
+      }
+
+      res.status(201).json({msg: '201'}) // success message
      }
      else{
       return res.json({status: 404, message: ' Error occurred, try again'})

@@ -34,6 +34,14 @@ const ticketSchema = new mongoose.Schema({
     tick_id: String,
     tick_response_date: {type: Date},
     createdOn: {type: Date},
+       
+    // Thread of replies between admin and user
+    replies: [{
+      sender: { type: String, default: 'admin' }, // 'admin' or 'user'
+      sender_name: { type: String },
+      message: { type: String },
+      sent_at: { type: Date, default: Date.now },
+    }],
  })
 
 // export it

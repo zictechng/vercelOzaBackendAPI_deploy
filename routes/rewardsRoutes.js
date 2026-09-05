@@ -114,4 +114,79 @@ router.get('/user_coins_history/:userId', isAuth, async (req, res) => {
   }
 });
 
+// GET /api/admin/coins/history
+// Admin view of all coins transactions with filters and stats
+router.get('/admin/coins/history', isAuth, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 15;
+    const skip = (page - 1) * limit;
+    const { source_type, search } = req.query;
+
+    const query = {};
+    if (source_type) query.source_type = source_type;
+    if (search) query.tag_id = { $regex: search, $options: 'i' };
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [transactions, total, totalCoinsData, todayCoinsData] = await Promise.all([
+      CoinsTransaction.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      CoinsTransaction.countDocuments(query),
+      CoinsTransaction.aggregate([
+        { $match: { type: 'credit' } },
+        { $group: { _id: null, total: { $sum: '$coins' } } },
+      ]),
+      CoinsTransaction.aggregate([
+        { $match: { type: 'credit', createdAt: { $gte: today } } },
+        { $group: { _id: null, total: { $sum: '$coins' } } },
+      ]),
+    ]);
+
+    return res.json({
+      msg: '200',
+      status: '200',
+      transactions,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+        hasMore: page * limit < total,
+      },
+      stats: {
+        totalCoins: totalCoinsData[0]?.total || 0,
+        todayCoins: todayCoinsData[0]?.total || 0,
+      },
+    });
+  } catch (error) {
+    console.log('Admin coins history error:', error.message);
+    return res.json({ msg: '400', status: '400', message: 'Could not fetch coins history.' });
+  }
+});
+
+// POST /api/rewards_settings/update
+// Admin updates rewards settings
+router.post('/rewards_settings/update', isAuth, async (req, res) => {
+  try {
+    let settings = await RewardsSettings.findOne();
+    if (!settings) {
+      settings = await RewardsSettings.create(req.body);
+    } else {
+      Object.assign(settings, req.body);
+      await settings.save();
+    }
+    return res.json({ msg: '200', status: '200', message: 'Rewards settings updated successfully.' });
+  } catch (error) {
+    console.log('Update rewards settings error:', error.message);
+    return res.json({ msg: '400', status: '400', message: 'Could not update rewards settings.' });
+  }
+});
+
+
+
 module.exports = router;
