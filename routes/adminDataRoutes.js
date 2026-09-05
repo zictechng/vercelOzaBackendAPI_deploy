@@ -1383,9 +1383,9 @@ router.post('/updateService_rate', isAuth, async (req, res, next) =>{
         paypal_selling: req.body.paypal_selling,
         payoneer_buying: req.body.payoneer_buying,
         payoneer_selling: req.body.payoneer_selling,
-        bonus_rate: req.body.referral_bonus_amt,
-        signup_bonus_rate: req.body.signup_bonus,
-        },
+        bonus_rate: req.body.bonus_rate || req.body.referral_bonus_amt,
+        signup_bonus_rate: req.body.signup_bonus_rate || req.body.signup_bonus,
+      },
     }
     const updateRead = await GetRate.updateOne(updateDoc);
     console.log(updateRead)
