@@ -42,6 +42,12 @@ const { isNull } = require('lodash');
 const { transactEmail } = require('../emailTemplate/emailRegister');
 const UserWithdrawal = require('../models/withdrawalRequest');
 
+const {
+      processSignupBonus,
+      processReferralBonus,
+    } = require('../services/bonusService')
+    const { processPromoterBonus } = require('../services/referralService')
+
 const uploadLocation = "public/images"; // this is the image store location in the project
 const storage = multer.diskStorage({
   destination: (req, file, callBack) => {
@@ -2795,274 +2801,64 @@ var newAmtBonus = null;
 // Approved user sales funds and credit their bank account details here..
 router.post("/approveFundSales", isAuth, async (req, res) => {
   let recordId = req.body.tran_id;
-
-  let bonusMoney // this will make this variable global and accessible anywhere in this block
-  //console.log("MY ID ", userId);
   try {
-    if(recordId == '' || recordId == null){
-      return res.json({status: 404, message: ' Record ID not found'})
-    }
-    //get user sale details
-    const allSales = await TransferFund.findOne({_id: recordId} );
-     
-    // get user details via tag ID
-     const userDetail = await User.findOne({tag_id: allSales.acct_number} );
-     
-     if(!userDetail){
-      return res.json({status: 404, message: ' User record not found'})
-     }
-     if(!allSales){
-      return res.json({status: 404, message: ' Transaction not valid'})
-     }
+    if(!recordId) return res.json({ status: 404, message: 'Record ID not found' })
 
-      //process user referral bonus details here
-    const checkReferral = await Referrals.findOne({ref_userEmail: userDetail.email, ref_status:'Pending' });
-    
-    const getSaleBonusStatus = await AppSetting.find();
+    // Get transaction and user details
+    const allSales = await TransferFund.findOne({ _id: recordId })
+    if(!allSales) return res.json({ status: 404, message: 'Transaction not valid' })
 
-        // implement bonus sharing profit system here
-        const checkSalesBonus = await Referrals.findOne({ref_userEmail: userDetail.email, ref_status:'Approved'});
-        if(checkSalesBonus && getSaleBonusStatus[0].app_referral_percent == true)
-        {
-          // get the main person who refer the user details
-          const checkUserBonus = await User.findOne({email: checkSalesBonus.ref_mainEmail });
-          // Calculate 20% of seller amount as a share profit
-          const sellerPercentage = 20;
-          const sellerTotal = allSales.amount;
-          const sellerResult = (sellerPercentage / 100) * sellerTotal;
-          
-          // Calculate live time percentage bonus sharing of 0.5% to a the user
-          const bonusPercentage = 1;
-          const bonusTotal = sellerResult;
-          const bonusResult = (bonusPercentage / 100) * bonusTotal;
+    const userDetail = await User.findOne({ tag_id: allSales.acct_number })
+    if(!userDetail) return res.json({ status: 404, message: 'User record not found' })
 
-          const currentBonusBal = checkUserBonus.all_bonus_acct+ +bonusResult
-          const filterUserBonus = { _id: checkUserBonus._id };
-          // update user bonus balance
-            const updateUserBonusBal = {
-              $set: {
-                all_bonus_acct: currentBonusBal,
-              },
-            };
-            const updateUserBal = await User.updateOne(filterUserBonus, updateUserBonusBal);
-            // create history record
-          const createRecord = TransferFund.create({
-            acct_name: checkUserBonus.display_name,
-            acct_number: checkUserBonus.tag_id,
-            amount: bonusResult,
-            bank_name: '',
-            sender_currency_type: '$',
-            tran_type: 'Credit',
-            transac_nature:'Profit Bonus',
-            transac_category: 'Shared Bonus',
-            tran_desc:'Free shared profit bonus to a member ',
-            tr_year:'',
-            colorcode:'green',
-            trans_method: 'Paypal',
-            createdBy: checkUserBonus._id,
-            currency_level:'2',
-            transaction_status:'successful',
-            tid: allSales.tid,
-            });
+    // ── NEW BONUS SYSTEM
+    // All bonus checks done via bonusService
+    // includes: KYC verification, individual pause,
+    // global toggles, qualifying transaction checks
+    // Determine service type from transaction category
+    const serviceType = allSales.transac_category?.toLowerCase()
+      ?.includes('paypal') ? 'paypal'
+      : allSales.transac_category?.toLowerCase()?.includes('payoneer') ? 'payoneer'
+      : allSales.transac_category?.toLowerCase()?.includes('bitcoin') ? 'bitcoin'
+      : 'paypal'
 
-            // check if user enabled in-app notifications and send notification
-            if(checkUserBonus.receive_app_message == true) {
-              const userLogs = Notification.create({
-              alert_username: checkUserBonus.display_name,
-              alert_name: checkUserBonus.display_name,
-              alert_user_ip: '',
-              alert_country: '',
-              alert_browser: '',
-              alert_date:  Date.now(),
-              alert_user_id: checkUserBonus._id,
-              alert_nature: `Bonus Profit \nNote: .${bonusResult? `\nYou got a bonus profit awarded to you \$${new Intl.NumberFormat().format(bonusResult)}. \n`: '\n' }With transaction ID: ${allSales.tid}`,
-              alert_status: 1,
-              alert_read_date: ''
-              })
-            }
-            // send email notification if enabled by user
-            if(checkUserBonus.receive_email_notification == true){
-              fetchApp().then((result) => {
-                appName = result.app_name
-                appLogo = result.app_logo
-                const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-      
-                const mailBody = loginEmail(appName, 'Profit Bonus', checkUserBonus.display_name, `this is to notify you that you have received a profit bonus and it has be credited to your wallet account
-                <b>\$${new Intl.NumberFormat().format(bonusResult)}</b>. 
-                ${bonusResult? ` <br>` :''}
-                With transaction ID <b>${allSales.tid}</b><br>
-                Thank you for choosing ${appName}, we hope you continue to enjoy our awesome services.`, logoImage)
-                    const mailText = loginText(checkUserBonus.display_name, `this is to notify you that you have received a profit bonus and it has be credited to your wallet account \n\n
-                    <b>\$${new Intl.NumberFormat().format(bonusResult)}</b><br>
-                    with transaction ID <b>${allSales.tid}</b><br>
-                    thank you for choosing ${appName}, we hope you continue to enjoy our awesome services.`)
-                    let account_issueEMail = {
-                      
-                      from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
-                      to: [{ email: checkUserBonus.email }],
-                      subject: 'Credit Notification',
-                      text: mailText,
-                      html: mailBody,
-                    }
-                  sendEmail(account_issueEMail).catch((err) => {
-                    console.error("❌ Email sending completely failed:", err.message);
-                    });
-      
-                  }).catch(console.error.bind(console))
-                }
-          }
+    // Transaction amount in ₦ for threshold check
+    const txnAmountNaira = Number(allSales.amount || 0) * Number(allSales.tran_rate || 1)
 
-    //check if referral is valid and award the user the credit amount
-      if(checkReferral && checkReferral.ref_status == 'Pending' && checkReferral.ref_state == true ){
-      // get the main person who refer the user details
-        const checkUser = await User.findOne({email: checkReferral.ref_mainEmail });
-          // get exchange rate details
-          const checkTradeRate = await GetRate.findOne();
+    // 1. Process signup bonus activation — non-blocking
+    processSignupBonus({
+      userId: userDetail._id,
+      serviceType,
+      amount: txnAmountNaira,
+      reference: allSales.tid,
+    }).catch(err => console.log('Signup bonus error:', err.message))
 
-          //let addAmount = parseInt(checkTradeRate.bonus_rate) * parseInt(checkTradeRate.paypal_buying);
-          let addAmount = parseInt(checkTradeRate.bonus_rate);
-          
-          const InitialBal = checkUser.all_bonus_acct+ +addAmount
+    // 2. Process one-time referral bonus — non-blocking
+    processReferralBonus({
+      buyerUserId: userDetail._id,
+      buyerTagId: userDetail.tag_id,
+      serviceType,
+      amount: txnAmountNaira,
+      reference: allSales.tid,
+    }).catch(err => console.log('Referral bonus error:', err.message))
 
-          const filterUser = { _id: checkUser._id };
-          const filterReferral = { _id: checkReferral._id };
-    
-          const updateReferralStatus = {
-          $set: {
-            ref_status: 'Approved',
-            ref_amt: checkTradeRate.bonus_rate,
-            ref_approvedDate: Date.now()
-            },
-          };
+    // 3. Process promoter commission — non-blocking
+    processPromoterBonus({
+      buyerUserId: userDetail._id,
+      buyerTagId: userDetail.tag_id,
+      purchaseAmount: txnAmountNaira,
+      serviceTitle: allSales.transac_category || 'Fund Sale',
+      reference: allSales.tid,
+    }).catch(err => console.log('Promoter commission error:', err.message))
 
-        const updateUserBalance = {
-          $set: {
-            all_bonus_acct: InitialBal,
-          },
-        };
+    // ── SELLER CREDIT
+    const currentBal = userDetail.tran_account + +allSales.amount
+    const filterUser = { _id: userDetail._id }
 
-        const updateUserBal = await User.updateOne(filterUser, updateUserBalance);
-        const updateRef = await Referrals.updateOne(filterReferral, updateReferralStatus);
-      
-        // process notifications for receiver referral bonus in different levels
-        const addLogs = await SystemActivity.create({
-          log_username: checkUser.email,
-          log_name: checkUser.display_name,
-          log_acct_number: checkUser.tag_id,
-          log_receiver_name: '',
-          log_receiver_number: '',
-          log_receiver_bank: '',
-          log_country: '',
-          log_swift_code: '',
-          log_desc:'User referral bonus approved and credited',
-          log_amt: '',
-          log_status: 'Successful',
-          log_nature:'Bonus fund Approved',
-         })
-  
-         // check if receiver referral bonus user enabled in-app notifications and send notification
-        if(checkUser.receive_app_message == true) {
-          const userLogs = Notification.create({
-          alert_username: checkUser.email,
-          alert_name: checkUser.display_name,
-          alert_user_ip: '',
-          alert_country: '',
-          alert_browser: '',
-          alert_date:  Date.now(),
-          alert_user_id: checkUser._id,
-          alert_nature: `Referral Bonus Approved \n Note: this is to notify you that your referral bonus has been approved and your wallet has been credited with the sum of \$${new Intl.NumberFormat().format(addAmount)}\n for your hard work by sharing your referral ID.\n Keep referring to keep earning free money.`,
-          alert_status: 1,
-          alert_read_date: ''
-          })
-        }
-
-         // create record for funding purposes
-        
-         //  const fundAccount = FundUserAccount.create({
-        //   fund_name: checkUser.display_name,
-        //   fund_number: allSales.tid,
-        //   fund_tag_id: checkUser.tag_id,
-        //   amount: addAmount,
-        //   fund_email: checkUser.email,
-        //   fund_note: 'Your referral bonus has been approved and credited to your wallet account',
-        //   fund_status: 'Credited',
-        //   fund_type: 'Referral Bonus'
-        // });
-  
-        // send email to receiver referral bonus account owner
-        if(checkUser.receive_email_notification == true){
-          fetchApp().then((result) => {
-            appName = result.app_name
-            appLogo = result.app_logo
-            const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-
-            const mailBody = loginEmail(appName, 'Fund Sales Approved', checkUser.display_name, `this is to notify you that your referral bonus has been approved and your wallet account has be credited with the sum of \n\n
-            <b>\$${new Intl.NumberFormat().format(addAmount)}</b> for your hard work for sharing your referral Tag ID <br>
-            </b><br>  Keep it up and keep referring your friends and loves once to continue earning free money. <br>
-            Thank you for choosing ${appName}, we hope you continue to enjoy our awesome services.`, logoImage)            
-           const mailText = loginText(checkUser.display_name, `this is to notify you that your referral bonus funds has been approved and your wallet account has be credited with the sum of \n\n
-          <b>\$${new Intl.NumberFormat().format(addAmount)}</b> for your hard work for sharing your referral Tag ID <br>
-          </b><br>  Keep it up and keep referring your friends and loves once to continue earning free money. <br>
-          Thank you for choosing ${appName}, we hope you continue to enjoy our awesome services.`)
-          let account_issueEMail = {
-            from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
-            to: [{ email: checkUser.email }],
-            subject: 'Funds Credit Notification!',
-            text: mailText,
-            html: mailBody,
-          }
-          sendEmail(account_issueEMail).catch((err) => {
-            console.error("❌ Email sending completely failed:", err.message);
-            });
-
-          }).catch(console.error.bind(console))
-          }
-        }
-
-      // seller details here 
-        const currentBal = userDetail.tran_account+ +allSales.amount
-        // check for user signup bonus amount and give the money to the user
-        const filterUser = { _id: userDetail._id };
-        if(userDetail.signup_account > 0){
-          // refetch user updated details here
-          const userDetailBonus = await User.findOne({tag_id: allSales.acct_number} );
-           bonusMoney = userDetailBonus.all_bonus_acct+ +userDetailBonus.signup_account
-           bonusAmount = userDetailBonus.signup_account
-          const updateUserBonus = {
-            $set: {
-              signup_account: 0,
-              all_bonus_acct: bonusMoney,
-              },
-            };
-            const updateUserBalBonus = await User.updateOne(filterUser, updateUserBonus);
-          
-            // create history record
-            //console.log('my name: ', userDetail.display_name)
-            const createRecord = TransferFund.create({
-              acct_name: userDetailBonus.display_name,
-              acct_number: userDetail.tag_id,
-              amount: userDetail.signup_account,
-              bank_name: '',
-              sender_currency_type: '$',
-              tran_type: 'Credit',
-              transac_nature:'Signup Bonus',
-              transac_category: 'Bonus',
-              tran_desc:'Free signup bonus to a new user ',
-              tr_year:'',
-              colorcode:'green',
-              trans_method: 'Paypal',
-              createdBy: userDetail._id,
-              currency_level:'2',
-              transaction_status:'successful',
-              tid: allSales.tid,
-              });
-            }
-
-        // get naira equivalent for the user funds sales and bonus amount
-          const totalSales = allSales.amount * allSales.tran_rate
-          let gTotal = bonusMoney+ + totalSales;
-
-        // credit approval request account here
+    // get naira equivalent for the user funds sales
+    const totalSales = allSales.amount * allSales.tran_rate
+    let gTotal = totalSales
+    // credit approval request account here
         if(userDetail){
           const filterUser = { _id: userDetail._id };
           const filterGeneral = { _id: allSales._id}
