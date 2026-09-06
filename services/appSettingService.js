@@ -22,7 +22,7 @@ const getAppSettings = async () => {
       return cachedSettings;
     }
     // Fetch fresh from DB
-    const settings = await AppSetting.findOne({ active: true });
+  const settings = await AppSetting.findOne();
     if (settings) {
       cachedSettings = settings;
       cacheTime = now;

@@ -167,6 +167,7 @@ const saveBonusToHistory = async ({
 // ------------------------------------------------
 const sendBonusEmail = async ({ userEmail, userName, subject, message }) => {
   try {
+    //console.log(`📧 Sending bonus email to: ${userEmail}`)
     const appSettings = await getAppSettings()
     const APP_NAME = appSettings?.app_name || appSettings?.app_short_name || 'Admin'
     const APP_LOGO = appSettings?.app_logo || ''
@@ -189,16 +190,19 @@ const sendBonusEmail = async ({ userEmail, userName, subject, message }) => {
     `
 
     const APP_BASE_URL = appSettings?.app_baseurl || ''
-    const SUPPORT_EMAIL = `noreply@${APP_BASE_URL.replace(/https?:\/\//, '').split('/')[0] || 'ota.com'}`
-
-    await sendEmail({
+    const domain = APP_BASE_URL.replace(/https?:\/\//, '').split('/')[0]
+    const SUPPORT_EMAIL = domain ? `noreply@${domain}` : 'noreply@ota.com'
+    const result = await sendEmail({
       from: { name: `${APP_NAME} Support`, email: SUPPORT_EMAIL },
       to: [{ email: userEmail }],
       subject,
       html,
       text: message.replace(/<[^>]*>/g, ''),
     })
+    return result
   } catch (error) {
+    console.error('❌ sendBonusEmail error:', error.message)
+    console.error('❌ sendBonusEmail stack:', error.stack)
     console.log('sendBonusEmail error:', error.message)
   }
 }
