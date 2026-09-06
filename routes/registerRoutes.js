@@ -179,16 +179,32 @@ router.post("/register", async (req, res, next) => {
             
             const filterUser = { _id: user._id };
             const signupStatus = await AppSetting.findOne();
-            const checkTradeRate = await GetRate.findOne();
+
+            // New signup bonus logic:
+            // Show pending bonus amount to user immediately
+            // Actual ₦ credited only after qualifying transaction
+            if (signupStatus?.app_signup_bonus === true) {
+              const bonusUsd = Number(signupStatus?.signup_bonus_usd_amount || 0)
+              const conversionRate = Number(signupStatus?.signup_bonus_conversion_rate || 0)
               
-              if(signupStatus.app_signup_bonus == true){
-                const updateUserBonus = {
+              if (bonusUsd > 0) {
+                // Calculate display amount in ₦ using admin rate
+                // If no rate set yet use 0 — admin must configure rate
+                const pendingNairaDisplay = bonusUsd * conversionRate
+
+                await User.updateOne(filterUser, {
                   $set: {
-                    signup_account: checkTradeRate?.signup_bonus_rate,
-                    },
-                  };
-                  const updateUserBalBonus = await User.updateOne(filterUser, updateUserBonus);
-                }
+                    // Store USD amount for later activation
+                    pending_signup_bonus_usd: bonusUsd,
+                    signup_bonus_activated: false,
+                    // Show ₦ display amount in wallet as pending
+                    // This is visible but NOT withdrawable
+                    signup_account: pendingNairaDisplay,
+                  }
+                })
+                console.log(`Signup bonus pending: $${bonusUsd} (₦${pendingNairaDisplay}) for ${user.email}`)
+              }
+            }
 
             // create referral here
             let userDetails = await User.findOne({tag_id: req.body.share_code });

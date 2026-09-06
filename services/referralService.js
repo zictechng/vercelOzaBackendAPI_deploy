@@ -24,13 +24,21 @@ const BusinessRate = require('../models/businessRate');
 const RewardsSettings = require('../models/RewardsSettings');
 const Notification = require('../models/NotificationAlert');
 const { getAppSettings } = require('./appSettingService');
+const { checkUserBonusEligibility } = require('./bonusService');
 
 // ------------------------------------------------
-// TYPE 1 — Process one-time referral bonus
-// Called after every successful purchase
-// Credits referrer's all_bonus_acct once only
+// TYPE 1 — One-time referral bonus
+// DEPRECATED: Moved to bonusService.js
+// Now uses fixed $ amount with admin-defined rate
+// and transaction qualification checks
 // ------------------------------------------------
-const processReferralBonus = async ({
+const processReferralBonus = async (params) => {
+  // This function is kept for backward compatibility
+  // New logic is in bonusService.processReferralBonus
+  return { success: true, skipped: true, reason: 'Moved to bonusService' };
+};
+/*
+const processReferralBonus_OLD = async ({
   buyerUserId,
   buyerTagId,
   purchaseAmount,
@@ -132,11 +140,12 @@ const processReferralBonus = async ({
 
     console.log(`Referral bonus: ₦${commission} credited to ${referrer.display_name}`);
     return { success: true, commission, referrer: referrer.display_name };
-  } catch (error) {
+   } catch (error) {
     console.log('processReferralBonus error:', error.message);
     return { success: false, message: error.message };
   }
 };
+*/
 
 // ------------------------------------------------
 // TYPE 2 — Process business promoter commission
@@ -164,12 +173,19 @@ const processPromoterBonus = async ({
     }
 
     // Get promoter user
+        // Get promoter user
     const promoter = await User.findOne({
       tag_id: buyer.promoter_tag_id,
       business_promoter: true,
     });
     if (!promoter) {
       return { success: true, skipped: true, reason: 'Promoter not found or inactive' };
+    }
+
+    // Check promoter individual eligibility
+    const promoterEligibility = await checkUserBonusEligibility(promoter._id);
+    if (!promoterEligibility.eligible) {
+      return { success: true, skipped: true, reason: `Promoter bonus paused: ${promoterEligibility.reason}` };
     }
 
     // Get promoter rate from RewardsSettings

@@ -123,6 +123,29 @@ router.post('/provider/activate', isAuth, async (req, res) => {
   }
 });
 
+
+// POST /api/provider/update
+// Admin updates provider details
+router.post('/provider/update', isAuth, async (req, res) => {
+  try {
+    const { provider_id, name, base_url, notes, supported_services, api_key } = req.body
+    if (!provider_id) return res.json({ msg: '400', message: 'Provider ID required.' })
+
+    const realId = decodeId(provider_id)
+    const updateData = { name, base_url, notes, supported_services }
+    if (api_key) updateData.api_key_encrypted = encrypt(api_key)
+
+    const provider = await BillsProvider.findByIdAndUpdate(realId, updateData, { new: true })
+    if (!provider) return res.json({ msg: '404', message: 'Provider not found.' })
+
+    clearCache()
+    return res.json({ msg: '200', message: 'Provider updated successfully.', provider: encodeDoc(provider) })
+  } catch (error) {
+    console.log('Update provider error:', error.message)
+    return res.json({ msg: '400', message: 'Could not update provider.' })
+  }
+})
+
 // ------------------------------------------------
 // POST /api/provider/deactivate
 // Admin deactivates a provider

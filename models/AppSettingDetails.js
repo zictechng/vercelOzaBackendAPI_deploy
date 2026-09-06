@@ -126,6 +126,66 @@ const systemSettingSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+        // Ongoing purchase rewards toggle
+    app_purchase_reward:{
+        type: Boolean,
+        default: false,
+    },
+    // Business promoter commission toggle
+    app_promoter_bonus:{
+        type: Boolean,
+        default: false,
+    },
+
+    // ── Signup Bonus Configuration ──────────────
+    // Amount in USD admin wants to give as signup bonus
+    signup_bonus_usd_amount: {
+        type: Number,
+        default: 0,
+    },
+    // Admin-defined conversion rate (₦ per $1)
+    signup_bonus_conversion_rate: {
+        type: Number,
+        default: 0,
+    },
+    // Minimum transaction amount (₦) to unlock bonus
+    signup_bonus_min_txn_amount: {
+        type: Number,
+        default: 0,
+    },
+    // Which service types qualify to unlock signup bonus
+    // Admin selects from: paypal, payoneer, bitcoin,
+    // airtime, data, electricity, tv_subscription, exam_cards
+    // Default: only high-value buy/sell services
+    signup_bonus_qualify_services: {
+        type: [String],
+        default: ['paypal', 'payoneer', 'bitcoin'],
+    },
+
+    // ── Referral Bonus Configuration
+    // Amount in USD admin wants to give as referral bonus
+    referral_bonus_usd_amount: {
+        type: Number,
+        default: 0,
+    },
+    // Admin-defined conversion rate (₦ per $1)
+    referral_bonus_conversion_rate: {
+        type: Number,
+        default: 0,
+    },
+    // Minimum transaction amount (₦) to unlock referral bonus
+    referral_bonus_min_txn_amount: {
+        type: Number,
+        default: 0,
+    },
+    // Which service types qualify to unlock referral bonus
+    // Admin selects from: paypal, payoneer, bitcoin,
+    // airtime, data, electricity, tv_subscription, exam_cards
+    // Default: only high-value buy/sell services
+    referral_bonus_qualify_services: {
+        type: [String],
+        default: ['paypal', 'payoneer', 'bitcoin'],
+    },
     createdBy: String,
 
     createdOn: {type: Date, default: Date.now},

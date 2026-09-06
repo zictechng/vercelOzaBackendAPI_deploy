@@ -106,6 +106,48 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+        // Tag ID of the business promoter who referred this user
+    // Empty if no promoter
+    promoter_tag_id: {
+        type: String,
+        default: '',
+    },
+    // User role — User | Admin | Promoter
+    // Promoter earns ongoing commission on referred users
+    business_promoter: {
+        type: Boolean,
+        default: false,
+    },
+
+    // ── Signup Bonus
+    // Pending signup bonus in USD (set on registration)
+    // Converted to ₦ and credited when qualifying txn made
+    pending_signup_bonus_usd: {
+        type: Number,
+        default: 0,
+    },
+    // Whether signup bonus has been activated and credited
+    signup_bonus_activated: {
+        type: Boolean,
+        default: false,
+    },
+
+    // ── Individual Bonus Control
+    // Admin can pause individual user from receiving ANY bonus
+    user_bonus_paused: {
+        type: Boolean,
+        default: false,
+    },
+    // Reason admin paused this user's bonus
+    user_bonus_pause_reason: {
+        type: String,
+        default: '',
+    },
+    // Date when bonus was paused
+    user_bonus_paused_at: {
+        type: Date,
+        default: null,
+    },
     acct_balance: {
         type: Number,
         default: 0.0,

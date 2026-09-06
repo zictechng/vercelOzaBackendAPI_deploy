@@ -11,7 +11,11 @@ const BillsTransaction = require('../models/BillsTransaction');
 const BillsServiceStatus = require('../models/BillsServiceStatus');
 const FundTransfer = require('../models/fundTransfer');
 const { creditCoins } = require('./rewardsService');
-const { processReferralBonus, processPromoterBonus } = require('./referralService');
+const { processPromoterBonus } = require('./referralService');
+const {
+  processSignupBonus,
+  processReferralBonus: processReferralBonusNew,
+} = require('./bonusService');
 const sendEmail = require('./emailService');
 const { getAppSettings } = require('./appSettingService');
 
@@ -474,19 +478,32 @@ const finalizeBillTransaction = async ({
   }
 
   // 4. Process one-time referral bonus — non-blocking
+    // 4. Process signup bonus activation — non-blocking
   try {
-    await processReferralBonus({
+    await processSignupBonus({
+      userId,
+      serviceType: service_type,
+      amount,
+      reference,
+    });
+  } catch (signupBonusError) {
+    console.log('Signup bonus error:', signupBonusError.message);
+  }
+
+  // 5. Process one-time referral bonus — non-blocking
+  try {
+    await processReferralBonusNew({
       buyerUserId: userId,
       buyerTagId: tag_id,
-      purchaseAmount: amount,
-      serviceTitle: service_title,
+      serviceType: service_type,
+      amount,
       reference,
     });
   } catch (referralError) {
     console.log('Referral bonus error:', referralError.message);
   }
 
-  // 5. Process promoter commission — non-blocking
+  // 6. Process promoter commission — non-blocking
   try {
     await processPromoterBonus({
       buyerUserId: userId,
