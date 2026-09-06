@@ -579,6 +579,112 @@ const unpauseUserBonus = async ({ userId, adminName }) => {
   }
 }
 
+// ------------------------------------------------
+// Admin: Pause individual user COMMISSION earning
+// Only blocks ongoing + promoter commission
+// Does NOT block: referral bonus, signup bonus, coins
+// ------------------------------------------------
+const pauseUserCommission = async ({ userId, reason }) => {
+  try {
+    const user = await User.findById(userId)
+    if (!user) return { success: false, message: 'User not found' }
+
+    await User.findByIdAndUpdate(userId, {
+      user_commission_paused: true,
+      user_commission_pause_reason: reason || 'Paused by admin',
+      user_commission_paused_at: new Date(),
+    })
+
+    // Send email
+    if (user.receive_email_notification) {
+      sendBonusEmail({
+        userEmail: user.email,
+        userName: user.display_name,
+        subject: 'Important: Your Commission Earnings Have Been Paused',
+        message: `
+          <p>We are writing to inform you that your ongoing commission earnings have been temporarily paused.</p>
+          <div style="background:#fff;border-radius:8px;padding:16px;margin:16px 0;border:1px solid #e5e7eb;border-left:4px solid #F59E0B;">
+            <p style="margin:8px 0;"><strong>Reason:</strong> ${reason || 'Under review'}</p>
+            <p style="margin:8px 0;"><strong>Effective Date:</strong> ${new Date().toLocaleDateString()}</p>
+          </div>
+          <p>During this period you will not receive ongoing commission from your referred users' transactions.</p>
+          <p>Your referral bonus, signup bonus and coins earning are not affected.</p>
+          <p>If you believe this is an error please contact our support team via your account dashboard.</p>
+        `,
+      }).catch(err => console.log('Pause commission email error:', err.message))
+    }
+
+    // In-app notification
+    if (user.receive_app_message) {
+      await Notification.create({
+        alert_username: user.email,
+        alert_name: user.display_name,
+        alert_date: new Date(),
+        alert_user_id: user._id,
+        alert_nature: `⚠️ Commission Paused\nYour ongoing commission earnings have been temporarily paused. Reason: ${reason || 'Under review'}. Contact support for assistance.`,
+        alert_status: 1,
+        alert_read_date: '',
+      })
+    }
+
+    return { success: true, message: 'User commission paused successfully' }
+  } catch (error) {
+    console.log('pauseUserCommission error:', error.message)
+    return { success: false, message: error.message }
+  }
+}
+
+// ------------------------------------------------
+// Admin: Restore individual user COMMISSION earning
+// ------------------------------------------------
+const unpauseUserCommission = async ({ userId }) => {
+  try {
+    const user = await User.findById(userId)
+    if (!user) return { success: false, message: 'User not found' }
+
+    await User.findByIdAndUpdate(userId, {
+      user_commission_paused: false,
+      user_commission_pause_reason: '',
+      user_commission_paused_at: null,
+    })
+
+    // Send email
+    if (user.receive_email_notification) {
+      sendBonusEmail({
+        userEmail: user.email,
+        userName: user.display_name,
+        subject: '✅ Your Commission Earnings Have Been Restored',
+        message: `
+          <p>Good news! Your ongoing commission earnings have been restored.</p>
+          <div style="background:#fff;border-radius:8px;padding:16px;margin:16px 0;border:1px solid #e5e7eb;border-left:4px solid #10B981;">
+            <p style="margin:8px 0;"><strong>Status:</strong> Active</p>
+            <p style="margin:8px 0;"><strong>Effective Date:</strong> ${new Date().toLocaleDateString()}</p>
+          </div>
+          <p>You will now receive ongoing commission from your referred users' transactions as usual.</p>
+        `,
+      }).catch(err => console.log('Unpause commission email error:', err.message))
+    }
+
+    // In-app notification
+    if (user.receive_app_message) {
+      await Notification.create({
+        alert_username: user.email,
+        alert_name: user.display_name,
+        alert_date: new Date(),
+        alert_user_id: user._id,
+        alert_nature: `✅ Commission Restored\nYour ongoing commission earnings have been restored. You will now receive commission from your referred users' transactions.`,
+        alert_status: 1,
+        alert_read_date: '',
+      })
+    }
+
+    return { success: true, message: 'User commission restored successfully' }
+  } catch (error) {
+    console.log('unpauseUserCommission error:', error.message)
+    return { success: false, message: error.message }
+  }
+}
+
 module.exports = {
   checkUserBonusEligibility,
   checkTransactionQualifies,
@@ -586,4 +692,6 @@ module.exports = {
   processReferralBonus,
   pauseUserBonus,
   unpauseUserBonus,
+  pauseUserCommission,
+  unpauseUserCommission,
 }

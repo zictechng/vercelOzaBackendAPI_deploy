@@ -26,6 +26,30 @@ const Notification = require('../models/NotificationAlert');
 const { getAppSettings } = require('./appSettingService');
 const { checkUserBonusEligibility } = require('./bonusService');
 
+
+// ------------------------------------------------
+// Check if user commission is paused individually
+// Different from bonus pause — only blocks commission
+// ------------------------------------------------
+const checkUserCommissionEligibility = async (userId) => {
+  try {
+    const user = await User.findById(userId).select(
+      'user_commission_paused user_commission_pause_reason display_name'
+    )
+    if (!user) return { eligible: false, reason: 'User not found' }
+    if (user.user_commission_paused) {
+      return {
+        eligible: false,
+        reason: user.user_commission_pause_reason || 'Commission paused by admin',
+      }
+    }
+    return { eligible: true }
+  } catch (error) {
+    console.log('checkUserCommissionEligibility error:', error.message)
+    return { eligible: true } // fail open
+  }
+}
+
 // ------------------------------------------------
 // TYPE 1 — One-time referral bonus
 // DEPRECATED: Moved to bonusService.js
@@ -160,39 +184,59 @@ const processPromoterBonus = async ({
   reference,
 }) => {
   try {
-    // Check if promoter bonus is enabled
-    const appSettings = await AppSetting.findOne();
+    // Check master rewards toggle
+    const rewardsSettings = await RewardsSettings.findOne()
+    if (!rewardsSettings?.rewards_active) {
+      return { success: true, skipped: true, reason: 'Rewards system inactive' }
+    }
+
+    // Check commission-specific toggle
+    if (!rewardsSettings?.commission_active) {
+      return { success: true, skipped: true, reason: 'Commission earning paused globally' }
+    }
+
+    // Check promoter commission toggle
+    if (!rewardsSettings?.promoter_commission_active) {
+      return { success: true, skipped: true, reason: 'Promoter commission paused globally' }
+    }
+
+    // Also check AppSetting promoter bonus toggle
+    const appSettings = await AppSetting.findOne()
     if (!appSettings?.app_promoter_bonus) {
-      return { success: true, skipped: true, reason: 'Promoter bonus disabled' };
+      return { success: true, skipped: true, reason: 'Promoter bonus disabled in app settings' }
     }
 
     // Get buyer and check if they have a promoter
-    const buyer = await User.findById(buyerUserId);
+    const buyer = await User.findById(buyerUserId)
     if (!buyer?.promoter_tag_id) {
-      return { success: true, skipped: true, reason: 'Buyer has no promoter' };
+      return { success: true, skipped: true, reason: 'Buyer has no promoter' }
     }
 
     // Get promoter user
-        // Get promoter user
     const promoter = await User.findOne({
       tag_id: buyer.promoter_tag_id,
       business_promoter: true,
-    });
+    })
     if (!promoter) {
-      return { success: true, skipped: true, reason: 'Promoter not found or inactive' };
+      return { success: true, skipped: true, reason: 'Promoter not found or inactive' }
     }
 
-    // Check promoter individual eligibility
-    const promoterEligibility = await checkUserBonusEligibility(promoter._id);
-    if (!promoterEligibility.eligible) {
-      return { success: true, skipped: true, reason: `Promoter bonus paused: ${promoterEligibility.reason}` };
+    // Check promoter individual commission pause
+    const commissionEligibility = await checkUserCommissionEligibility(promoter._id)
+    if (!commissionEligibility.eligible) {
+      return { success: true, skipped: true, reason: `Promoter commission paused: ${commissionEligibility.reason}` }
+    }
+
+    // Check promoter full verification
+    const bonusEligibility = await checkUserBonusEligibility(promoter._id)
+    if (!bonusEligibility.eligible) {
+      return { success: true, skipped: true, reason: `Promoter not eligible: ${bonusEligibility.reason}` }
     }
 
     // Get promoter rate from RewardsSettings
-    const rewardsSettings = await RewardsSettings.findOne();
-    const promoterRate = Number(rewardsSettings?.business_promoter_rate || 0);
+    const promoterRate = Number(rewardsSettings?.business_promoter_rate || 0)
     if (promoterRate <= 0) {
-      return { success: true, skipped: true, reason: 'Promoter rate is zero' };
+      return { success: true, skipped: true, reason: 'Promoter rate is zero' }
     }
 
     // Calculate commission

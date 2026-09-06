@@ -44,8 +44,25 @@ const rewardsSettingsSchema = new mongoose.Schema(
       type: Number,
       default: 100,
     },
-    // Is rewards system active
+    // Master rewards toggle — if OFF nothing works
     rewards_active: {
+      type: Boolean,
+      default: true,
+    },
+    // Coins earning toggle — independent from commission
+    // Admin can stop coins without stopping commission
+    coins_active: {
+      type: Boolean,
+      default: true,
+    },
+    // Ongoing commission toggle — independent from coins
+    // Admin can stop commission without stopping coins
+    commission_active: {
+      type: Boolean,
+      default: true,
+    },
+    // Promoter commission toggle
+    promoter_commission_active: {
       type: Boolean,
       default: true,
     },

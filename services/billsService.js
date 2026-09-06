@@ -20,6 +20,7 @@ const sendEmail = require('./emailService');
 const { getAppSettings } = require('./appSettingService');
 
 
+
 // Generate unique transaction reference
 const generateReference = (prefix = 'BILL') => {
   const timestamp = Date.now();
@@ -490,7 +491,20 @@ const finalizeBillTransaction = async ({
     console.log('Signup bonus error:', signupBonusError.message);
   }
 
+  // 4. Process signup bonus activation — non-blocking
+  try {
+    await processSignupBonus({
+      userId,
+      serviceType: service_type,
+      amount,
+      reference,
+    })
+  } catch (signupError) {
+    console.log('Signup bonus error:', signupError.message)
+  }
+
   // 5. Process one-time referral bonus — non-blocking
+  // Uses new bonusService with all safety checks
   try {
     await processReferralBonusNew({
       buyerUserId: userId,
@@ -498,9 +512,9 @@ const finalizeBillTransaction = async ({
       serviceType: service_type,
       amount,
       reference,
-    });
+    })
   } catch (referralError) {
-    console.log('Referral bonus error:', referralError.message);
+    console.log('Referral bonus error:', referralError.message)
   }
 
   // 6. Process promoter commission — non-blocking
@@ -511,12 +525,12 @@ const finalizeBillTransaction = async ({
       purchaseAmount: amount,
       serviceTitle: service_title,
       reference,
-    });
+    })
   } catch (promoterError) {
-    console.log('Promoter bonus error:', promoterError.message);
+    console.log('Promoter bonus error:', promoterError.message)
   }
 
-  // 6. Send email notification — non-blocking
+  // 7. Send email notification — non-blocking
   try {
     if (user?.email) {
       await sendBillPaymentEmail({

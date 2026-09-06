@@ -1623,6 +1623,7 @@ router.post("/update_appStatus", isAuth, async (req, res, next) => {
         app_stop_login_status: req.body.appLogin_status,
         app_mode_message: req.body.appMode_message,
         app_referral_percent: req.body.referral_percent,
+        app_promoter_bonus: req.body.promoter_bonus_status,
         
         //user_policy
         });
@@ -1659,8 +1660,10 @@ router.post("/update_appStatus", isAuth, async (req, res, next) => {
           app_stop_login_status: req.body.appLogin_status,
           app_mode_message: req.body.appMode_message,
           app_referral_percent: req.body.referral_percent,
-        },
-      }
+          app_promoter_bonus: req.body.promoter_bonus_status,
+          app_textEditor_key: req.body.textEditorKey,
+            },
+        }
       const updateRead = await AppSetting.updateOne({}, updateDoc);
       if(updateRead.modifiedCount == 1) {
           res.send({ msg: '201', message: ' Record updated successfully'})

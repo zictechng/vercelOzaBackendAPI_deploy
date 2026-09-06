@@ -169,23 +169,98 @@ router.get('/admin/coins/history', isAuth, async (req, res) => {
   }
 });
 
+// -------------------------------------------------
 // POST /api/rewards_settings/update
-// Admin updates rewards settings
+// Admin updates rewards configuration
+// -------------------------------------------------
 router.post('/rewards_settings/update', isAuth, async (req, res) => {
   try {
-    let settings = await RewardsSettings.findOne();
-    if (!settings) {
-      settings = await RewardsSettings.create(req.body);
-    } else {
-      Object.assign(settings, req.body);
-      await settings.save();
+    const updateDoc = {
+      $set: {
+        digital_services_coin_rate: Number(req.body.digital_services_coin_rate || 2),
+        buy_sell_coin_rate: Number(req.body.buy_sell_coin_rate || 1),
+        general_referral_rate: Number(req.body.general_referral_rate || 1),
+        business_promoter_rate: Number(req.body.business_promoter_rate || 2),
+        coin_ngn_value: Number(req.body.coin_ngn_value || 1),
+        coin_usd_value: Number(req.body.coin_usd_value || 0.001),
+        min_redeem_coins: Number(req.body.min_redeem_coins || 100),
+        rewards_active: Boolean(req.body.rewards_active),
+        coins_active: Boolean(req.body.coins_active),
+        commission_active: Boolean(req.body.commission_active),
+        promoter_commission_active: Boolean(req.body.promoter_commission_active),
+        quarterly_reward_active: Boolean(req.body.quarterly_reward_active),
+        annual_reward_active: Boolean(req.body.annual_reward_active),
+        quarterly_reward_desc: req.body.quarterly_reward_desc || '',
+        annual_reward_desc: req.body.annual_reward_desc || '',
+        last_updated_by: 'admin',
+      },
     }
-    return res.json({ msg: '200', status: '200', message: 'Rewards settings updated successfully.' });
+
+    let settings = await RewardsSettings.findOne()
+    if (!settings) {
+      settings = await RewardsSettings.create({})
+    }
+    await RewardsSettings.updateOne({}, updateDoc)
+
+    return res.json({
+      msg: '200',
+      status: '200',
+      message: 'Rewards settings updated successfully.',
+    })
   } catch (error) {
-    console.log('Update rewards settings error:', error.message);
-    return res.json({ msg: '400', status: '400', message: 'Could not update rewards settings.' });
+    console.log('Rewards settings update error:', error.message)
+    return res.json({ msg: '400', status: '400', message: 'Could not update rewards settings.' })
   }
-});
+})
+
+// -------------------------------------------------
+// POST /api/user/commission_pause
+// Admin pause or restore individual user commission
+// Does NOT affect referral bonus or signup bonus
+// -------------------------------------------------
+router.post('/user/commission_pause', isAuth, async (req, res) => {
+  try {
+    const { user_id, action, reason } = req.body
+    if (!user_id) return res.json({ msg: '400', message: 'User ID required.' })
+
+    const user = await User.findById(user_id)
+    if (!user) return res.json({ msg: '404', message: 'User not found.' })
+
+    const { pauseUserCommission, unpauseUserCommission } = require('../services/bonusService')
+
+    if (action === 'pause') {
+      if (!reason?.trim()) return res.json({ msg: '400', message: 'Reason is required.' })
+      const result = await pauseUserCommission({ userId: user_id, reason })
+      if (result.success) return res.json({ msg: '200', message: 'User commission paused.' })
+      return res.json({ msg: '400', message: result.message })
+    } else if (action === 'restore') {
+      const result = await unpauseUserCommission({ userId: user_id })
+      if (result.success) return res.json({ msg: '200', message: 'User commission restored.' })
+      return res.json({ msg: '400', message: result.message })
+    }
+
+    return res.json({ msg: '400', message: 'Invalid action.' })
+  } catch (error) {
+    console.log('user/commission_pause error:', error.message)
+    return res.json({ msg: '400', message: 'Could not process request.' })
+  }
+})
+
+// -------------------------------------------------
+// GET /api/rewards_settings/full
+// Get full rewards settings including all toggles
+// Admin only
+// -------------------------------------------------
+router.get('/rewards_settings/full', isAuth, async (req, res) => {
+  try {
+    let settings = await RewardsSettings.findOne()
+    if (!settings) settings = await RewardsSettings.create({})
+    return res.json({ msg: '200', status: '200', settings })
+  } catch (error) {
+    console.log('Rewards settings full error:', error.message)
+    return res.json({ msg: '400', status: '400', message: 'Could not fetch settings.' })
+  }
+})
 
 
 

@@ -132,8 +132,8 @@ const userSchema = new mongoose.Schema({
         default: false,
     },
 
-    // ── Individual Bonus Control
     // Admin can pause individual user from receiving ANY bonus
+    // This blocks: signup bonus, referral bonus
     user_bonus_paused: {
         type: Boolean,
         default: false,
@@ -148,6 +148,25 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: null,
     },
+    
+    // Admin can pause individual user from earning commission
+    // This blocks: ongoing commission + promoter commission
+    // Does NOT block: referral bonus, signup bonus, coins
+    user_commission_paused: {
+        type: Boolean,
+        default: false,
+    },
+    // Reason admin paused this user's commission
+    user_commission_pause_reason: {
+        type: String,
+        default: '',
+    },
+    // Date when commission was paused
+    user_commission_paused_at: {
+        type: Date,
+        default: null,
+    },
+    
     acct_balance: {
         type: Number,
         default: 0.0,

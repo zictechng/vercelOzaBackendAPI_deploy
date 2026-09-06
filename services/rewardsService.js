@@ -30,7 +30,16 @@ const creditCoins = async ({
 }) => {
   try {
     const settings = await getRewardsSettings();
-    if (!settings.rewards_active) return { success: true, coins: 0 };
+
+    // Check master rewards toggle first
+    if (!settings.rewards_active) {
+      return { success: true, coins: 0, skipped: true, reason: 'Rewards system inactive' }
+    }
+
+    // Check coins-specific toggle independently
+    if (!settings.coins_active) {
+      return { success: true, coins: 0, skipped: true, reason: 'Coins earning paused by admin' }
+    }
 
     // Calculate coins based on source type
     let rate = 0;
