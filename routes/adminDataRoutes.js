@@ -4216,130 +4216,61 @@ router.get("/search_referral_pagination", isAuth, async (req, res) => {
 });
 
 // approve referral bonus amount and credit user wallet here..
+// GET /api/approveReferral_bonus/:id
+// Admin manually triggers referral bonus for edge cases
+// Uses new bonusService with all safety checks
 router.get("/approveReferral_bonus/:id", isAuth, async (req, res) => {
 
   let recordId = req.params.id;
-  //console.log("data ", req.params.id)
 
   if(recordId == '' || recordId == null){
-    return res.json({status: 404, message: ' Record ID not found'})
+    return res.json({status: 404, message: 'Record ID not found'})
   }
-
   try {
+    const { processReferralBonus } = require('../services/bonusService')
 
-    //get all user count details
+    // Get referral record
     const checkReferral = await Referrals.findOne({_id: recordId });
-        if(!checkReferral){
-        return res.json({ status: 404, message: ' No results found, try again'})
-        }
-        //console.log(checkReferral)
-        if(checkReferral.ref_status == 'Successful' || checkReferral.ref_status == 'Approved'){
-          return res.json({ status: 404, message: ' Referral bonus already added'})
-          }
-      // // get user details
-      const checkUser = await User.findOne({email: checkReferral.ref_mainEmail });
-      //console.log(checkUser)
-      if(!checkUser){
-        return res.json({ status: 404, message: ' User details not found' });
-      }
-      // // get current trade rates
-      const checkTradeRate = await GetRate.findOne();
-      
-      let addAmount = parseInt(checkTradeRate.bonus_rate) * parseInt(checkTradeRate.paypal_buying);
-      //console.log(addAmount)
 
-      const NowCurrentBal = checkUser.amount+ +addAmount
+        // Get referral record
+    if (!checkReferral) {
+      return res.json({ msg: '404', message: 'Referral record not found' })
+    }
 
-      if(checkUser){
-        const filterUser = { _id: checkUser._id };
-        const filterReferral = { _id: recordId };
-        
-        const updateReferralStatus = {
-          $set: {
-            ref_status: 'Approved',
-            ref_approvedDate: Date.now()
-          },
-        };
+    if (checkReferral.ref_status === 'Approved') {
+      return res.json({ msg: '400', message: 'Referral bonus already approved' })
+    }
 
-        const updateUserBalance = {
-          $set: {
-            amount: NowCurrentBal,
-          },
-        };
+    // Get the referred user (buyer) to trigger bonus
+    const buyer = await User.findOne({ email: checkReferral.ref_userEmail })
+    if (!buyer) {
+      return res.json({ msg: '404', message: 'Referred user not found' })
+    }
 
-        const updateUserBal = await User.updateOne(filterUser, updateUserBalance);
-        const updateRef = await Referrals.updateOne(filterReferral, updateReferralStatus);
+    // Use bonusService with all safety checks
+    // This checks: global toggle, verification, eligibility,
+    // qualification — all in one place
+    const result = await processReferralBonus({
+      buyerUserId: buyer._id,
+      buyerTagId: buyer.tag_id,
+      serviceType: 'paypal', // admin override uses paypal as qualifying type
+      amount: 999999999,     // admin override bypasses amount check
+      reference: `ADMIN-${recordId}-${Date.now()}`,
+    })
 
+    if (result.success && result.credited) {
+      return res.json({ msg: '201', message: 'Referral bonus approved and credited successfully' })
+    } else if (result.skipped) {
+      return res.json({ msg: '400', message: result.reason || 'Bonus could not be credited' })
+    } else {
+      return res.json({ msg: '400', message: result.message || 'Failed to process bonus' })
+    }
 
-      const addLogs = await SystemActivity.create({
-        log_username: checkUser.email,
-        log_name: checkUser.display_name,
-        log_acct_number: checkUser.tag_id,
-        log_receiver_name: '',
-        log_receiver_number: '',
-        log_receiver_bank: '',
-        log_country: '',
-        log_swift_code: '',
-        log_desc:'Admin staff approved user referral bonus request',
-        log_amt: '',
-        log_status: 'Successful',
-        log_nature:'Bonus fund Approved',
-       })
-
-       // check if user enabled in-app notifications and send notification
-      if(checkUser.receive_app_message == true) {
-        const userLogs = Notification.create({
-        alert_username: checkUser.display_name,
-        alert_name: checkUser.display_name,
-        alert_user_ip: '',
-        alert_country: '',
-        alert_browser: '',
-        alert_date:  Date.now(),
-        alert_user_id: checkUser._id,
-        alert_nature: `Referral Bonus Approved \n Note: this is to notify you that your referral bonus funds has been approved and your account has be credited with the sum of
-        \u20A6${new Intl.NumberFormat().format(addAmount)} \n\n for your hard work by sharing your referral ID! \n\n Keep referring to keep earning...`,
-        alert_status: 1,
-        alert_read_date: ''
-        })
-      }
-
-      // send email to the account owner
-      if(checkUser.receive_email_notification == true){
-        fetchApp().then((result) => {
-          appName = result.app_name
-          appLogo = result.app_logo
-          const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-
-          const mailBody = loginEmail(appName, 'Referral Bonus Approved', checkUser.display_name, `this is to notify you that your referral bonus funds has been approved and your account has be credited with the sum of \n\n
-          <b>\u20A6${new Intl.NumberFormat().format(addAmount)}</b> for your hard work for sharing your referral Tag ID <br>
-          </b><br>  Keep it up and keep referring your friends, loves one to continue earning... <br>
-          Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`, logoImage)
-          
-          const mailText = loginText(checkUser.display_name, `this is to notify you that your referral bonus funds has been approved and your account has be credited with the sum of \n\n
-          <b>\u20A6${new Intl.NumberFormat().format(addAmount)}</b> for your hard work for sharing your referral Tag ID <br>
-          </b><br>  Keep it up and keep referring your friends, loves one to continue earning... <br>
-          Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
-          let account_issueEMail = {
-            from: `${appName} <noreply@ozaapp.com>`,
-            to: checkUser.email,
-            subject: 'Funds Credit Notification!',
-            text: mailText,
-            html: mailBody,
-          }
-          async function main() {
-          const info = await transporterMailer.sendMail(account_issueEMail);
-              }
-          main().catch('Message Error', console.error);
-          }).catch(console.error.bind(console))
-      }
-      
-      res.send({ msg: '201', feedAll: true })
-      }
-    } catch (err) {
-    res.status(500).json(err.message);
-    console.log(err.message);
+  } catch (err) {
+    console.log('approveReferral_bonus error:', err.message)
+    res.status(500).json({ msg: '500', message: err.message })
   }
-});
+})
 
 router.get("/allPayPal_sales", isAuth, async (req, res) => {
   //console.log("My ID", userId);

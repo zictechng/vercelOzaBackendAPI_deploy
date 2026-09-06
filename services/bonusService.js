@@ -55,22 +55,50 @@ const BILL_TO_BONUS_SERVICE_MAP = {
 const checkUserBonusEligibility = async (userId) => {
   try {
     const user = await User.findById(userId).select(
-      'user_bonus_paused user_bonus_pause_reason display_name email'
+      'user_bonus_paused user_bonus_pause_reason display_name email ' +
+      'reg_stage1 reg_stage2 reg_stage3 reg_stage4 acct_approved_status'
     )
     if (!user) return { eligible: false, reason: 'User not found' }
+
+    // Check 1 — individual bonus pause by admin
     if (user.user_bonus_paused) {
       return {
         eligible: false,
         reason: user.user_bonus_pause_reason || 'Bonus paused by admin',
       }
     }
+
+    // Check 2 — full account verification required
+    // ALL stages must be complete AND KYC approved
+    const isFullyVerified = (
+      user.reg_stage1 === 'Yes' &&
+      user.reg_stage2 === 'Yes' &&
+      user.reg_stage3 === 'Yes' &&
+      user.reg_stage4 === 'Yes' &&
+      user.acct_approved_status === 'Approved'
+    )
+
+    if (!isFullyVerified) {
+      // Identify which stage is incomplete for logging
+      let missingStep = ''
+      if (user.reg_stage1 !== 'Yes') missingStep = 'account not activated'
+      else if (user.reg_stage2 !== 'Yes') missingStep = 'profile not completed'
+      else if (user.reg_stage3 !== 'Yes') missingStep = 'profile photo not uploaded'
+      else if (user.reg_stage4 !== 'Yes') missingStep = 'KYC document not uploaded'
+      else if (user.acct_approved_status !== 'Approved') missingStep = 'KYC not approved by admin'
+
+      return {
+        eligible: false,
+        reason: `Account not fully verified — ${missingStep}`,
+      }
+    }
+
     return { eligible: true }
   } catch (error) {
     console.log('checkUserBonusEligibility error:', error.message)
-    return { eligible: true } // fail open — don't block on error
+    return { eligible: true } // fail open — never block transaction
   }
 }
-
 // ------------------------------------------------
 // Check if a transaction qualifies for bonus
 // serviceType: 'airtime' | 'paypal' | etc
@@ -327,6 +355,17 @@ const processReferralBonus = async ({
     const conversionRate = Number(settings.referral_bonus_conversion_rate || 0)
     if (bonusUsd <= 0 || conversionRate <= 0) {
       return { success: true, skipped: true, reason: 'Referral bonus amount or rate not configured' }
+    }
+
+    // Check buyer verification — buyer must be fully verified
+    // before their transaction can trigger referral bonus
+    const buyerEligibility = await checkUserBonusEligibility(buyerUserId)
+    if (!buyerEligibility.eligible) {
+      return {
+        success: true,
+        skipped: true,
+        reason: `Buyer not eligible: ${buyerEligibility.reason}`,
+      }
     }
 
     // Find pending referral for this buyer
