@@ -4451,4 +4451,62 @@ router.get("/user_acct_summary/:id", async (req, res) => {
 
 
 
+// POST /api/update_bonusConfig
+// Admin updates bonus configuration
+router.post('/update_bonusConfig', isAuth, async (req, res) => {
+  try {
+    const updateDoc = {
+      $set: {
+        signup_bonus_usd_amount: Number(req.body.signup_bonus_usd_amount || 0),
+        signup_bonus_conversion_rate: Number(req.body.signup_bonus_conversion_rate || 0),
+        signup_bonus_min_txn_amount: Number(req.body.signup_bonus_min_txn_amount || 0),
+        signup_bonus_qualify_services: req.body.signup_bonus_qualify_services || [],
+        referral_bonus_usd_amount: Number(req.body.referral_bonus_usd_amount || 0),
+        referral_bonus_conversion_rate: Number(req.body.referral_bonus_conversion_rate || 0),
+        referral_bonus_min_txn_amount: Number(req.body.referral_bonus_min_txn_amount || 0),
+        referral_bonus_qualify_services: req.body.referral_bonus_qualify_services || [],
+      },
+    }
+    await AppSetting.updateOne({}, updateDoc)
+    return res.json({ msg: '201', message: 'Bonus configuration updated successfully.' })
+  } catch (error) {
+    console.log('update_bonusConfig error:', error.message)
+    return res.json({ msg: '400', message: 'Failed to update bonus configuration.' })
+  }
+})
+
+
+// POST /api/user/bonus_pause
+// Admin pause or restore individual user bonus earning
+router.post('/user/bonus_pause', isAuth, async (req, res) => {
+  try {
+    const { user_id, action, reason } = req.body
+    if (!user_id) return res.json({ msg: '400', message: 'User ID required.' })
+
+    const user = await User.findById(user_id)
+    if (!user) return res.json({ msg: '404', message: 'User not found.' })
+
+    const { pauseUserBonus, unpauseUserBonus } = require('../services/bonusService')
+
+    if (action === 'pause') {
+      if (!reason?.trim()) return res.json({ msg: '400', message: 'Reason is required to pause bonus.' })
+      const result = await pauseUserBonus({ userId: user_id, reason })
+      if (result.success) return res.json({ msg: '200', message: 'User bonus paused successfully.' })
+      return res.json({ msg: '400', message: result.message })
+    } else if (action === 'restore') {
+      const result = await unpauseUserBonus({ userId: user_id })
+      if (result.success) return res.json({ msg: '200', message: 'User bonus restored successfully.' })
+      return res.json({ msg: '400', message: result.message })
+    }
+
+    return res.json({ msg: '400', message: 'Invalid action.' })
+  } catch (error) {
+    console.log('user/bonus_pause error:', error.message)
+    return res.json({ msg: '400', message: 'Could not process request.' })
+  }
+})
+
+
+
+
 module.exports = router;
