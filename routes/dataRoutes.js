@@ -1783,4 +1783,38 @@ router.post("/system_setup", upload.single("file"), async (req, res) => {
   }
 });
 
-  module.exports = router;
+
+
+// GET /api/user_tickets/:userId
+// Get all tickets submitted by a specific user with pagination
+router.get("/user_tickets/:userId", isAuth, async (req, res) => {
+  const { userId } = req.params;
+  const page = parseInt(req.query.page) || 1;
+  const pageSize = parseInt(req.query.pageSize) || 10;
+  const skip = (page - 1) * pageSize;
+
+  if (!userId) return res.json({ status: 404, message: 'User ID required' });
+  try {
+    const totalRecord = await Ticket.countDocuments({ createdBy: userId });
+    const tickets = await Ticket.find({ createdBy: userId })
+      .sort({ createdOn: -1 })
+      .skip(skip)
+      .limit(pageSize);
+
+    const totalPages = Math.ceil(totalRecord / pageSize);
+    return res.json({
+      msg: '201',
+      feedAll: tickets,
+      totalRecord,
+      totalPage: totalPages,
+      currentPage: page,
+    });
+  } catch (err) {
+    console.log('user_tickets error:', err.message);
+    return res.status(500).json({ msg: '400', message: err.message });
+  }
+});
+
+
+
+module.exports = router;

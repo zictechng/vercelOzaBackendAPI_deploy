@@ -166,6 +166,16 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: null,
     },
+
+    // Password reset OTP fields
+    reset_password_otp: {
+        type: String,
+        default: '',
+    },
+    reset_password_otp_expiry: {
+        type: Date,
+        default: null,
+    },
     
     acct_balance: {
         type: Number,

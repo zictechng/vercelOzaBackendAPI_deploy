@@ -282,8 +282,6 @@ router.post("/register", async (req, res, next) => {
         }
   });
 
-
-
 // delete image when error is occurred  during upload
   router.post("/deleteUploaded_image", isAuth, async (req, res) => {
     try {
@@ -1264,5 +1262,116 @@ router.post("/verify_reset_password", async (req, res, next) => {
         console.log("Error Message", error);
     }
   });
+
+
+
+// POST /api/forgot_password
+// Send OTP to user email for password reset
+router.post('/forgot_password', async (req, res) => {
+  try {
+    const { email } = req.body
+    if (!email) return res.json({ msg: '400', message: 'Email is required' })
+
+    const user = await User.findOne({ email })
+    if (!user) return res.json({ msg: '404', message: 'No account found with this email address' })
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString()
+    const otpExpiry = new Date(Date.now() + 30 * 60 * 1000) // 30 mins
+
+    // Save OTP to user
+    await User.updateOne({ email }, {
+      $set: {
+        reset_password_otp: otp,
+        reset_password_otp_expiry: otpExpiry,
+      }
+    })
+
+    // Send email
+    try {
+      const appSettings = await fetchApp()
+      const appName = appSettings?.app_name || 'Support'
+      const appLogo = appSettings?.app_logo || ''
+
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: #4C5FD5; padding: 24px; border-radius: 12px 12px 0 0; text-align: center;">
+            ${appLogo ? `<img src="${appLogo}" alt="${appName}" style="height: 48px; margin-bottom: 12px;" />` : ''}
+            <h2 style="color: #fff; margin: 0;">${appName}</h2>
+          </div>
+          <div style="background: #f9f9f9; padding: 24px; border-radius: 0 0 12px 12px;">
+            <p>Hi <strong>${user.display_name}</strong>,</p>
+            <p>We received a request to reset your password. Use the OTP below:</p>
+            <div style="text-align: center; margin: 32px 0;">
+              <div style="display: inline-block; background: #4C5FD5; color: white; font-size: 36px; font-weight: 800; letter-spacing: 8px; padding: 16px 32px; border-radius: 12px;">
+                ${otp}
+              </div>
+            </div>
+            <p style="color: #666; font-size: 14px;">This OTP expires in <strong>30 minutes</strong>.</p>
+            <p style="color: #666; font-size: 14px;">If you did not request this, please ignore this email.</p>
+          </div>
+        </div>
+      `
+
+      const domain = appSettings?.app_baseurl?.replace(/https?:\/\//, '').split('/')[0] || 'ota.com'
+      await sendEmail({
+        from: { name: `${appName} Support`, email: `noreply@${domain}` },
+        to: [{ email }],
+        subject: `Password Reset OTP — ${appName}`,
+        html,
+        text: `Your password reset OTP is: ${otp}. It expires in 30 minutes.`,
+      })
+    } catch (emailErr) {
+      console.log('Forgot password email error:', emailErr.message)
+    }
+
+    return res.json({ msg: '201', message: 'Password reset OTP sent to your email' })
+  } catch (error) {
+    console.log('forgot_password error:', error.message)
+    return res.json({ msg: '400', message: 'Could not process request. Please try again.' })
+  }
+})
+
+// POST /api/reset_password
+// Verify OTP and reset password
+router.post('/reset_password', async (req, res) => {
+  try {
+    const { email, otp, new_password } = req.body
+    if (!email || !otp || !new_password) {
+      return res.json({ msg: '400', message: 'Email, OTP and new password are required' })
+    }
+
+    const user = await User.findOne({ email })
+    if (!user) return res.json({ msg: '404', message: 'Account not found' })
+
+    // Check OTP
+    if (user.reset_password_otp !== otp) {
+      return res.json({ msg: '400', message: 'Invalid OTP. Please check and try again.' })
+    }
+
+    // Check expiry
+    if (new Date() > new Date(user.reset_password_otp_expiry)) {
+      return res.json({ msg: '400', message: 'OTP has expired. Please request a new one.' })
+    }
+
+    // Hash new password
+    const hashedPwd = await bcrypt.hash(new_password, 10)
+
+    // Update password and clear OTP
+    await User.updateOne({ email }, {
+      $set: {
+        password: hashedPwd,
+        reset_password_otp: '',
+        reset_password_otp_expiry: null,
+      }
+    })
+
+    return res.json({ msg: '201', message: 'Password reset successfully. Please sign in.' })
+  } catch (error) {
+    console.log('reset_password error:', error.message)
+    return res.json({ msg: '400', message: 'Could not reset password. Please try again.' })
+  }
+})
+
 
   module.exports = router;
