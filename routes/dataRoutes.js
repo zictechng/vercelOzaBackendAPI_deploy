@@ -1816,5 +1816,55 @@ router.get("/user_tickets/:userId", isAuth, async (req, res) => {
 });
 
 
+// GET /api/user_transaction_summary/:id
+// Returns all-time approved transaction totals for a user
+router.get("/user_transaction_summary/:id", isAuth, async (req, res) => {
+  const userId = req.params.id;
+  try {
+    // Only count approved/completed transactions
+    const approvedStatuses = ['Completed', 'successful', 'Successful', 'approved', 'Approved'];
+
+    const allTx = await TransferFund.find({
+      createdBy: userId,
+      transaction_status: { $in: approvedStatuses },
+    });
+
+    // Total ₦ volume (all approved transactions)
+    const totalNairaVolume = allTx
+      .filter(t => t.sender_currency_type !== '$')
+      .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+
+    // Total credit ₦
+    const totalCredit = allTx
+      .filter(t => t.tran_type === 'Credit' && t.sender_currency_type !== '$')
+      .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+
+    // Total debit ₦
+    const totalDebit = allTx
+      .filter(t => t.tran_type === 'Debit' && t.sender_currency_type !== '$')
+      .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+
+    // Dollar volume ($ transactions only)
+    const totalDollar = allTx
+      .filter(t => t.sender_currency_type === '$')
+      .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+
+    // Also return raw count for reference
+    const totalCount = allTx.length;
+
+    return res.json({
+      msg: '201',
+      totalNairaVolume,
+      totalCredit,
+      totalDebit,
+      totalDollar,
+      totalCount,
+    });
+  } catch (err) {
+    return res.status(500).json({ msg: '400', message: err.message });
+  }
+});
+
+
 
 module.exports = router;
