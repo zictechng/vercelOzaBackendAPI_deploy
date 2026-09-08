@@ -618,6 +618,144 @@ const processPaymentDetails = async(data, paymentId) =>{
      }
   });
 
+
+// POST /api/verify_paystack_payment
+// Verifies PayStack payment and instantly credits user wallet
+router.post("/verify_paystack_payment", isAuth, async (req, res) => {
+  const { reference, userId, amt } = req.body;
+
+  if (!reference || !userId) {
+    return res.json({ status: 400, message: 'Reference and userId are required' });
+  }
+
+  try {
+    // Step 1 — Verify payment with PayStack API
+    const paystackRes = await fetch(
+      `https://api.paystack.com/transaction/verify/${reference}`,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    const paystackData = await paystackRes.json();
+
+    if (!paystackData.status || paystackData.data?.status !== 'success') {
+      return res.json({
+        status: 400,
+        message: 'Payment verification failed. Please contact support.',
+      });
+    }
+
+    // Step 2 — Get verified amount from PayStack (in kobo — divide by 100)
+    const verifiedAmount = paystackData.data.amount / 100;
+
+    // Step 3 — Find user
+    const userFund = await User.findOne({ _id: userId });
+    if (!userFund) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const Trans_ID = transactionID(25);
+
+    // Step 4 — Credit wallet instantly
+    const creditWallet = await User.findOneAndUpdate(
+      { _id: userId },
+      { $inc: { amount: verifiedAmount } },
+      { new: true }
+    );
+
+    // Step 5 — Create completed transaction record
+    await TransferFund.create({
+      acct_name: userFund.display_name,
+      acct_number: userFund.tag_id,
+      amount: verifiedAmount,
+      sender_name: userFund.display_name,
+      transac_category: 'Account Funding',
+      tran_type: 'Credit',
+      transac_nature: 'In-app funding',
+      createdBy: userFund._id,
+      tid: Trans_ID,
+      colorcode: 'green',
+      pay_tran: reference,
+      sender_acct_number: userFund.tag_id,
+      transaction_status: 'Completed',
+      creditOn: Date.now(),
+      createdOn: Date.now(),
+    });
+
+    // Step 6 — Create funding record
+    await FundUserAccount.create({
+      fund_name: userFund.display_name,
+      fund_number: Trans_ID,
+      fund_tag_id: userFund.tag_id,
+      amount: verifiedAmount,
+      fund_email: userFund.email,
+      fund_method: 'PayStack',
+      fund_status: 'Approved',
+    });
+
+    // Step 7 — Send notification
+    if (userFund.receive_app_message === true) {
+      await Notification.create({
+        alert_username: userFund.display_name,
+        alert_name: userFund.display_name,
+        alert_user_id: userFund._id,
+        alert_date: Date.now(),
+        alert_nature: `Your account has been funded with ₦${new Intl.NumberFormat().format(verifiedAmount)} via PayStack. Transaction ID: ${Trans_ID}`,
+        alert_status: 1,
+        alert_read_date: '',
+      });
+    }
+
+    // Step 8 — Process bonus and referral
+    await processSignupBonus(userFund, verifiedAmount, 'funding');
+    await processReferralBonus(userFund, verifiedAmount, 'funding');
+
+    // Step 9 — Send email notification
+    if (userFund.receive_email_notification === true) {
+      fetchApp().then((result) => {
+        const appName = result.app_name;
+        const appLogo = result.app_logo;
+        const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+        const mailBody = loginEmail(
+          appName,
+          'Account Funding Successful',
+          userFund.display_name,
+          `Your account has been credited with ₦${new Intl.NumberFormat().format(verifiedAmount)} via PayStack. Transaction ID: ${Trans_ID}`,
+          logoImage
+        );
+        const fundMailOptions = {
+          from: { name: `${appName} Payments`, email: '<noreply@ozaapp.com>' },
+          to: [{ email: userFund.email }],
+          subject: 'Account Funded Successfully!',
+          html: mailBody,
+        };
+        sendEmail(fundMailOptions).catch(err => {
+          console.error('Email error:', err.message);
+        });
+      }).catch(console.error.bind(console));
+    }
+
+    const { password, ...userDetails } = creditWallet._doc;
+
+    return res.status(200).json({
+      msg: '201',
+      message: 'Payment verified and wallet credited successfully',
+      feedback: Trans_ID,
+      userData: userDetails,
+    });
+
+  } catch (err) {
+    console.error('PayStack verification error:', err.message);
+    return res.status(500).json({ status: 500, message: 'Server error: ' + err.message });
+  }
+});
+
+
     // user request route to fund account goes here...
   router.post("/userAccount_funding", isAuth, async (req, res) => {
       const dataReceive = req.body;
