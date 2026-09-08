@@ -558,6 +558,97 @@ router.get("/user_chart_data/:id", isAuth, async (req, res) => {
 });
 
 
+// GET /api/user_wallet_chart/:id
+// Returns wallet balance history and monthly credit/debit for wallet page
+router.get("/user_wallet_chart/:id", isAuth, async (req, res) => {
+  const userId = req.params.id;
+  try {
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    const allTx = await TransferFund.find({
+      createdBy: userId,
+      creditOn: { $gte: sixMonthsAgo },
+      transaction_status: { $in: ['Completed', 'successful', 'Successful'] },
+    }).sort({ creditOn: 1 });
+
+    // Monthly credit vs debit
+    const monthlyData = {};
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const key = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      monthlyData[key] = { month: key, credit: 0, debit: 0, net: 0 };
+    }
+
+    allTx.forEach(tx => {
+      const key = new Date(tx.creditOn).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      if (monthlyData[key]) {
+        const amt = Number(tx.amount || 0);
+        if (tx.tran_type === 'Credit') {
+          monthlyData[key].credit += amt;
+          monthlyData[key].net += amt;
+        } else {
+          monthlyData[key].debit += amt;
+          monthlyData[key].net -= amt;
+        }
+      }
+    });
+
+    // Balance history — running balance over last 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const recentTx = await TransferFund.find({
+      createdBy: userId,
+      creditOn: { $gte: thirtyDaysAgo },
+      transaction_status: { $in: ['Completed', 'successful', 'Successful'] },
+    }).sort({ creditOn: 1 });
+
+    // Build daily balance trend
+    const dailyBalance = {};
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      dailyBalance[key] = { date: key, balance: 0, credit: 0, debit: 0 };
+    }
+
+    let runningBalance = 0;
+    recentTx.forEach(tx => {
+      const key = new Date(tx.creditOn).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const amt = Number(tx.amount || 0);
+      if (tx.tran_type === 'Credit') runningBalance += amt;
+      else runningBalance -= amt;
+      if (dailyBalance[key]) {
+        dailyBalance[key].balance = runningBalance > 0 ? runningBalance : 0;
+        if (tx.tran_type === 'Credit') dailyBalance[key].credit += amt;
+        else dailyBalance[key].debit += amt;
+      }
+    });
+
+    // Fill forward balance for days with no transactions
+    let lastBalance = 0;
+    Object.keys(dailyBalance).forEach(key => {
+      if (dailyBalance[key].balance === 0 && lastBalance > 0) {
+        dailyBalance[key].balance = lastBalance;
+      } else {
+        lastBalance = dailyBalance[key].balance;
+      }
+    });
+
+    return res.json({
+      msg: '201',
+      monthly: Object.values(monthlyData),
+      balanceHistory: Object.values(dailyBalance).filter((_, i) => i % 3 === 0), // every 3rd day
+    });
+  } catch (err) {
+    console.log('wallet chart error:', err.message);
+    return res.status(500).json({ msg: '400', message: err.message });
+  }
+});
+
+
 router.get("/all_userHistory/:id", isAuth, async (req, res) => {
   const userId = req.params.id;
   const itemsPerPage = 10; // Number of transactions per page
