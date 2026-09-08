@@ -631,7 +631,7 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
   try {
     // Step 1 — Verify payment with PayStack API
     const paystackRes = await fetch(
-      `https://api.paystack.com/transaction/verify/${reference}`,
+      `https://api.paystack.co/transaction/verify/${reference}`,
       {
         method: 'GET',
         headers: {
@@ -729,7 +729,7 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
           logoImage
         );
         const fundMailOptions = {
-          from: { name: `${appName} Payments`, email: '<noreply@ozaapp.com>' },
+          from: { name: `${appName} Payments`, email: `<${appEmail}>` },
           to: [{ email: userFund.email }],
           subject: 'Account Funded Successfully!',
           html: mailBody,
