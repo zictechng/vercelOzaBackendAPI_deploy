@@ -388,14 +388,14 @@ router.post("/register", async (req, res, next) => {
         }
   });
 
-  // upload user profile image route
+  // upload payment proof route
   router.post("/user_uploadPaymentProof", isAuth, async (req, res) => {
     const file = req.FileData;
     //const url = req.protocol + '://' + req.get('host') // this will get the host url directly
     const url = process.env.SERVER_BASEURL;
     const filterUser = {tid: req.body.trackId };
     const filterUserFunding = {fund_number: req.body.trackId };
-    //console.log("Data submitted ", req.body)
+
        try {
             const fundDetails = await TransferFund.findOne({tid:req.body.trackId}).lean().exec()
             const fundAccount = await FundUserAccount.findOne({fund_number:req.body.trackId}).lean().exec()
@@ -418,18 +418,18 @@ router.post("/register", async (req, res, next) => {
                       fund_payment_proof_url: imageUrl != null? imageUrl:'', 
                       },
                   };
-                // delete old image from cloudinary
-                if(fundDetails.payment_proof_url != null || fundDetails.payment_proof_url !==''){
+               
+              // delete old image from cloudinary only if URL exists
+                if(fundDetails.payment_proof_url && fundDetails.payment_proof_url !== ''){
                     const oldImage = fundDetails.payment_proof_url;
                     const imageDirectory = oldImage?.split("/")[7];
-                    const public_id = oldImage?.split("/")[8]
-                    const newPublicId = public_id?.split(".")[0]
-                    const deleteImage = imageDirectory+'/'+newPublicId;
-
-                    // console.log('delete old image', oldImage.split("/")[8]);
-                    // console.log('delete directory', oldImage.split("/")[7]);
-                    await cloudinary.uploader.destroy(deleteImage, 
-                    function(err, result) { console.log("Delete Status ", result) })
+                    const public_id = oldImage?.split("/")[8];
+                    const newPublicId = public_id?.split(".")[0];
+                    const deleteImage = imageDirectory + '/' + newPublicId;
+                    if(deleteImage && deleteImage !== 'undefined/undefined'){
+                      await cloudinary.uploader.destroy(deleteImage, 
+                      function(err, result) { console.log("Delete Status ", result) });
+                    }
                   }
                 
             const updateUserNow = await TransferFund.updateOne(filterUser, updateDoc);
@@ -1263,8 +1263,6 @@ router.post("/verify_reset_password", async (req, res, next) => {
     }
   });
 
-
-
 // POST /api/forgot_password
 // Send OTP to user email for password reset
 router.post('/forgot_password', async (req, res) => {
@@ -1373,5 +1371,97 @@ router.post('/reset_password', async (req, res) => {
   }
 })
 
+// Option two to upload proof of payment
+router.post("/user_uploadPayment_Proof", isAuth, upload.single('payment_proof'), async (req, res) => {
+  const file = req.file; // Captured by multer
+  console.log("Data submitted (body):", req.body);
+  console.log("File submitted:", file ? file.originalname : 'No file');
+  console.log("File Nam:", file ? file : 'No file');
+
+  const trackId = req.body.trackId;
+
+  try {
+    const fundDetails = await TransferFund.findOne({ tid: trackId }).lean().exec();
+    const fundAccount = await FundUserAccount.findOne({ fund_number: trackId }).lean().exec();
+
+    if (!fundDetails) {
+      return res.json({ status: 402, message: 'Transaction not valid' });
+    }
+
+    let imageUrl = '';
+
+    // If a file was uploaded, send it to Cloudinary from the server
+    if (file) {
+      const uploadToCloudinary = () => {
+        return new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            { folder: 'payment_proofs' },
+            (error, result) => {
+              if (result) resolve(result);
+              else reject(error);
+            }
+          );
+          stream.end(file.buffer);
+        });
+      };
+
+      const cloudRes = await uploadToCloudinary();
+      imageUrl = cloudRes.secure_url;
+
+      // Delete old image from Cloudinary if it exists
+      if (fundDetails.payment_proof_url) {
+        try {
+          const oldImage = fundDetails.payment_proof_url;
+          const imageDirectory = oldImage?.split("/")[7];
+          const public_id = oldImage?.split("/")[8];
+          const newPublicId = public_id?.split(".")[0];
+          if (imageDirectory && newPublicId) {
+            await cloudinary.uploader.destroy(`${imageDirectory}/${newPublicId}`);
+          }
+        } catch (err) {
+          console.error("Error deleting old image:", err);
+        }
+      }
+    }
+
+    const updateDoc = {
+      $set: {
+        payment_proofDoc_type: file?.mimetype || '',
+        payment_proof_url: imageUrl || fundDetails.payment_proof_url,
+      },
+    };
+
+    const updateFunding = {
+      $set: {
+        fund_payment_proof_url: imageUrl || fundDetails.payment_proof_url,
+      },
+    };
+
+    const updateUserNow = await TransferFund.updateOne({ tid: trackId }, updateDoc);
+    const updateFundNow = await FundUserAccount.updateOne({ fund_number: trackId }, updateFunding);
+
+    if (updateUserNow) {
+      await SystemActivity.create({
+        log_username: fundDetails.acct_number,
+        log_name: fundDetails.acct_name,
+        log_acct_number: fundDetails?.acct_number,
+        log_receiver_name: '',
+        log_receiver_number: '',
+        log_receiver_bank: '',
+        log_country: '',
+        log_swift_code: '',
+        log_desc: 'User uploaded proof of payment',
+        log_amt: '',
+        log_status: 'Successful',
+        log_nature: 'Payment proof uploaded',
+      });
+    }
+
+    return res.status(201).json({ msg: '201' });
+  } catch (error) {
+    console.error("Server error during proof upload:", error);
+    return res.json({ status: 500, message: 'Server error occurred' });
+  }
+});
 
   module.exports = router;

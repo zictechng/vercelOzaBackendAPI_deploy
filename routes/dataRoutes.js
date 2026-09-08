@@ -465,6 +465,99 @@ router.get("/all_historyMobile/:id", isAuth, async (req, res) => {
       }
       });
 
+
+// GET /api/user_chart_data/:id
+// Returns aggregated chart data for dashboard analytics
+router.get("/user_chart_data/:id", isAuth, async (req, res) => {
+  const userId = req.params.id;
+  try {
+    // Get last 30 days of transactions
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const transactions = await TransferFund.find({
+      createdBy: userId,
+      creditOn: { $gte: thirtyDaysAgo },
+    }).sort({ creditOn: 1 });
+
+    // Group by day for last 7 days
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const dailyData = {};
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toLocaleDateString('en-US', { weekday: 'short' });
+      dailyData[key] = { credit: 0, debit: 0, date: key };
+    }
+
+    transactions.forEach(tx => {
+      const txDate = new Date(tx.creditOn);
+      if (txDate >= sevenDaysAgo) {
+        const key = txDate.toLocaleDateString('en-US', { weekday: 'short' });
+        if (dailyData[key]) {
+          if (tx.tran_type === 'Credit') {
+            dailyData[key].credit += Number(tx.amount || 0);
+          } else {
+            dailyData[key].debit += Number(tx.amount || 0);
+          }
+        }
+      }
+    });
+
+    // Service breakdown
+    const serviceBreakdown = {};
+    transactions.forEach(tx => {
+      const category = tx.transac_nature || tx.transac_category || 'Other';
+      if (!serviceBreakdown[category]) serviceBreakdown[category] = 0;
+      serviceBreakdown[category] += Number(tx.amount || 0);
+    });
+
+    // Monthly summary (last 6 months)
+    const monthlyData = {};
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const key = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      monthlyData[key] = { credit: 0, debit: 0, month: key };
+    }
+
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    const allTx = await TransferFund.find({
+      createdBy: userId,
+      creditOn: { $gte: sixMonthsAgo },
+    });
+
+    allTx.forEach(tx => {
+      const key = new Date(tx.creditOn).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      if (monthlyData[key]) {
+        if (tx.tran_type === 'Credit') {
+          monthlyData[key].credit += Number(tx.amount || 0);
+        } else {
+          monthlyData[key].debit += Number(tx.amount || 0);
+        }
+      }
+    });
+
+    return res.json({
+      msg: '201',
+      daily: Object.values(dailyData),
+      monthly: Object.values(monthlyData),
+      serviceBreakdown: Object.entries(serviceBreakdown)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 6),
+    });
+  } catch (err) {
+    console.log('chart data error:', err.message);
+    return res.status(500).json({ msg: '400', message: err.message });
+  }
+});
+
+
 router.get("/all_userHistory/:id", isAuth, async (req, res) => {
   const userId = req.params.id;
   const itemsPerPage = 10; // Number of transactions per page
