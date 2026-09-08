@@ -712,9 +712,7 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
     }
 
     // Step 8 — Process bonus and referral
-    await processSignupBonus(userFund, verifiedAmount, 'funding');
-    await processReferralBonus(userFund, verifiedAmount, 'funding');
-
+    
     // Step 9 — Send email notification
     if (userFund.receive_email_notification === true) {
       fetchApp().then((result) => {
