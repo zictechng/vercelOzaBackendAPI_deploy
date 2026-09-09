@@ -18,9 +18,11 @@ const passwordResetEmail = (sendCompanyName, sendTitle, sendReceiverName, sendMe
   const color = '#F59E0B';
   const light = '#FEF3C7';
 
-  const logoHtml = logo
-    ? `<img src="${logo}" alt="${sendCompanyName}" style="height:40px; width:40px; border-radius:8px; object-fit:cover;" />`
-    : `<div style="width:40px; height:40px; background:#4C5FD5; border-radius:8px; display:inline-block; text-align:center; line-height:40px; color:white; font-weight:800; font-size:18px;">${sendCompanyName?.charAt(0) || 'A'}</div>`;
+    const logoHtml = !logo
+    ? `<div style="width:40px; height:40px; background:#4C5FD5; border-radius:8px; display:inline-block; text-align:center; line-height:40px; color:white; font-weight:800; font-size:18px;">${sendCompanyName?.charAt(0) || 'A'}</div>`
+    : logo.startsWith('<img')
+    ? logo
+    : `<img src="${logo}" alt="${sendCompanyName}" style="height:40px; width:40px; border-radius:8px; object-fit:cover;" />`;
 
   // Format OTP as individual digit boxes
   const otpDigits = String(otpCode).split('').map(d =>

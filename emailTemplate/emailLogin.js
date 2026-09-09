@@ -53,10 +53,12 @@ const getEmailStyle = (title) => {
 const loginEmail = (sendCompanyName, sendTitle, sendReceiverName, sendMessage, logo) => {
   const { icon, color, light, label } = getEmailStyle(sendTitle);
   const year = new Date().getFullYear();
-  const logoHtml = logo
-    ? `<img src="${logo}" alt="${sendCompanyName}" style="height:40px; width:40px; border-radius:8px; object-fit:cover;" />`
-    : `<div style="width:40px; height:40px; background:${color}; border-radius:8px; display:inline-block; text-align:center; line-height:40px; color:white; font-weight:800; font-size:18px;">${sendCompanyName?.charAt(0) || 'A'}</div>`;
-
+    // Handle both URL string and pre-built img tag
+  const logoHtml = !logo
+    ? `<div style="width:40px; height:40px; background:${color}; border-radius:8px; display:inline-block; text-align:center; line-height:40px; color:white; font-weight:800; font-size:18px;">${sendCompanyName?.charAt(0) || 'A'}</div>`
+    : logo.startsWith('<img')
+    ? logo
+    : `<img src="${logo}" alt="${sendCompanyName}" style="height:40px; width:40px; border-radius:8px; object-fit:cover;" />`;
   return `<!DOCTYPE html>
 <html lang="en">
 <head>

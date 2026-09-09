@@ -46,10 +46,6 @@ const sendBillPaymentEmail = async ({
     const APP_LOGO = appSettings?.app_logo || '';
     const APP_EMAIL = appSettings?.app_email || 'noreply@ota.com';
 
-    const logoImage = APP_LOGO
-      ? `<img src="${APP_LOGO}" alt="${APP_NAME}" style="height:40px; width:40px; border-radius:8px; object-fit:cover;" />`
-      : '';
-
     const message = `
       Your <strong>${service_title}</strong> payment was successful.<br/><br/>
       <table style="width:100%; border-collapse:collapse;">
@@ -66,7 +62,7 @@ const sendBillPaymentEmail = async ({
       `${service_title} Payment Successful`,
       name,
       message,
-      logoImage
+      APP_LOGO
     );
 
     await sendEmail({
