@@ -274,6 +274,7 @@ const mapServiceToNetwork = (service, provider) => {
     }
 
     // Exam cards
+        // Exam cards
     if (fetchedType === 'education') {
       return {
         service_type: 'exam_cards',
@@ -286,6 +287,7 @@ const mapServiceToNetwork = (service, provider) => {
         extra_params: {
           product_code: service.product_code || '',
           edu_type: service.edu_type || '',
+          unit_price: service.unit_price || service.price || service.amount || 0,
         },
       };
     }

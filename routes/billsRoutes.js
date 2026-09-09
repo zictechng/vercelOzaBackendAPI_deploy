@@ -107,6 +107,7 @@ router.get('/bills/networks/:service_type', async (req, res) => {
         mode: n.mode,
         extra: n.extra_params,
         commission_value: n.commission_value,
+        price: n.extra_params?.unit_price || 0,
       })),
     });
   } catch (error) {
