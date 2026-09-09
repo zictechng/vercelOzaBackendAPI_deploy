@@ -18,6 +18,7 @@ const {
 } = require('./bonusService');
 const sendEmail = require('./emailService');
 const { getAppSettings } = require('./appSettingService');
+const { loginEmail } = require('../emailTemplate/emailLogin');
 
 
 
@@ -28,6 +29,7 @@ const generateReference = (prefix = 'BILL') => {
   return `${prefix}-${timestamp}-${random}`;
 };
 
+// -- Bill payment confirmation email ---------------
 // -- Bill payment confirmation email ---------------
 const sendBillPaymentEmail = async ({
   email,
@@ -42,41 +44,33 @@ const sendBillPaymentEmail = async ({
     const appSettings = await getAppSettings();
     const APP_NAME = appSettings?.app_name || 'Ota Mobile';
     const APP_LOGO = appSettings?.app_logo || '';
-    const APP_BASE_URL = appSettings?.app_baseurl || 'https://ota.com';
+    const APP_EMAIL = appSettings?.app_email || 'noreply@ota.com';
 
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: #4C5FD5; padding: 24px; border-radius: 12px 12px 0 0; text-align: center;">
-          ${APP_LOGO ? `<img src="${APP_LOGO}" alt="${APP_NAME}" style="height: 48px; margin-bottom: 12px;" />` : ''}
-          <h2 style="color: #fff; margin: 0;">${APP_NAME}</h2>
-          <p style="color: rgba(255,255,255,0.85); margin: 4px 0 0;">Bill Payment Confirmation</p>
-        </div>
-        <div style="background: #f9f9f9; padding: 24px; border-radius: 0 0 12px 12px;">
-          <p>Hi <strong>${name}</strong>,</p>
-          <p>Your <strong>${service_title}</strong> payment was successful.</p>
-          <div style="background: #fff; border-radius: 8px; padding: 16px; margin: 16px 0; border: 1px solid #e5e7eb;">
-            <p style="margin: 8px 0;"><strong>Service:</strong> ${service_title}</p>
-            <p style="margin: 8px 0;"><strong>Amount:</strong> &#8358;${Number(amount).toLocaleString()}</p>
-            <p style="margin: 8px 0;"><strong>Reference:</strong> ${reference}</p>
-            <p style="margin: 8px 0;"><strong>Wallet Balance:</strong> &#8358;${Number(balance).toLocaleString()}</p>
-            ${coins_earned > 0 ? `<p style="margin: 8px 0; color: #4C5FD5;"><strong>Coins Earned:</strong> +${coins_earned} coins</p>` : ''}
-          </div>
-          <p style="color: #6b7280; font-size: 14px;">If you did not make this transaction, please contact support immediately.</p>
-          <p style="color: #6b7280; font-size: 14px;">Thank you for using ${APP_NAME}.</p>
-          <div style="text-align: center; margin-top: 24px;">
-            <a href="${APP_BASE_URL}" style="background: #4C5FD5; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">
-              Open ${APP_NAME}
-            </a>
-          </div>
-        </div>
-        <p style="text-align: center; color: #9ca3af; font-size: 12px; margin-top: 16px;">
-          &copy; ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.
-        </p>
-      </div>
+    const logoImage = APP_LOGO
+      ? `<img src="${APP_LOGO}" alt="${APP_NAME}" style="height:40px; width:40px; border-radius:8px; object-fit:cover;" />`
+      : '';
+
+    const message = `
+      Your <strong>${service_title}</strong> payment was successful.<br/><br/>
+      <table style="width:100%; border-collapse:collapse;">
+        <tr><td style="padding:8px 0; color:#6B7280; font-size:14px;">Service</td><td style="padding:8px 0; font-weight:700; text-align:right;">${service_title}</td></tr>
+        <tr style="border-top:1px solid #E5E7EB;"><td style="padding:8px 0; color:#6B7280; font-size:14px;">Amount</td><td style="padding:8px 0; font-weight:700; text-align:right; color:#10B981;">₦${Number(amount).toLocaleString()}</td></tr>
+        <tr style="border-top:1px solid #E5E7EB;"><td style="padding:8px 0; color:#6B7280; font-size:14px;">Reference</td><td style="padding:8px 0; font-weight:700; text-align:right; font-size:12px;">${reference}</td></tr>
+        <tr style="border-top:1px solid #E5E7EB;"><td style="padding:8px 0; color:#6B7280; font-size:14px;">New Balance</td><td style="padding:8px 0; font-weight:700; text-align:right;">₦${Number(balance).toLocaleString()}</td></tr>
+        ${coins_earned > 0 ? `<tr style="border-top:1px solid #E5E7EB;"><td style="padding:8px 0; color:#6B7280; font-size:14px;">Coins Earned</td><td style="padding:8px 0; font-weight:700; text-align:right; color:#4C5FD5;">+${coins_earned} coins 🎉</td></tr>` : ''}
+      </table>
     `;
 
+    const html = loginEmail(
+      APP_NAME,
+      `${service_title} Payment Successful`,
+      name,
+      message,
+      logoImage
+    );
+
     await sendEmail({
-      from: { name: APP_NAME, email: 'noreply@ota.com' },
+      from: { name: `${APP_NAME} Payments`, email: `<${APP_EMAIL}>` },
       to: [{ email }],
       subject: `${service_title} Payment Successful - ${APP_NAME}`,
       html,

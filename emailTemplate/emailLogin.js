@@ -143,21 +143,6 @@ const loginEmail = (sendCompanyName, sendTitle, sendReceiverName, sendMessage, l
             </td>
           </tr>
 
-          <!-- Security Note -->
-          <tr>
-            <td style="padding: 0 40px 32px;">
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F9FAFB; border-radius:12px; padding:16px;">
-                <tr>
-                  <td style="padding:16px;">
-                    <p style="margin:0; color:#6B7280; font-size:13px; line-height:1.6;">
-                      🔒 <strong>Security tip:</strong> ${sendCompanyName} will never ask for your password, PIN or OTP via email or phone. If you did not initiate this action, please contact our support team immediately.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
           <!-- CTA Button -->
           <tr>
             <td align="center" style="padding: 0 40px 40px;">
