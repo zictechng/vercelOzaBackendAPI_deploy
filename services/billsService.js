@@ -39,6 +39,7 @@ const sendBillPaymentEmail = async ({
   balance,
   coins_earned,
   token = '',
+  pins = [],
 }) => {
   try {
     const appSettings = await getAppSettings();
@@ -57,7 +58,20 @@ const sendBillPaymentEmail = async ({
         ${coins_earned > 0 ? `<tr style="border-top:1px solid #E5E7EB;"><td style="padding:8px 0; color:#6B7280; font-size:14px;">Coins Earned</td><td style="padding:8px 0; font-weight:700; text-align:right; color:#4C5FD5;">+${coins_earned} coins 🎉</td></tr>` : ''}
       </table>
       ${token ? `<br/><div style="background:#EEF2FF; border-radius:12px; padding:16px; text-align:center; margin-top:8px;"><p style="margin:0 0 8px; color:#6B7280; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:1px;">Your Electricity Token</p><p style="margin:0; font-size:22px; font-weight:800; color:#4C5FD5; letter-spacing:3px;">${token}</p><p style="margin:8px 0 0; color:#6B7280; font-size:11px;">Keep this token safe — it is required to recharge your meter</p></div>` : ''}
-    `;
+      ${pins && pins.length > 0 ? `
+          <br/>
+          <div style="background:#EDE9FE; border-radius:12px; padding:20px; text-align:center; margin-top:8px;">
+            <p style="margin:0 0 12px; color:#6B7280; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:1px;">Your Exam Card PIN${pins.length > 1 ? 'S' : ''}</p>
+            ${pins.map((pin, i) => `
+              <div style="background:#ffffff; border:2px solid #8B5CF6; border-radius:10px; padding:12px; margin-bottom:8px;">
+                <p style="margin:0 0 4px; color:#6B7280; font-size:11px;">Card ${i + 1}</p>
+                <p style="margin:0; font-size:20px; font-weight:800; color:#8B5CF6; letter-spacing:3px;">${pin}</p>
+              </div>
+            `).join('')}
+            <p style="margin:12px 0 0; color:#6B7280; font-size:11px;">Keep these PINs safe — do not share with anyone</p>
+          </div>
+        ` : ''}
+      `;
 
     const html = loginEmail(
       APP_NAME,
@@ -534,6 +548,7 @@ const finalizeBillTransaction = async ({
         balance: wallet_balance_after,
         coins_earned: coinsResult.coins || 0,
         token: token_delivered || '',
+        pins: pins_delivered || [],
       });
     }
   } catch (emailError) {
