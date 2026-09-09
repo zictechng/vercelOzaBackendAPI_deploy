@@ -1,170 +1,213 @@
 
-const passwordResetEmail = (sendCompanyName, sendTitle, sendReceiverName, sendMessage, otpCode, logo) =>
-    `<!DOCTYPE html>
-    <html>
-    <head>
-    <title></title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <style type="text/css">
-    
-    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-    img { -ms-interpolation-mode: bicubic; }
-    
-    img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
-    table { border-collapse: collapse !important; }
-    body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
-    
-    
-    a[x-apple-data-detectors] {
-        color: inherit !important;
-        text-decoration: none !important;
-        font-size: inherit !important;
-        font-family: inherit !important;
-        font-weight: inherit !important;
-        line-height: inherit !important;
-    }
-    
-    @media screen and (max-width: 480px) {
-        .mobile-hide {
-            display: none !important;
-        }
-        .mobile-center {
-            text-align: center !important;
-        }
-    }
-    div[style*="margin: 16px 0;"] { margin: 0 !important; }
-    </style>
-    <body style="margin: 0 !important; padding: 0 !important; background-color: #eeeeee;" bgcolor="#eeeeee">
-    
+const moment = require('moment');
 
-<div style="display: none; font-size: 1px; color: #fefefe; line-height: 1px; font-family: Open Sans, Helvetica, Arial, sans-serif; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
-For what reason would it be advisable for me to think about business content? That might be little bit risky to have crew member like them. 
-</div>
+const baseStyles = `
+  body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+  table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+  img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+  table { border-collapse: collapse !important; }
+  body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #F0F4F8; }
+  @media screen and (max-width: 600px) {
+    .otp-digit { font-size: 26px !important; padding: 10px 14px !important; }
+    .mobile-padding { padding: 20px !important; }
+  }
+`;
 
-<table border="0" cellpadding="0" cellspacing="0" width="100%">
-<tr>
-    <td align="center" style="background-color: #eeeeee;" bgcolor="#eeeeee">
-    
-    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-        <tr>
-            <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#1D2667">
-           
-            <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;">
-                <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                    <tr>
-                        <td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; line-height: 35px;" class="mobile-center">
-                            <h3 style="font-size: 25px; font-weight: 700; margin: 0; color: #ffffff;">${sendCompanyName}</h3>
+const passwordResetEmail = (sendCompanyName, sendTitle, sendReceiverName, sendMessage, otpCode, logo) => {
+  const year = new Date().getFullYear();
+  const color = '#F59E0B';
+  const light = '#FEF3C7';
+
+  const logoHtml = logo
+    ? `<img src="${logo}" alt="${sendCompanyName}" style="height:40px; width:40px; border-radius:8px; object-fit:cover;" />`
+    : `<div style="width:40px; height:40px; background:#4C5FD5; border-radius:8px; display:inline-block; text-align:center; line-height:40px; color:white; font-weight:800; font-size:18px;">${sendCompanyName?.charAt(0) || 'A'}</div>`;
+
+  // Format OTP as individual digit boxes
+  const otpDigits = String(otpCode).split('').map(d =>
+    `<td style="padding:4px;">
+      <div style="width:44px; height:56px; background:#ffffff; border:2px solid ${color}; border-radius:12px; text-align:center; line-height:56px; font-size:28px; font-weight:800; color:${color}; display:inline-block;">
+        ${d}
+      </div>
+    </td>`
+  ).join('');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>${sendTitle} — ${sendCompanyName}</title>
+  <style type="text/css">${baseStyles}</style>
+</head>
+<body style="margin:0; padding:0; background-color:#F0F4F8; font-family:'Segoe UI', Arial, sans-serif;">
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F0F4F8;">
+    <tr>
+      <td align="center" style="padding:40px 20px;">
+
+        <table width="100%" cellpadding="0" cellspacing="0" border="0"
+          style="max-width:600px; background:#ffffff; border-radius:20px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg, #F59E0B 0%, #D97706 100%); padding:32px 40px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td>
+                    <table cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="vertical-align:middle; padding-right:12px;">${logoHtml}</td>
+                        <td style="vertical-align:middle;">
+                          <span style="color:#ffffff; font-size:20px; font-weight:800;">${sendCompanyName}</span>
                         </td>
-                    </tr>
+                      </tr>
+                    </table>
+                  </td>
+                  <td align="right">
+                    <span style="color:rgba(255,255,255,0.7); font-size:12px;">${moment().format('DD MMM YYYY, hh:mm A')}</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Icon -->
+          <tr>
+            <td align="center" style="padding:40px 40px 16px;">
+              <div style="width:80px; height:80px; background:${light}; border-radius:50%; display:inline-block; text-align:center; line-height:80px; font-size:36px;">
+                🔑
+              </div>
+            </td>
+          </tr>
+
+          <!-- Label + Title -->
+          <tr>
+            <td align="center" style="padding:0 40px 8px;">
+              <p style="margin:0 0 8px; color:${color}; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px;">Password Reset</p>
+              <h1 style="margin:0; color:#1a1a2e; font-size:26px; font-weight:800; line-height:1.3;">${sendTitle}</h1>
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td align="center" style="padding:16px 40px;">
+              <div style="width:48px; height:4px; background:${color}; border-radius:4px;"></div>
+            </td>
+          </tr>
+
+          <!-- Greeting + Message -->
+          <tr>
+            <td style="padding:0 40px 24px;">
+              <p style="margin:0 0 12px; color:#374151; font-size:16px; line-height:1.6;">
+                Hello <strong>${sendReceiverName}</strong>,
+              </p>
+              <p style="margin:0; color:#374151; font-size:15px; line-height:1.8;">
+                ${sendMessage || 'We received a request to reset your password. Use the OTP code below to complete the process. This code is valid for <strong>30 minutes</strong>.'}
+              </p>
+            </td>
+          </tr>
+
+          <!-- OTP Box -->
+          <tr>
+            <td align="center" style="padding:0 40px 32px;">
+              <div style="background:${light}; border-radius:16px; padding:32px 24px;">
+                <p style="margin:0 0 16px; color:#92400E; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:1px;">
+                  🔐 Your Password Reset OTP
+                </p>
+                <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
+                  <tr>${otpDigits}</tr>
                 </table>
-            </div>
-            
-            <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;" class="mobile-hide">
-                <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                    <tr>
-                        <td align="right" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 48px; font-weight: 400; line-height: 48px;">
-                            <table cellspacing="0" cellpadding="0" border="0" align="right">
-                                <tr>
-                                    <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
-                                        <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
-                                        ${logo} &nbsp;</a></p>
-                                    </td>
-                                    
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-          
+                <p style="margin:16px 0 0; color:#92400E; font-size:12px; font-weight:600;">
+                  ⏰ Expires in <strong>30 minutes</strong>
+                </p>
+              </div>
             </td>
-        </tr>
-        <tr>
-            <td align="center" style="padding: 35px 35px 20px 35px; background-color: #ffffff;" bgcolor="#ffffff">
-            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                <tr>
-                    <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                    <img src="https://img.icons8.com/ios/50/null/appointment-reminders--v2.png" style="display: block; border: 0px;" /><br>
-                        <h4 style="font-size: 20px; font-weight: 600; line-height: 25px; color: #333333; margin: 0;">
-                            ${sendTitle}
-                        </h4>
+          </tr>
+
+          <!-- Steps -->
+          <tr>
+            <td style="padding:0 40px 32px;">
+              <p style="margin:0 0 12px; color:#1a1a2e; font-size:15px; font-weight:700;">How to reset your password:</p>
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                ${[
+                  'Enter the OTP code above in the verification field',
+                  'Create a new strong password (min. 8 characters)',
+                  'Confirm your new password and submit',
+                  'Login with your new password',
+                ].map((step, i) =>
+                  `<tr>
+                    <td style="padding:6px 0; vertical-align:top;">
+                      <div style="width:24px; height:24px; background:#F59E0B; border-radius:50%; display:inline-block; text-align:center; line-height:24px; color:white; font-size:11px; font-weight:800; vertical-align:middle; margin-right:10px;">${i + 1}</div>
+                      <span style="color:#374151; font-size:14px; vertical-align:middle;">${step}</span>
                     </td>
-                </tr>
-                <tr>
-                    <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                        <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                        Hello ${sendReceiverName}, ${sendMessage}
-                        </p>
-                    </td>
-                </tr>
-                
-                <tr>
-                    <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                    <h3 style="font-size: 30px; font-weight: 800; line-height: 36px; color: #333333; margin: 0;">
-                    OTP Code ${otpCode}
-                    </h3>
-                    <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                        Use this code to complete your password reset request.
-                        </p>
-                    </td>
-                </tr>
-        <tr>
-            <td align="center" style=" padding: 35px; background-color: #010A4F;" bgcolor="#1b9ba3">
-            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                <tr>
-                    <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                        <h5 style="font-size: 18px; font-weight: 600; line-height: 15px; color: #ffffff; margin: 0;">
-                           Please, contact support for any irregularity in your account.
-                        </h5>
-                    </td>
-                </tr>
-                <tr>
-                    <td align="center" style="padding: 25px 0 15px 0;">
-                        <table border="0" cellspacing="0" cellpadding="0">
-                            <tr>
-                                <td align="center" style="border-radius: 5px;" bgcolor="#66b3b7">
-                                  <a href="https://ozaapp.com/contact-us" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #1D2667; padding: 15px 30px; border: 1px solid #1D2667; display: block;">Contact</a>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-            </table>
+                  </tr>`
+                ).join('')}
+              </table>
             </td>
-        </tr>
-        <tr>
-            <td align="center" style="padding: 35px; background-color: #ffffff;" bgcolor="#ffffff">
-            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                
+          </tr>
+
+          <!-- Warning -->
+          <tr>
+            <td style="padding:0 40px 32px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                style="background:#FEE2E2; border-radius:12px; border-left:4px solid #EF4444;">
                 <tr>
-                    <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px; padding: 5px 0 10px 0;">
-                        <p style="font-size: 14px; font-weight: 600; line-height: 12px; color: #333333;">&nbsp;</p>
-                    </td>
+                  <td style="padding:16px 20px;">
+                    <p style="margin:0; color:#991B1B; font-size:13px; line-height:1.6;">
+                      ⚠️ <strong>Did not request this?</strong> If you did not request a password reset, please ignore this email and contact our support immediately. Your account may be at risk.
+                    </p>
+                  </td>
                 </tr>
-                <tr>
-                    <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
-                        <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
-                            You have received this email because you are a Customer of ${sendCompanyName}<br>
-This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of ${sendCompanyName}. It is confidential, private and intended for the address only.
-                        </p>
-                    </td>
-                </tr>
-            </table>
+              </table>
             </td>
-        </tr>
-    </table>
-    </td>
-</tr>
-</table>
+          </tr>
+
+          <!-- CTA -->
+          <tr>
+            <td align="center" style="padding:0 40px 40px;">
+              <a href="#" style="display:inline-block; background:linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color:#ffffff; font-size:15px; font-weight:700; text-decoration:none; padding:14px 40px; border-radius:12px; letter-spacing:0.3px;">
+                Contact Support &rarr;
+              </a>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#F9FAFB; border-top:1px solid #E5E7EB; padding:32px 40px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center">
+                    <p style="margin:0 0 8px; color:#1a1a2e; font-size:16px; font-weight:800;">${sendCompanyName}</p>
+                    <p style="margin:0 0 16px; color:#9CA3AF; font-size:12px;">The secure and profitable way to manage your virtual funds</p>
+                    <div style="margin-bottom:16px;">
+                      <a href="#" style="color:#F59E0B; font-size:12px; text-decoration:none; margin:0 8px;">Support</a>
+                      <span style="color:#D1D5DB;">|</span>
+                      <a href="#" style="color:#F59E0B; font-size:12px; text-decoration:none; margin:0 8px;">Privacy Policy</a>
+                      <span style="color:#D1D5DB;">|</span>
+                      <a href="#" style="color:#F59E0B; font-size:12px; text-decoration:none; margin:0 8px;">Terms</a>
+                    </div>
+                    <p style="margin:0; color:#9CA3AF; font-size:11px; line-height:1.6;">
+                      &copy; ${year} ${sendCompanyName}. All rights reserved.<br/>
+                      This OTP is confidential — never share it with anyone.<br/>
+                      ${sendCompanyName} will never ask for your OTP via phone or chat.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
 
 </body>
-</html>`
+</html>`;
+};
 
 const passwordResetText = (sendReceiverName, otpCode) =>
-    `${sendReceiverName} this is to notify you that your account has been requested to reset password, If this is not your, contact our support immediately.\n
-    OTP Code ${otpCode}, Use this code to complete your password reset.`
+  `Hello ${sendReceiverName},\n\nYour password reset OTP code is: ${otpCode}\n\nThis code expires in 30 minutes. Do not share it with anyone.\n\nIf you did not request this, please contact support immediately.\n\nThank you.`;
 
-module.exports = {passwordResetEmail, passwordResetText}
+module.exports = { passwordResetEmail, passwordResetText };
