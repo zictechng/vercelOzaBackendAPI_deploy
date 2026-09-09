@@ -331,7 +331,7 @@ const processPaymentDetails = async(data, paymentId) =>{
                fetchApp().then((result) =>{
                 appName = result.app_name
                 appLogo = result.app_logo
-                const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                const logoImage = appLogo;
                 const mailBody = loginEmail(appName, 'Payment notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment received. \n Request reference / Transaction ID is ${TransID}, \n 
                 Order ID is ${paymentId} Thank you`, logoImage)
                 const mailText = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n Order ID is ${paymentId}`)
@@ -355,7 +355,7 @@ const processPaymentDetails = async(data, paymentId) =>{
             fetchApp().then((result) =>{
               appName = result.app_name
               appLogo = result.app_logo
-              const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+              const logoImage = appLogo;
               const mailBody = loginEmail(appName, 'Paypal Fund notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} as requested for fund exchanging. \n Request reference / Transaction ID is ${TransID}, \n 
               Order ID is ${paymentId} Thank you`, logoImage)
               const mailText = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n Order ID is ${paymentId}`)
@@ -564,8 +564,8 @@ const processPaymentDetails = async(data, paymentId) =>{
                     const mailBody = loginEmail(appName, 'Account Debit Notification', userFund.display_name, `This is to notify you that your transfer request of
                       <b>${dataReceive.account_source == '2'? `\$${new Intl.NumberFormat().format(req.body.amt)}`:`\u20A6${new Intl.NumberFormat().format(req.body.amt)}`}</b> to
                       ${receiverUser.display_name} was successful and your account has been debited.
-                      `, '', Trans_ID, logoImage)
-                    const TextBody = transactEmailText(userFund.display_name, `this is to notify you that your transfer request was successful and your account has been debited with <b>${dataReceive.account_source == '2'? `\$${new Intl.NumberFormat().format(req.body.amt)}`:`\u20A6${new Intl.NumberFormat().format(req.body.amt)}`} '</b> <br>`, Trans_ID );
+                      Transaction ID: ${Trans_ID}`, logoImage)
+                    const TextBody = loginText(userFund.display_name, `This is to notify you that your transfer request was successful and your account has been debited with ${dataReceive.account_source == '2'? `$${new Intl.NumberFormat().format(req.body.amt)}`:`₦${new Intl.NumberFormat().format(req.body.amt)}`}. Transaction ID: ${Trans_ID}`);
                     let sendFundMailOptions = {
                     from: { name: `${appName} Payments`, email: `<${result.app_email || 'noreply@ota.com'}>` },
                     to: [{ email: userFund.email }],
@@ -717,7 +717,7 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
       fetchApp().then((result) => {
         const appName = result.app_name;
         const appLogo = result.app_logo;
-        const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+        const logoImage = appLogo;
         const mailBody = loginEmail(
           appName,
           'Account Funding Successful',
@@ -726,7 +726,7 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
           logoImage
         );
         const fundMailOptions = {
-          from: { name: `${appName} Payments`, email: `<${appEmail}>` },
+          from: { name: `${appName} Payments`, email: `<${result.app_email || 'noreply@ota.com'}>` },
           to: [{ email: userFund.email }],
           subject: 'Account Funded Successfully!',
           html: mailBody,
@@ -849,7 +849,7 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                   fetchApp().then((result) =>{
                       appName = result.app_name
                       appLogo = result.app_logo
-                      const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                      const logoImage = appLogo;
                       const mailBody = loginEmail(appName, 'Account Funding Notification', userFund.display_name, `this is to notify you that your account funding request has been logged and we will treat as soon as we confirm your payment status. \n Account funding Transaction ID is ${Trans_ID}, \n 
                       Transaction Reference ID ${req.body.payId ? req.body.payId: 'None. ' } \n Thank you`, logoImage)
                       const TextBody = loginText(userFund.display_name, `this is to notify you that your account funding request has been logged and we will treat as soon as your payment received. \n Transaction ID is ${Trans_ID} \n
@@ -872,7 +872,7 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                 fetchApp().then((result) =>{
                   appName = result.app_name
                   appLogo = result.app_logo
-                  const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                  const logoImage = appLogo;
                   const mailBody = loginEmail(appName, 'Account Funding Notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} has made account funding request and it has been logged! kindly treat as soon as possible. \n Account funding Transaction ID is ${Trans_ID}, \n 
                   Transaction Reference ID ${req.body.payId ? req.body.payId: 'None. ' } \n Thank you`, logoImage)
                   const TextBody = loginText(userFund.display_name, `this is to notify you that your account funding request has been logged and we will treat as soon as your payment received. \n Transaction ID is ${Trans_ID} \n
@@ -1037,7 +1037,7 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
               fetchApp().then((result) =>{
                 appName = result.app_name
                 appLogo = result.app_logo
-                const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                const logoImage = appLogo;
                 const mailBody = loginEmail(appName, 'Withdrawal Notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} has made fund withdrawal request and it has been logged! kindly treat as soon as possible. \n Transaction ID is ${Trans_ID}, \n 
                 ${req.body.payId ? 'Transaction Reference ID '+ req.body.payId: 'None. ' } \n Thank you`, logoImage)
                 const TextBody = loginText(userFund.display_name, `this is to notify you that withdrawal request has been logged, treat as soon as possible. \n Transaction ID is ${Trans_ID} \n
@@ -1174,7 +1174,7 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
               fetchApp().then((result) =>{
                 appName = result.app_name
                 appLogo = result.app_logo
-                const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                const logoImage = appLogo;
                 const mailBody = loginEmail(appName, 'Withdrawal Notification', 'Hello Admin', `this is to notify you that ${userWithdrawal.display_name} has made withdrawal request and it has been logged! kindly treat as soon as possible. \n withdrawal Transaction ID is ${Trans_ID}, \n 
                 ${req.body.payId ? 'Transaction Reference ID '+req.body.payId: 'None. ' } \n Thank you`, logoImage)
                 const TextBody = loginText(userWithdrawal.display_name, `this is to notify you that withdrawal request has been logged treat as soon as possible. \n Transaction ID is ${Trans_ID} \n
@@ -1313,7 +1313,7 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                   fetchApp().then((result) =>{
                       appName = result.app_name
                       appLogo = result.app_logo
-                      const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                      const logoImage = appLogo;
                       const mailBody = loginEmail(appName, 'Account Funding Notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment received. \n Request reference / Transaction ID is ${TransID}, \nThank you`, logoImage)
                       const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID}`);
                       let fundAcctMailOptionUser = {
@@ -1334,7 +1334,7 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
               fetchApp().then((result) =>{
                 appName = result.app_name
                 appLogo = result.app_logo
-                const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                const logoImage = appLogo;
                 const mailBody = loginEmail(appName, 'Account Funding Notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} made fund exchange request and it has been logged, kindly treat as soon as possible. \n Request reference / Transaction ID is ${TransID}, \nThank you`, logoImage)
                 const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID}`);
                 let fundAcctMailOptionsAdmin = {
@@ -1441,7 +1441,7 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                   fetchApp().then((result) =>{
                       appName = result.app_name
                       appLogo = result.app_logo
-                      const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                      const logoImage = appLogo;
                       const mailBody = loginEmail(appName, 'Transaction Notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment is received. \n Request reference / Transaction ID is ${TransID}, \n
                       \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId: ''}
                       \n Thank you`, logoImage)
@@ -1464,7 +1464,7 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                 fetchApp().then((result) =>{
                   appName = result.app_name
                   appLogo = result.app_logo
-                  const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                  const logoImage = appLogo;
                   const mailBody = loginEmail(appName, 'Transaction Notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} made fund exchange request and it has been logged, kindly treat as soon as possible. \n Request reference / Transaction ID is ${TransID}, \n
                   \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId: ''}
                   \n Thank you`, logoImage)
@@ -1600,7 +1600,7 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                   fetchApp().then((result) =>{
                   appName = result.app_name
                   appLogo = result.app_logo
-                  const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                  const logoImage = appLogo;
 
                   const mailBody = loginEmail(appName, 'Account Funding Notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment received. \n Request reference / Transaction ID is ${TransID}, \n 
                   Order ID is ${dataReceive.orderId} Thank you`, logoImage)
@@ -1623,7 +1623,7 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
               fetchApp().then((result) =>{
                 appName = result.app_name
                 appLogo = result.app_logo
-                const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                const logoImage = appLogo;
 
                 const mailBody = loginEmail(appName, 'Account Funding Notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} made fund exchange request and it has been logged, kindly treat as soon as possible. \n Request reference / Transaction ID is ${TransID}, \n 
                 Order ID is ${dataReceive.orderId} Thank you`, logoImage)
