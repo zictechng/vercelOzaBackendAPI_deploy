@@ -21,12 +21,17 @@ const baseStyles = `
 const getEmailStyle = (title) => {
   const t = title?.toLowerCase() || '';
 
-  if (t.includes('login') || t.includes('sign in') || t.includes('access'))
-    return { icon: '🔐', color: '#4C5FD5', light: '#EEF2FF', label: 'Security Alert' };
-  if (t.includes('fund') || t.includes('credit') || t.includes('payment') || t.includes('deposit'))
-    return { icon: '💰', color: '#10B981', light: '#D1FAE5', label: 'Payment Notification' };
+  // Check most specific first to avoid wrong matches
+  if (t.includes('debit'))
+    return { icon: '💸', color: '#EF4444', light: '#FEE2E2', label: 'Account Debit' };
+  if (t.includes('credit') || t.includes('deposit'))
+    return { icon: '💰', color: '#10B981', light: '#D1FAE5', label: 'Account Credit' };
   if (t.includes('withdraw'))
     return { icon: '💸', color: '#F59E0B', light: '#FEF3C7', label: 'Withdrawal Notification' };
+  if (t.includes('fund') || t.includes('payment'))
+    return { icon: '💰', color: '#10B981', light: '#D1FAE5', label: 'Payment Notification' };
+  if (t.includes('login') || t.includes('sign in') || t.includes('access'))
+    return { icon: '🔐', color: '#4C5FD5', light: '#EEF2FF', label: 'Security Alert' };
   if (t.includes('approved') || t.includes('congratulations') || t.includes('activated') || t.includes('success'))
     return { icon: '✅', color: '#10B981', light: '#D1FAE5', label: 'Great News!' };
   if (t.includes('reject') || t.includes('issue') || t.includes('cancel') || t.includes('failed'))
@@ -39,12 +44,12 @@ const getEmailStyle = (title) => {
     return { icon: '🔄', color: '#4C5FD5', light: '#EEF2FF', label: 'Transaction Update' };
   if (t.includes('ticket') || t.includes('support'))
     return { icon: '🎫', color: '#06B6D4', light: '#CFFAFE', label: 'Support Ticket' };
-  if (t.includes('account') || t.includes('profile'))
-    return { icon: '👤', color: '#4C5FD5', light: '#EEF2FF', label: 'Account Update' };
-  if (t.includes('notification') || t.includes('in-app'))
-    return { icon: '🔔', color: '#8B5CF6', light: '#EDE9FE', label: 'Notification Update' };
   if (t.includes('deactivat') || t.includes('delete') || t.includes('block'))
     return { icon: '⚠️', color: '#EF4444', light: '#FEE2E2', label: 'Account Notice' };
+  if (t.includes('notification') || t.includes('in-app'))
+    return { icon: '🔔', color: '#8B5CF6', light: '#EDE9FE', label: 'Notification Update' };
+  if (t.includes('account') || t.includes('profile'))
+    return { icon: '👤', color: '#4C5FD5', light: '#EEF2FF', label: 'Account Update' };
 
   return { icon: '📧', color: '#4C5FD5', light: '#EEF2FF', label: 'Notification' };
 };

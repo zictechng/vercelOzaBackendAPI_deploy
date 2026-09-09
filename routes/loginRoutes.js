@@ -125,7 +125,7 @@ router.post("/login", async (req, res, next) => {
                 const mailBody = loginEmail(appName, 'Login Authentication', userExist.display_name, 'this is to notify you that your account has just been logged into successfully, If this is not you, contact support for immediate intervention, thank you.', logoImage);
                 const TextBody = loginText(userExist.display_name,);
                 let loginMailOptions = {
-                    from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                    from: { name: `${appName + ' Support'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
                     to: [{ email: userExist.email }],
                     subject: 'Account login notification!',
                     text: TextBody,
@@ -290,7 +290,7 @@ router.post("/otp_verify", async (req, res) => {
             const mailBody = loginEmail(appName, 'Account Activated', userExist.display_name, 'this is to notify you that your account has been activated successfully, You can now login to use your account, thank you.', logoImage);
             const TextBody = loginText(userExist.display_name,);
             let otpMailOptions = {
-                from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                from: { name: `${appName + ' Support'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
                 to: [{ email: userExist.email }],
                 subject: 'Oza Account Activated!',
                 text: TextBody,
@@ -358,7 +358,7 @@ router.post("/otpResend", async (req, res) => {
             appLogo = result.app_logo
             const TextBody = registerEmailText(userExistResend.display_name, userExistResend.reg_otp);
             let resendMailOptions = {
-                from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                from: { name: `${appName + ' Support'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
                 to: [{ email: userExistResend.email }],
                 subject: 'New OTP Code For Account Activation!',
                 text: TextBody,
@@ -426,7 +426,7 @@ router.post("/forgetPasswordMobile", async (req, res) => {
                 const mailBody = passwordResetEmail(appName, 'Forget password reset', userExist.display_name, 'this is to notify you that your account has been requested to reset password, If this is not you, contact our support immediately. \n', otpCode, logoImage)
                 const TextBody = passwordResetText(userExist.display_name, otpCode);
                 let resetPasswordMailSend = {
-                from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                from: { name: `${appName + ' Support'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
                 to: [{ email: userExist.email }],
                 subject: 'Forget password reset!',
                 text: TextBody,
@@ -504,7 +504,7 @@ router.post("/resetPasswordMobile", async (req, res) => {
                     const mailBody = loginEmail(appName, 'Password reset successfully', userExist.display_name, 'this is to notify you that your account password has been reset, If this is not you, contact our support immediately. \n', logoImage)
                     const TextBody = loginText(userExist.display_name, 'this is to notify you that your account password has been reset, If this is not you, contact our support immediately');
                     let passwordResetMailOptions = {
-                        from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                        from: { name: `${appName + ' Support'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
                         to: [{ email: userExist.email }],
                         subject: 'Password reset successfully!',
                         text: TextBody,
@@ -581,7 +581,7 @@ router.post("/sendUserOTP", async (req, res) => {
                 Thank you.`, logoImage)
             const TextBody = registerEmailText(userExistResend.display_name, req.body.otp_code);
             let sendMailOptions = {
-                from: { name: `${appName + ' Activation Code'}`, email: '<noreply@ozaapp.com>' },
+                from: { name: `${appName + ' Activation Code'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
                 to: [{ email: req.body.email }],
                 subject: 'Account Activation Code',
                 text: TextBody,

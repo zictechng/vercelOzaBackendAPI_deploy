@@ -18,7 +18,7 @@ const UserWithdrawal = require('../models/withdrawalRequest');
 //const transporter = require('../controllers/mailSender');
 const { isAuth } = require('../middleware/auth');
 const moment = require('moment');
-const { transactEmail, transactEmailText } = require('../emailTemplate/emailRegister');
+const { transactEmailText } = require('../emailTemplate/emailRegister');
 const { loginEmail, loginText } = require('../emailTemplate/emailLogin');
 const { fetchApp } = require('../middleware/appDetails');
 
@@ -336,7 +336,7 @@ const processPaymentDetails = async(data, paymentId) =>{
                 Order ID is ${paymentId} Thank you`, logoImage)
                 const mailText = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n Order ID is ${paymentId}`)
                 let payPal_mailOptions = {
-                    from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
+                    from: { name: `${appName + ' Sales'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
                     to: [{ email: userFund.email }],
                     subject: 'Payment notification!',
                     text: mailText,
@@ -360,8 +360,8 @@ const processPaymentDetails = async(data, paymentId) =>{
               Order ID is ${paymentId} Thank you`, logoImage)
               const mailText = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n Order ID is ${paymentId}`)
               let payPal_mailOptions = {
-                  from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
-                  to: [{ email: 'hello@ozaapp.com'}],
+                  from: { name: `${appName + ' Sales'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
+                  to: [{ email: `<${result.app_email || 'noreply@ota.com'}>`}],
                   subject: 'Payment notification!',
                   text: mailText,
                   html: mailBody,
@@ -561,13 +561,13 @@ const processPaymentDetails = async(data, paymentId) =>{
                     appName = result.app_name
                     appLogo = result.app_logo
                     const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-                    const mailBody = transactEmail(appName, 'Account Debit Notification', userFund.display_name, `this is to notify you that your transfer request of
+                    const mailBody = loginEmail(appName, 'Account Debit Notification', userFund.display_name, `This is to notify you that your transfer request of
                       <b>${dataReceive.account_source == '2'? `\$${new Intl.NumberFormat().format(req.body.amt)}`:`\u20A6${new Intl.NumberFormat().format(req.body.amt)}`}</b> to
                       ${receiverUser.display_name} was successful and your account has been debited.
                       `, '', Trans_ID, logoImage)
                     const TextBody = transactEmailText(userFund.display_name, `this is to notify you that your transfer request was successful and your account has been debited with <b>${dataReceive.account_source == '2'? `\$${new Intl.NumberFormat().format(req.body.amt)}`:`\u20A6${new Intl.NumberFormat().format(req.body.amt)}`} '</b> <br>`, Trans_ID );
                     let sendFundMailOptions = {
-                    from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                    from: { name: `${appName} Payments`, email: `<${result.app_email || 'noreply@ota.com'}>` },
                     to: [{ email: userFund.email }],
                     subject: 'Account Debit Notification!',
                     text: TextBody,
@@ -589,12 +589,11 @@ const processPaymentDetails = async(data, paymentId) =>{
                     appName = result.app_name
                     appLogo = result.app_logo
                     const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-                    const mailBody = transactEmail(appName, 'Account Credit Notification', receiverUser.display_name, `this is to notify you that your account was credited with 
-                      <b>${dataReceive.account_source == '2'? `\$${new Intl.NumberFormat().format(dataReceive.amt)}`:`\u20A6${new Intl.NumberFormat().format(dataReceive.amt)}`}</b>`, Trans_ID, logoImage)
-                    const TextBody = transactEmailText(receiverUser.display_name, `this is to notify you that your account was credited with
-                      <b>${dataReceive.account_source == '2'? `\$${new Intl.NumberFormat().format(dataReceive.amt)}`:`\u20A6${new Intl.NumberFormat().format(dataReceive.amt)}`}</b>`, Trans_ID);
+                    const mailBody = loginEmail(appName, 'Account Credit Notification', receiverUser.display_name, `This is to notify you that your account was credited with 
+                      <b>${dataReceive.account_source == '2'? `\\$${new Intl.NumberFormat().format(dataReceive.amt)}`:`\\u20A6${new Intl.NumberFormat().format(dataReceive.amt)}`}</b> from a wallet transfer. Transaction ID: ${Trans_ID}`, logoImage)
+                    const TextBody = loginText(receiverUser.display_name, `This is to notify you that your account was credited with ${dataReceive.account_source == '2'? `$${new Intl.NumberFormat().format(dataReceive.amt)}`:`₦${new Intl.NumberFormat().format(dataReceive.amt)}`}. Transaction ID: ${Trans_ID}`);
                     let getFundMailOptions = {
-                    from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                    from: { name: `${appName} Payments`, email: `<${result.app_email || 'noreply@ota.com'}>` },
                     to: [{ email: receiverUser.email }],
                     subject: 'Account Credit Notification!',
                     text: TextBody,
@@ -856,7 +855,7 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                       const TextBody = loginText(userFund.display_name, `this is to notify you that your account funding request has been logged and we will treat as soon as your payment received. \n Transaction ID is ${Trans_ID} \n
                       Transaction Reference ID ${req.body.payId? req.body.payId: 'None.'}`);
                       let fundAcctMailOptions = {
-                      from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
+                      from: { name: `${appName + ' Sales'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
                       to: [{ email: userFund.email }],
                       subject: 'Account Funding Notification!',
                       text: TextBody,
@@ -879,8 +878,8 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                   const TextBody = loginText(userFund.display_name, `this is to notify you that your account funding request has been logged and we will treat as soon as your payment received. \n Transaction ID is ${Trans_ID} \n
                   Transaction Reference ID ${req.body.payId? req.body.payId: 'None.'}`);
                   let fundAcctMailOptions = {
-                  from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
-                  to: [{ email: 'hello@ozaapp.com' }],
+                  from: { name: `${appName + ' Sales'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
+                  to: [{ email: `<${result.app_email || 'noreply@ota.com'}>` }],
                   subject: 'Account Funding Notification!',
                   text: TextBody,
                   html: mailBody,
@@ -1022,7 +1021,7 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                     const TextBody = loginText(userFund.display_name, `this is to notify you that your withdrawal request has been logged and we will treat as soon as possible. \n Transaction ID is ${Trans_ID} \n
                     ${req.body.payId? 'Transaction Reference ID ' +req.body.payId: 'None.'}`);
                     let fundAcctMailOptions = {
-                    from: { name: `${appName + ' Withdrawal'}`, email: '<noreply@ozaapp.com>' },
+                    from: { name: `${appName + ' Withdrawal'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
                     to: [{ email: userFund.email }],
                     subject: 'Funds Withdrawal Notification!',
                     text: TextBody,
@@ -1044,8 +1043,8 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                 const TextBody = loginText(userFund.display_name, `this is to notify you that withdrawal request has been logged, treat as soon as possible. \n Transaction ID is ${Trans_ID} \n
                 ${req.body.payId? 'Transaction Reference ID '+req.body.payId: 'None.'}`);
                 let acct_withdrawalMail = {
-                from: { name: `${appName + ' Withdrawal'}`, email: '<noreply@ozaapp.com>' },
-                to: [{ email: 'hello@ozaapp.com' }],
+                from: { name: `${appName + ' Withdrawal'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
+                to: [{ email: `<${result.app_email || 'noreply@ota.com'}>` }],
                 subject: 'Funds Withdrawal Notification!',
                 text: TextBody,
                 html: mailBody,
@@ -1157,7 +1156,7 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                     const TextBody = loginText(userWithdrawal.display_name, `this is to notify you that your withdrawal request has been logged and we will treat as soon as possible. \n Transaction ID is ${Trans_ID} \n
                     Transaction Reference ID ${req.body.payId? req.body.payId: 'None.'}`);
                     let acct_withdrawal = {
-                    from: { name: `${appName + ' Team'}`, email: '<noreply@ozaapp.com>' },
+                    from: { name: `${appName + ' Team'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
                     to: [{ email: userWithdrawal.email }],
                     subject: 'Withdrawal Notification!',
                     text: TextBody,
@@ -1181,8 +1180,8 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                 const TextBody = loginText(userWithdrawal.display_name, `this is to notify you that withdrawal request has been logged treat as soon as possible. \n Transaction ID is ${Trans_ID} \n
                 ${req.body.payId? 'Transaction Reference ID '+ req.body.payId: 'None.'}`);
                 let fundAcctMailOptionAdmin = {
-                from: { name: `${appName + ' Team'}`, email: '<noreply@ozaapp.com>' },
-                to: [{ email: 'hello@ozaapp.com' }],
+                from: { name: `${appName + ' Team'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
+                to: [{ email: `<${result.app_email || 'noreply@ota.com'}>` }],
                 subject: 'Withdrawal Notification!',
                 text: TextBody,
                 html: mailBody,
@@ -1318,7 +1317,7 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                       const mailBody = loginEmail(appName, 'Account Funding Notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment received. \n Request reference / Transaction ID is ${TransID}, \nThank you`, logoImage)
                       const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID}`);
                       let fundAcctMailOptionUser = {
-                      from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
+                      from: { name: `${appName + ' Sales'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
                       to: [{ email: userFund.email }],
                       subject: 'Account Funding Notification!',
                       text: TextBody,
@@ -1339,8 +1338,8 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                 const mailBody = loginEmail(appName, 'Account Funding Notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} made fund exchange request and it has been logged, kindly treat as soon as possible. \n Request reference / Transaction ID is ${TransID}, \nThank you`, logoImage)
                 const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID}`);
                 let fundAcctMailOptionsAdmin = {
-                from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
-                to: [{ email: 'hello@ozaapp.com' }],
+                from: { name: `${appName + ' Sales'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
+                to: [{ email: `<${result.app_email || 'noreply@ota.com'}>` }],
                 subject: 'Account Funding Notification!',
                 text: TextBody,
                 html: mailBody,
@@ -1448,7 +1447,7 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                       \n Thank you`, logoImage)
                       const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId:''}`);
                       let fundAcctMailUserBuy = {
-                      from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
+                      from: { name: `${appName + ' Sales'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
                       to: [{ email: userFund.email }],
                       subject: 'Transaction Notification!',
                       text: TextBody,
@@ -1471,8 +1470,8 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                   \n Thank you`, logoImage)
                   const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId:''}`);
                   let fundAcctMailBuyAdmin = {
-                  from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
-                  to: [{ email: 'hello@ozaapp.com' }],
+                  from: { name: `${appName + ' Sales'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
+                  to: [{ email: `<${result.app_email || 'noreply@ota.com'}>` }],
                   subject: 'Transaction Notification!',
                   text: TextBody,
                   html: mailBody,
@@ -1607,7 +1606,7 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                   Order ID is ${dataReceive.orderId} Thank you`, logoImage)
                   const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n Order ID is ${dataReceive.orderId}`);
                   let fundAcctUser = {
-                  from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                  from: { name: `${appName + ' Support'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
                   to: [{ email: userFund.email }],
                   subject: 'Account Funding Notification!',
                   text: TextBody,
@@ -1630,8 +1629,8 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                 Order ID is ${dataReceive.orderId} Thank you`, logoImage)
                 const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n Order ID is ${dataReceive.orderId}`);
                 let fundAcctUserAdmin = {
-                from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
-                to: [{ email: 'hello@ozaapp.com' }],
+                from: { name: `${appName + ' Sales'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
+                to: [{ email: `<${result.app_email || 'noreply@ota.com'}>` }],
                 subject: 'Account Funding Notification!',
                 text: TextBody,
                 html: mailBody,

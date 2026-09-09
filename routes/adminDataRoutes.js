@@ -39,7 +39,6 @@ const { loginEmail, loginText } = require('../emailTemplate/emailLogin');
 const UserBankDetails = require('../models/UserBankDetails');
 const TermCondition = require('../models/companyTermsCondition');
 const { isNull } = require('lodash');
-const { transactEmail } = require('../emailTemplate/emailRegister');
 const UserWithdrawal = require('../models/withdrawalRequest');
 
 const {
@@ -950,7 +949,7 @@ router.post("/approveAcctWithdrawal", isAuth, async (req, res) => {
             thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
             let account_issueEMail = {
               //from: `${appName +' Sales'} <noreply@ozaapp.com>`,
-              from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
+              from: { name: `${appName + ' Sales'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
               //to: userDetail.email,
               to: [{ email: userDetail.email }],
               subject: 'Withdrawal Notification!',
@@ -1065,7 +1064,7 @@ router.post("/rejectAccountWithdrawal", isAuth, async (req, res) => {
         We are unable to withdrawal request! Please you can contact support for more details and possible resolutions.<br><br>
         Thank you for choosing ${appName}, we hope you continue to enjoy our awesome services.`)
         let account_issueEMail = {
-          from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+          from: { name: `${appName + ' Support'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
           to: [{ email: userDetail.email }],
           subject: 'Withdrawal Notification!',
           text: mailText,
@@ -2001,7 +2000,7 @@ router.post("/user_accountAction/", isAuth, async (req, res) => {
             thank you for choosing ${appName} and we hope you will continue to enjoy our services`:`this is to notify you that your account has been flashed with an issue. Kindly contact support for more details and possible resolution.
             Thank you` }`)
             let account_ownerEMail = {
-              from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+              from: { name: `${appName + ' Support'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
               to: [{ email: user.email }],
               subject: 'Account Notification!',
               text: mailText,
@@ -2076,7 +2075,7 @@ router.post("/user_accountStateAction/", isAuth, async (req, res) => {
                 thank you for choosing ${appName} and we hope you will continue to enjoy our services`:`this is to notify you that your account has been flashed with an issue. Kindly contact support for more details and possible resolution.
                 Thank you` }`)
                 let account_ownerEMail = {
-                  from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                  from: { name: `${appName + ' Support'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
                   to: [{ email: user.email }],
                   subject: 'Account Notification!',
                   text: mailText,
@@ -2152,7 +2151,7 @@ router.post("/user_ApproveAccountAction/", isAuth, async (req, res) => {
                 thank you for choosing ${appName} and we hope you will enjoy our services`:`this is to notify you that your account has been flashed with an issue. Kindly contact support for more details and possible resolution.
                 Thank you` }`)
                 let account_issueEMail = {
-                  from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                  from: { name: `${appName + ' Support'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
                   to: [{ email: user.email }],
                   subject: 'Account Notification!',
                   text: mailText,
@@ -2331,7 +2330,7 @@ router.post("/adminApprove_document", isAuth, async (req, res) => {
                 thank you for choosing ${appName} and we hope you will enjoy our services`:`this is to notify you that your account document was not approved. Kindly contact support for more details and possible resolution.
                 Thank you` }`)
                 let account_issueEMail = {
-                  from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                  from: { name: `${appName + ' Support'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
                   to: [{ email: user.email }],
                   subject: 'Account Document Notification!',
                   text: mailText,
@@ -2453,7 +2452,7 @@ router.post("/adminRejected_documentUpload", isAuth, async (req, res) => {
                 const mailText = loginText(user.display_name, `this is to notify you that your ${documentName} has been rejected after been carefully reviewed the documents, Reason: ${documentReason} 
                 you can contact support for more details and possible resolution.`)
                 let account_issueEMail = {
-                  from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                  from: { name: `${appName + ' Support'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
                   to: [{ email: user.email }],
                   subject: 'Uploaded Document Notification!',
                   text: mailText,
@@ -2615,7 +2614,7 @@ router.post("/approveAcctFunding", isAuth, async (req, res) => {
             thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
             let account_issueEMail = {
               //from: `${appName +' Sales'} <noreply@ozaapp.com>`,
-              from: { name: `${appName + ' Sales'}`, email: '<noreply@ozaapp.com>' },
+              from: { name: `${appName + ' Sales'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
               //to: userDetail.email,
               to: [{ email: userDetail.email }],
               subject: 'Account Funding Notification!',
@@ -2750,7 +2749,7 @@ router.post("/rejectApproveAcctFunding", isAuth, async (req, res) => {
         const mailText = loginText(userDetail.display_name, `Your account funding of ₦${new Intl.NumberFormat().format(userFund.amount)} with transaction ID ${userFund.fund_number} has been rejected. Reason: ${rejectReason}. Please contact support via your account dashboard for assistance. Thank you for choosing ${appName}.`)
 
         const rejectionEmail = {
-          from: { name: `${appName} Support`, email: 'noreply@ozaapp.com' },
+          from: { name: `${appName} Support`, email: `<${result.app_email || 'noreply@ota.com'}>` },
           to: [{ email: userDetail.email }],
           subject: `Account Funding Rejected — ₦${new Intl.NumberFormat().format(userFund.amount)}`,
           text: mailText,
@@ -2933,7 +2932,7 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
                 // subject: 'Funds Sales Notification!',
                 // text: mailText,
                 // html: mailBody,
-                from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+                from: { name: `${appName + ' Support'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
                 to: [{ email: userDetail.email }],
                 subject: 'Funds Sales Notification',
                 text: mailText,
@@ -3061,7 +3060,7 @@ router.post("/rejectSaleFunding", isAuth, async (req, res) => {
         const mailText = loginText(userDetail.display_name, `Your ${allTranSales.transac_category} sale of $${new Intl.NumberFormat().format(allTranSales.amount)} with transaction ID ${allTranSales.tid} has been rejected. Reason: ${rejectReason}. Contact support via your account dashboard. Thank you for choosing ${appName}.`)
 
         const rejectionEmail = {
-          from: { name: `${appName} Support`, email: 'noreply@ozaapp.com' },
+          from: { name: `${appName} Support`, email: `<${result.app_email || 'noreply@ota.com'}>` },
           to: [{ email: userDetail.email }],
           subject: `Funds Sale Rejected — $${new Intl.NumberFormat().format(allTranSales.amount)}`,
           text: mailText,
@@ -3388,7 +3387,7 @@ router.post("/messageFeedback_send", isAuth, async (req, res) => {
         );
 
         const mailOptions = {
-          from: { name: `${appName} Support`, email: 'noreply@ozaapp.com' },
+          from: { name: `${appName} Support`, email: `<${result.app_email || 'noreply@ota.com'}>` },
           to: [{ email: userDetail.email }],
           subject: `Support Ticket Reply — Ticket #${ticketMessage?.tick_id}`,
           text: emailText,
@@ -3519,7 +3518,7 @@ router.post("/closeUserTicket_message", isAuth, async (req, res) => {
             const mailText = loginText(userDetail.display_name, `This is to notified you that your <b>Ticket ID: ${closeMessage?.tick_id} </b> has been marked completed and closed! If you still have still any issue please, feel free to get back to us. <br><br> 
             Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
             let ticket_issueEMail = {
-              from: { name: `${appName + ' Support'}`, email: '<noreply@ozaapp.com>' },
+              from: { name: `${appName + ' Support'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
               to: [{ email: userDetail.email }],
               subject: 'Account Funding Notification!',
               text: mailText,
