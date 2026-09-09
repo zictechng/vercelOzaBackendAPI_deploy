@@ -938,7 +938,7 @@ router.post("/approveAcctWithdrawal", isAuth, async (req, res) => {
       fetchApp().then((result) => {
         appName = result.app_name
         appLogo = result.app_logo
-        const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+        const logoImage = appLogo;
         const mailBody = loginEmail(appName, 'Withdrawal Approved', userDetail.display_name, `this is to notify you that your withdrawal request of <b>\$${new Intl.NumberFormat().format(userFund.amount)}</b> has been approved and your wallet has be credited with equivalent. 
         <br>
         Transaction ID <b>${userFund.withdrawal_tid}</b><br>
@@ -1051,7 +1051,7 @@ router.post("/rejectAccountWithdrawal", isAuth, async (req, res) => {
       fetchApp().then((result) => {
         appName = result.app_name
         appLogo = result.app_logo
-        const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+        const logoImage = appLogo;
 
         const mailBody = loginEmail(appName, 'Withdrawal Issue', userDetail.display_name, `this is to notify you that your withdrawal request has been rejected or cancelled after been reviewed.
         <br> Withdrawal Amount : <b>\u20A6${new Intl.NumberFormat().format(userFund.amount)}</b> <br>
@@ -1991,7 +1991,7 @@ router.post("/user_accountAction/", isAuth, async (req, res) => {
        fetchApp().then((result) => {
         appName = result.app_name
         appLogo = result.app_logo
-        const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+        const logoImage = appLogo;
 
         const mailBody = loginEmail(appName, `${actionStatus =='Active' ? 'Congratulations' :'Account Issue'}`, user.display_name, ` ${actionStatus ==`Active` ? `this is to notify you that your account has been activated after been carefully reviewed.
         thank you for choosing ${appName} and we hope you will continue enjoy our services`: `this is to notify you that your account has been flashed with an issue. Kindly contact support for more details and possible resolution.
@@ -2066,7 +2066,7 @@ router.post("/user_accountStateAction/", isAuth, async (req, res) => {
            fetchApp().then((result) => {
             appName = result.app_name
             appLogo = result.app_logo
-            const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+            const logoImage = appLogo;
 
             const mailBody = loginEmail(appName, `${actionStatus =='Active' ? 'Congratulations' :'Account Issue'}`, user.display_name, ` ${actionStatus ==`Active` ? `this is to notify you that your account has been activated after been carefully reviewed.
             thank you for choosing ${appName} and we hope you will continue enjoy our services`: `this is to notify you that your account has been flashed with an issue. Kindly contact support for more details and possible resolution.
@@ -2142,7 +2142,7 @@ router.post("/user_ApproveAccountAction/", isAuth, async (req, res) => {
            fetchApp().then((result) => {
             appName = result.app_name
             appLogo = result.app_logo
-            const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+            const logoImage = appLogo;
 
             const mailBody = loginEmail(appName, `${actionStatus =='Approved' ? 'Congratulations' :'Account Issue'}`, user.display_name, ` ${actionStatus ==`Approved` ? `this is to notify you that your account has been fully approved after been carefully reviewed your documents.
             thank you for choosing ${appName} and we hope you will enjoy our services`: `this is to notify you that your account has been flashed with an issue. Kindly contact support for more details and possible resolution.
@@ -2321,7 +2321,7 @@ router.post("/adminApprove_document", isAuth, async (req, res) => {
            fetchApp().then((result) => {
             appName = result.app_name
             appLogo = result.app_logo
-            const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+            const logoImage = appLogo;
 
             const mailBody = loginEmail(appName, `${actionStatus =='Approved' ? 'Congratulations' :'Document Issue'}`, user.display_name, ` ${actionStatus ==`Approved` ? `this is to notify you that your ${documentName} document has been fully approved after been carefully reviewed the documents,
             thank you for choosing ${appName} and we hope you will enjoy our services`: `this is to notify you that your account document was not approved. Kindly contact support for more details and possible resolution.
@@ -2445,7 +2445,7 @@ router.post("/adminRejected_documentUpload", isAuth, async (req, res) => {
            fetchApp().then((result) => {
             appName = result.app_name
             appLogo = result.app_logo
-            const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+            const logoImage = appLogo;
 
             const mailBody = loginEmail(appName, 'Document Issue', user.display_name, `this is to notify you that your ${documentName} has been rejected after been carefully reviewed the documents, Reason: ${documentReason} 
             you can contact support for more details and possible resolution, Thank you`, logoImage)
@@ -2602,7 +2602,7 @@ router.post("/approveAcctFunding", isAuth, async (req, res) => {
       fetchApp().then((result) => {
         appName = result.app_name
         appLogo = result.app_logo
-        const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+        const logoImage = appLogo;
         const mailBody = loginEmail(appName, 'Fund Approved', userDetail.display_name, `this is to notify you that your account funding has been approved and your wallet has be credited with the sum of 
         <b>\u20A6${new Intl.NumberFormat().format(userFund.amount)}</b> <br>
         with transaction ID <b>${userFund.fund_number}</b><br>
@@ -2915,8 +2915,7 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
         fetchApp().then((result) => {
           appName = result.app_name
           appLogo = result.app_logo
-          const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
-
+          const logoImage = appLogo;
           const mailBody = loginEmail(appName, 'Fund Sales Approved', userDetail.display_name, `this is to notify you that your ${allSales.transac_category} funds has been approved and your bank account has be credited with the sum of
           <b>\u20A6${new Intl.NumberFormat().format(totalSales)}</b>. ${bonusMoney? `<br/> Wow... you got some extra money credited to you as signup bonus of <b>\$${new Intl.NumberFormat().format(bonusAmount)}</b>`: ''}
           ${bonusMoney? ` <br>` :''}
@@ -3511,7 +3510,7 @@ router.post("/closeUserTicket_message", isAuth, async (req, res) => {
       fetchApp().then((result) => {
         appName = result.app_name
         appLogo = result.app_logo
-        const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+        const logoImage = appLogo;
 
         const mailBody = loginEmail(appName, 'Ticket Closed', userDetail.display_name, `This is to notified you that your <b>Ticket ID: ${closeMessage?.tick_id} </b> has been marked completed and closed! If you still have still any issue please, feel free to get back to us. <br><br> 
         Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`, logoImage)

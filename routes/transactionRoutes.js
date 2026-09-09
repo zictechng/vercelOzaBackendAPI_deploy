@@ -560,7 +560,7 @@ const processPaymentDetails = async(data, paymentId) =>{
                  fetchApp().then((result) =>{
                     appName = result.app_name
                     appLogo = result.app_logo
-                    const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                    const logoImage = appLogo;
                     const mailBody = loginEmail(appName, 'Account Debit Notification', userFund.display_name, `This is to notify you that your transfer request of
                       <b>${dataReceive.account_source == '2'? `\$${new Intl.NumberFormat().format(req.body.amt)}`:`\u20A6${new Intl.NumberFormat().format(req.body.amt)}`}</b> to
                       ${receiverUser.display_name} was successful and your account has been debited.
@@ -588,7 +588,7 @@ const processPaymentDetails = async(data, paymentId) =>{
                 fetchApp().then((result) =>{
                     appName = result.app_name
                     appLogo = result.app_logo
-                    const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                    const logoImage = appLogo;
                     const mailBody = loginEmail(appName, 'Account Credit Notification', receiverUser.display_name, `This is to notify you that your account was credited with 
                       <b>${dataReceive.account_source == '2'? `\\$${new Intl.NumberFormat().format(dataReceive.amt)}`:`\\u20A6${new Intl.NumberFormat().format(dataReceive.amt)}`}</b> from a wallet transfer. Transaction ID: ${Trans_ID}`, logoImage)
                     const TextBody = loginText(receiverUser.display_name, `This is to notify you that your account was credited with ${dataReceive.account_source == '2'? `$${new Intl.NumberFormat().format(dataReceive.amt)}`:`₦${new Intl.NumberFormat().format(dataReceive.amt)}`}. Transaction ID: ${Trans_ID}`);
@@ -1015,7 +1015,7 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                 fetchApp().then((result) =>{
                     appName = result.app_name
                     appLogo = result.app_logo
-                    const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                    const logoImage = appLogo;
                     const mailBody = loginEmail(appName, 'Withdrawal Notification', userFund.display_name, `this is to notify you that your funds withdrawal request has been logged and we will treat as soon as possible. \n Transaction ID is ${Trans_ID}, \n 
                     ${req.body.payId ? 'Transaction Reference ID '+ req.body.payId: 'None. ' } \n Thank you`, logoImage)
                     const TextBody = loginText(userFund.display_name, `this is to notify you that your withdrawal request has been logged and we will treat as soon as possible. \n Transaction ID is ${Trans_ID} \n
@@ -1150,7 +1150,7 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                 fetchApp().then((result) =>{
                     appName = result.app_name
                     appLogo = result.app_logo
-                    const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                    const logoImage = appLogo;
                     const mailBody = loginEmail(appName, 'Withdrawal Notification', userWithdrawal.display_name, `this is to notify you that your withdrawal request has been logged and we will treat as soon as possible. \n Transaction ID is ${Trans_ID}, \n 
                     Transaction Reference ID ${req.body.payId ? req.body.payId: 'None. ' } \n`, logoImage)
                     const TextBody = loginText(userWithdrawal.display_name, `this is to notify you that your withdrawal request has been logged and we will treat as soon as possible. \n Transaction ID is ${Trans_ID} \n

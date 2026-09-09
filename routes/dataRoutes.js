@@ -1212,7 +1212,7 @@ router.post("/block_AccountMobile", isAuth, async (req, res) => {
       fetchApp().then((result) =>{
         appName = result.app_name
         appLogo = result.app_logo
-        const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+        const logoImage = appLogo;
         const mailBody = loginEmail(appName, 'Account Security', checkUser.display_name, 'this is to notify you that your request to block your account was successful \n Contact admin to unlock the account any time thank you.', logoImage)
         const TextBody = loginText(checkUser.display_name, 'this is to notify you that your request was submitted successfully, your account has been blocked.');
         let mailOptions = {
@@ -1293,7 +1293,7 @@ router.post("/reset_AccountPINMobile", isAuth, async (req, res) => {
            fetchApp().then((result) =>{
             appName = result.app_name
             appLogo = result.app_logo
-            const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+            const logoImage = appLogo;
             const mailBody = loginEmail(appName, 'Account Security', checkUser.display_name, 'this is to notify you that your support ticket was submitted successfully, we will get in-touch shortly thank you', logoImage)
             const TextBody = loginText(checkUser.display_name, 'this is to notify you that your request was submitted successfully, your account PIN been updated.');
            let Account_mailOptions = {
@@ -1383,7 +1383,7 @@ router.post("/submit_ticketMobile", isAuth, async (req, res) => {
       fetchApp().then((result) =>{
         appName = result.app_name
         appLogo = result.app_logo
-        const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+        const logoImage = appLogo;
         const mailBody = loginEmail(appName, 'Open Ticket for Support', checkUser.display_name, `this is to notify you that your support ticket with Ticket ID ${ticketNumber} was submitted successfully, we will get in-touch shortly thank you.`, logoImage)
         const TextBody = loginText(checkUser.display_name, `this is to notify you that your ticket with ID ${ticketNumber} submitted successfully, our staff will get in-touch thank you.`);
         let tickMailOptions = {
@@ -1448,7 +1448,7 @@ router.post("/newsletter_subscriptions", async (req, res) => {
         fetchApp().then((result) =>{
           appName = result.app_name
           appLogo = result.app_logo
-          const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+          const logoImage = appLogo;
           const mailBody = loginEmail(appName, 'New Mailing Subscriptions', 'dear User', `this is to notify you that your subscription to our mailing list was successfully! <br/> Thank you for joining our mailing list.`, logoImage)
           const TextBody = loginText('dear User', `this is to notify you that your mailing request was successfully, you can now receive notifications and update from us.`);
           let tickMailOptions = {
@@ -1517,7 +1517,7 @@ router.post("/submit_ticketWebsite", async (req, res) => {
     fetchApp().then((result) =>{
       appName = result.app_name
       appLogo = result.app_logo
-      const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+      const logoImage = appLogo;
       const mailBody = loginEmail(appName, 'Support Contact Message', req.body.customer_name, `this is to notify you that your message with Ticket ID ${ticketNumber} was submitted successfully, we will get in-touch shortly thank you.`, logoImage)
       const TextBody = loginText(req.body.customer_name, `this is to notify you that your message with ticket ID ${ticketNumber} was submitted successfully, our staff will get in-touch thank you.`);
       let tickMailOptions = {
@@ -1539,7 +1539,7 @@ router.post("/submit_ticketWebsite", async (req, res) => {
   fetchApp().then((result) =>{
     appName = result.app_name
     appLogo = result.app_logo
-    const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+    const logoImage = appLogo;
     const mailBody = loginEmail(appName, 'Online Contact Message', 'Admin', `this is to notify you that ${req.body.customer_name} sent you a message from the website contact us page with Ticket ID ${ticketNumber} kindly review and get in-touch shortly thank you. ,<br/>
     <b>Customer Email:</b> ${req.body.customer_email} <br/>
     <b>Customer Phone:</b> ${req.body.customer_phone}<br/>

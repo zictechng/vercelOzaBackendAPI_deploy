@@ -121,7 +121,7 @@ router.post("/login", async (req, res, next) => {
             fetchApp().then((result) =>{
                 appName = result.app_name
                 appLogo = result.app_logo
-                const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                const logoImage = appLogo;
                 const mailBody = loginEmail(appName, 'Login Authentication', userExist.display_name, 'this is to notify you that your account has just been logged into successfully, If this is not you, contact support for immediate intervention, thank you.', logoImage);
                 const TextBody = loginText(userExist.display_name,);
                 let loginMailOptions = {
@@ -286,7 +286,7 @@ router.post("/otp_verify", async (req, res) => {
             fetchApp().then((result) =>{
             appName = result.app_name
             appLogo = result.app_logo
-            const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+            const logoImage = appLogo;
             const mailBody = loginEmail(appName, 'Account Activated', userExist.display_name, 'this is to notify you that your account has been activated successfully, You can now login to use your account, thank you.', logoImage);
             const TextBody = loginText(userExist.display_name,);
             let otpMailOptions = {
@@ -421,7 +421,7 @@ router.post("/forgetPasswordMobile", async (req, res) => {
                 fetchApp().then((result) =>{
                 appName = result.app_name
                 appLogo = result.app_logo
-                const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                const logoImage = appLogo;
 
                 const mailBody = passwordResetEmail(appName, 'Forget password reset', userExist.display_name, 'this is to notify you that your account has been requested to reset password, If this is not you, contact our support immediately. \n', otpCode, logoImage)
                 const TextBody = passwordResetText(userExist.display_name, otpCode);
@@ -499,7 +499,7 @@ router.post("/resetPasswordMobile", async (req, res) => {
                  fetchApp().then((result) =>{
                     appName = result.app_name
                     appLogo = result.app_logo
-                    const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                    const logoImage = appLogo;
 
                     const mailBody = loginEmail(appName, 'Password reset successfully', userExist.display_name, 'this is to notify you that your account password has been reset, If this is not you, contact our support immediately. \n', logoImage)
                     const TextBody = loginText(userExist.display_name, 'this is to notify you that your account password has been reset, If this is not you, contact our support immediately');
@@ -575,7 +575,7 @@ router.post("/sendUserOTP", async (req, res) => {
             fetchApp().then((result) =>{
             appName = result.app_name
             appLogo = result.app_logo
-            const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+            const logoImage = appLogo;
 
             const mailBody = loginEmail(appName, 'Activation Code', userExistResend.display_name, `Here is your activation code! \n Use the OTP code below to activate your account if you have not done so. \n\n OTP Cde: <h2> ${req.body.otp_code} </h2> \n
                 Thank you.`, logoImage)

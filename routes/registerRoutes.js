@@ -246,7 +246,7 @@ router.post("/register", async (req, res, next) => {
             fetchApp().then((result) =>{
             appName = result.app_name
             appLogo = result.app_logo
-            const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+            const logoImage = appLogo;
 
             const mailBody = registerEmail(appName, 'Congratulations', userDone.display_name, randomSixDigitNumber, logoImage);
             const TextBody = registerEmailText(userDone.display_name, randomSixDigitNumber);
@@ -681,7 +681,7 @@ router.post("/register", async (req, res, next) => {
             fetchApp().then((result) =>{
                 appName = result.app_name
                 appLogo = result.app_logo
-                const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                const logoImage = appLogo;
 
                 const mailBody = _2FAEmail(appName, '2FA OTP Code', userInfo.display_name, randomSixDigitNumber, logoImage);
                 const TextBody = _2FAEmailText(userInfo.display_name, randomSixDigitNumber);
@@ -930,7 +930,7 @@ router.post("/user_activate_email", isAuth, async (req, res) => {
             fetchApp().then((result) =>{
             appName = result.app_name
             appLogo = result.app_logo
-            const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+            const logoImage = appLogo;
 
             const mailBody = loginEmail(appName, 'Email Notification', userPro.display_name, `this is to notify you that email notification has been ${actionStatus == true? 'Enabled': 'Disabled'} in your account, thank you`, logoImage)
             const TextBody = loginText(userPro.display_name, `this is to notify you that email notification has been ${actionStatus == true? 'Enabled': 'Disabled'} in your account, thank you. \n`);
@@ -997,7 +997,7 @@ router.post("/user_activate_2fa_notice", isAuth, async (req, res) => {
         fetchApp().then((result) =>{
             appName = result.app_name
             appLogo = result.app_logo
-            const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+            const logoImage = appLogo;
 
             const mailBody = loginEmail(appName, '2FA Authentication Notification', userPro.display_name, `this is to notify you that 2FA authentication has been ${actionStatus == true? 'Enabled': 'Disabled'} in your account, thank you`, logoImage)
             const TextBody = loginText(userPro.display_name, `this is to notify you that 2FA authentication has been ${actionStatus == true? 'Enabled': 'Disabled'} in your account, thank you. \n`);
@@ -1063,7 +1063,7 @@ router.post("/user_notice_request", isAuth, async (req, res) => {
             fetchApp().then((result) =>{
                 appName = result.app_name
                 appLogo = result.app_logo
-                const logoImage = `<img src=${appLogo} width='100' height='100'/>`;
+                const logoImage = appLogo;
 
                 const mailBody = loginEmail(appName, 'In-App Notification', userPro.display_name, `this is to notify you that in-app notification has been ${actionStatus == true? 'Enabled': 'Disabled'} in your account, thank you.`, logoImage)
                 const TextBody = loginText(userPro.display_name, `this is to notify you that in-app notification has been ${actionStatus == true? 'Enabled': 'Disabled'} in your account, thank you. \n`);
