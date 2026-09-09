@@ -30,7 +30,6 @@ const generateReference = (prefix = 'BILL') => {
 };
 
 // -- Bill payment confirmation email ---------------
-// -- Bill payment confirmation email ---------------
 const sendBillPaymentEmail = async ({
   email,
   name,
@@ -39,6 +38,7 @@ const sendBillPaymentEmail = async ({
   reference,
   balance,
   coins_earned,
+  token = '',
 }) => {
   try {
     const appSettings = await getAppSettings();
@@ -50,11 +50,13 @@ const sendBillPaymentEmail = async ({
       Your <strong>${service_title}</strong> payment was successful.<br/><br/>
       <table style="width:100%; border-collapse:collapse;">
         <tr><td style="padding:8px 0; color:#6B7280; font-size:14px;">Service</td><td style="padding:8px 0; font-weight:700; text-align:right;">${service_title}</td></tr>
-        <tr style="border-top:1px solid #E5E7EB;"><td style="padding:8px 0; color:#6B7280; font-size:14px;">Amount</td><td style="padding:8px 0; font-weight:700; text-align:right; color:#10B981;">₦${Number(amount).toLocaleString()}</td></tr>
+        <tr style="border-top:1px solid #E5E7EB;"><td style="padding:8px 0; color:#6B7280; font-size:14px;">Amount</td><td style="padding:8px 0; font-weight:700; text-align:right; color:#10B981;">&#8358;${Number(amount).toLocaleString()}</td></tr>
+        ${token ? `<tr style="border-top:1px solid #E5E7EB;"><td style="padding:8px 0; color:#6B7280; font-size:14px;">Token</td><td style="padding:8px 0; font-weight:800; text-align:right; font-size:16px; color:#4C5FD5; letter-spacing:2px;">${token}</td></tr>` : ''}
         <tr style="border-top:1px solid #E5E7EB;"><td style="padding:8px 0; color:#6B7280; font-size:14px;">Reference</td><td style="padding:8px 0; font-weight:700; text-align:right; font-size:12px;">${reference}</td></tr>
-        <tr style="border-top:1px solid #E5E7EB;"><td style="padding:8px 0; color:#6B7280; font-size:14px;">New Balance</td><td style="padding:8px 0; font-weight:700; text-align:right;">₦${Number(balance).toLocaleString()}</td></tr>
+        <tr style="border-top:1px solid #E5E7EB;"><td style="padding:8px 0; color:#6B7280; font-size:14px;">New Balance</td><td style="padding:8px 0; font-weight:700; text-align:right;">&#8358;${Number(balance).toLocaleString()}</td></tr>
         ${coins_earned > 0 ? `<tr style="border-top:1px solid #E5E7EB;"><td style="padding:8px 0; color:#6B7280; font-size:14px;">Coins Earned</td><td style="padding:8px 0; font-weight:700; text-align:right; color:#4C5FD5;">+${coins_earned} coins 🎉</td></tr>` : ''}
       </table>
+      ${token ? `<br/><div style="background:#EEF2FF; border-radius:12px; padding:16px; text-align:center; margin-top:8px;"><p style="margin:0 0 8px; color:#6B7280; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:1px;">Your Electricity Token</p><p style="margin:0; font-size:22px; font-weight:800; color:#4C5FD5; letter-spacing:3px;">${token}</p><p style="margin:8px 0 0; color:#6B7280; font-size:11px;">Keep this token safe — it is required to recharge your meter</p></div>` : ''}
     `;
 
     const html = loginEmail(
@@ -70,7 +72,7 @@ const sendBillPaymentEmail = async ({
       to: [{ email }],
       subject: `${service_title} Payment Successful - ${APP_NAME}`,
       html,
-      text: `Your ${service_title} payment of NGN${Number(amount).toLocaleString()} was successful. Reference: ${reference}`,
+      text: `Your ${service_title} payment of NGN${Number(amount).toLocaleString()} was successful. Reference: ${reference}${token ? `. Token: ${token}` : ''}`,
     });
   } catch (error) {
     console.log('sendBillPaymentEmail error:', error.message);
@@ -523,7 +525,7 @@ const finalizeBillTransaction = async ({
   // 7. Send email notification — non-blocking
   try {
     if (user?.email) {
-      await sendBillPaymentEmail({
+        await sendBillPaymentEmail({
         email: user.email,
         name: user.display_name || 'User',
         service_title,
@@ -531,6 +533,7 @@ const finalizeBillTransaction = async ({
         reference,
         balance: wallet_balance_after,
         coins_earned: coinsResult.coins || 0,
+        token: token_delivered || '',
       });
     }
   } catch (emailError) {
