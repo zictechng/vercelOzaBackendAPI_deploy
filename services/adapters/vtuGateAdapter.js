@@ -277,11 +277,36 @@ class VTUGateAdapter extends BaseAdapter {
   // -----------------------------------------------
   // Buy exam card
   // -----------------------------------------------
-  async buyExamCard({ service_id, quantity, phone, email, reference }) {
+    // Get exam card price by service_id
+  // -----------------------------------------------
+  async getExamPrice({ service_id }) {
+    try {
+      const res = await this.client.post(
+        '/api/v1/geteducationtypeprice',
+        this.form({ service_id })
+      );
+      if (res.data?.status !== true) {
+        return this.error(res.data?.message || 'Failed to fetch price', res.data);
+      }
+      return this.success({
+        price: res.data?.data?.price || 0,
+        type: res.data?.data?.type || '',
+      });
+    } catch (error) {
+      return this.error(
+        error.response?.data?.message || 'Failed to fetch price',
+        error.response?.data
+      );
+    }
+  }
+
+  // Buy exam card
+  // -----------------------------------------------
+  async buyExamCard({ service_id, product_code, quantity, phone, email, reference }) {
     try {
       const res = await this.client.post(
         '/api/v1/buyeducation',
-        this.form({ service_id, quantity, phone, email, external_reference: reference })
+        this.form({ service_id, product_code, quantity, phone, email, external_reference: reference })
       );
       if (res.data?.status !== true) {
         return this.error(res.data?.message || 'Exam card purchase failed', res.data);

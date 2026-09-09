@@ -623,6 +623,28 @@ router.post('/bills/buy_tv', isAuth, async (req, res) => {
   }
 });
 
+
+// GET /api/bills/exam_price/:service_id
+// Get exam card price from provider
+router.get('/bills/exam_price/:service_id', isAuth, async (req, res) => {
+  try {
+    const { service_id } = req.params;
+    const { adapter } = await resolveAdapter('exam_cards');
+    const result = await adapter.getExamPrice({ service_id });
+    if (!result.success) {
+      return res.json(response.error(result.message));
+    }
+    return res.json({
+      msg: '200',
+      price: result.price,
+      type: result.type,
+    });
+  } catch (error) {
+    console.log('Get exam price error:', error.message);
+    return res.json(response.error('Could not fetch price.'));
+  }
+});
+
 // ------------------------------------------------
 // POST /api/bills/buy_exam_cards
 // Purchase exam scratch card pins
@@ -660,6 +682,7 @@ router.post('/bills/buy_exam_cards', isAuth, async (req, res) => {
     // 6. Call provider
     const providerResult = await adapter.buyExamCard({
       service_id,
+      product_code: exam_type, // product_code = waec, neco, jamb, nabteb
       quantity: Number(quantity),
       phone,
       email,
