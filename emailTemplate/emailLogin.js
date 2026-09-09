@@ -1,173 +1,213 @@
-const newsLetterEmail = (clientName) => `<p>Hi ${clientName}, here you have today news.</p>`
 
-const loginEmail = (sendCompanyName, sendTitle, sendReceiverName, sendMessage, logo) =>
-    `<!DOCTYPE html>
-    <html>
-    <head>
-    <title></title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <style type="text/css">
-    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-    img { -ms-interpolation-mode: bicubic; }
-    
-    img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
-    table { border-collapse: collapse !important; }
-    body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
-    
-    a[x-apple-data-detectors] {
-        color: inherit !important;
-        text-decoration: none !important;
-        font-size: inherit !important;
-        font-family: inherit !important;
-        font-weight: inherit !important;
-        line-height: inherit !important;
-    } 
-    @media screen and (max-width: 480px) {
-        .mobile-hide {
-            display: none !important;
-        }
-        .mobile-center {
-            text-align: center !important;
-        }
-    }
-    div[style*="margin: 16px 0;"] { margin: 0 !important; }
-    </style>
-    <body style="margin: 0 !important; padding: 0 !important; background-color: #eeeeee;" bgcolor="#eeeeee">
-    
-    <table border="0" cellpadding="0" cellspacing="0" width="100%">
-        <tr>
-            <td align="center" style="background-color: #eeeeee;" bgcolor="#eeeeee">
-            
-          <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
+const moment = require('moment');
+
+// ─── SHARED BASE STYLES
+const baseStyles = `
+  body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+  table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+  img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+  table { border-collapse: collapse !important; }
+  body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #F0F4F8; }
+  a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; font-size: inherit !important; }
+  @media screen and (max-width: 600px) {
+    .mobile-padding { padding: 20px !important; }
+    .mobile-text { font-size: 14px !important; }
+    .mobile-title { font-size: 22px !important; }
+    .mobile-hide { display: none !important; }
+  }
+`;
+
+// ─── GET ICON & COLOR BY TITLE TYPE
+const getEmailStyle = (title) => {
+  const t = title?.toLowerCase() || '';
+
+  if (t.includes('login') || t.includes('sign in') || t.includes('access'))
+    return { icon: '🔐', color: '#4C5FD5', light: '#EEF2FF', label: 'Security Alert' };
+  if (t.includes('fund') || t.includes('credit') || t.includes('payment') || t.includes('deposit'))
+    return { icon: '💰', color: '#10B981', light: '#D1FAE5', label: 'Payment Notification' };
+  if (t.includes('withdraw'))
+    return { icon: '💸', color: '#F59E0B', light: '#FEF3C7', label: 'Withdrawal Notification' };
+  if (t.includes('approved') || t.includes('congratulations') || t.includes('activated') || t.includes('success'))
+    return { icon: '✅', color: '#10B981', light: '#D1FAE5', label: 'Great News!' };
+  if (t.includes('reject') || t.includes('issue') || t.includes('cancel') || t.includes('failed'))
+    return { icon: '❌', color: '#EF4444', light: '#FEE2E2', label: 'Action Required' };
+  if (t.includes('2fa') || t.includes('otp') || t.includes('verification') || t.includes('auth'))
+    return { icon: '🛡️', color: '#8B5CF6', light: '#EDE9FE', label: 'Security Code' };
+  if (t.includes('password') || t.includes('reset'))
+    return { icon: '🔑', color: '#F59E0B', light: '#FEF3C7', label: 'Password Reset' };
+  if (t.includes('transaction') || t.includes('exchange') || t.includes('transfer'))
+    return { icon: '🔄', color: '#4C5FD5', light: '#EEF2FF', label: 'Transaction Update' };
+  if (t.includes('ticket') || t.includes('support'))
+    return { icon: '🎫', color: '#06B6D4', light: '#CFFAFE', label: 'Support Ticket' };
+  if (t.includes('account') || t.includes('profile'))
+    return { icon: '👤', color: '#4C5FD5', light: '#EEF2FF', label: 'Account Update' };
+  if (t.includes('notification') || t.includes('in-app'))
+    return { icon: '🔔', color: '#8B5CF6', light: '#EDE9FE', label: 'Notification Update' };
+  if (t.includes('deactivat') || t.includes('delete') || t.includes('block'))
+    return { icon: '⚠️', color: '#EF4444', light: '#FEE2E2', label: 'Account Notice' };
+
+  return { icon: '📧', color: '#4C5FD5', light: '#EEF2FF', label: 'Notification' };
+};
+
+// ─── MAIN LOGIN/GENERAL EMAIL TEMPLATE
+const loginEmail = (sendCompanyName, sendTitle, sendReceiverName, sendMessage, logo) => {
+  const { icon, color, light, label } = getEmailStyle(sendTitle);
+  const year = new Date().getFullYear();
+  const logoHtml = logo
+    ? `<img src="${logo}" alt="${sendCompanyName}" style="height:40px; width:40px; border-radius:8px; object-fit:cover;" />`
+    : `<div style="width:40px; height:40px; background:${color}; border-radius:8px; display:inline-block; text-align:center; line-height:40px; color:white; font-weight:800; font-size:18px;">${sendCompanyName?.charAt(0) || 'A'}</div>`;
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>${sendTitle} — ${sendCompanyName}</title>
+  <style type="text/css">${baseStyles}</style>
+</head>
+<body style="margin:0; padding:0; background-color:#F0F4F8; font-family: 'Segoe UI', Arial, sans-serif;">
+
+  <!-- Wrapper -->
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F0F4F8;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+
+        <!-- Email Card -->
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; background:#ffffff; border-radius:20px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, ${color} 0%, ${color}CC 100%); padding: 32px 40px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                    <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#1D2667">
-                
-                    <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;">
-                        <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                            <tr>
-                                <td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; line-height: 35px;" class="mobile-center">
-                            <h3 style="font-size: 25px; font-weight: 700; margin: 0; color: #ffffff;">${sendCompanyName}</h3>
+                  <td>
+                    <table cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="vertical-align:middle; padding-right:12px;">${logoHtml}</td>
+                        <td style="vertical-align:middle;">
+                          <span style="color:#ffffff; font-size:20px; font-weight:800; letter-spacing:-0.5px;">${sendCompanyName}</span>
                         </td>
-                    </tr>
-                </table>
-            </div>
-            
-            <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;" class="mobile-hide">
-                <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                    <tr>
-                        <td align="right" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 48px; font-weight: 400; line-height: 48px;">
-                            <table cellspacing="0" cellpadding="0" border="0" align="right">
-                                <tr>
-                                    <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
-                                        <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
-                                        ${logo} &nbsp;</a></p>
-                                    </td>
-                                   
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-          
+                      </tr>
+                    </table>
+                  </td>
+                  <td align="right">
+                    <span style="color:rgba(255,255,255,0.7); font-size:12px;">${moment().format('DD MMM YYYY')}</span>
+                  </td>
+                </tr>
+              </table>
             </td>
-        </tr>
-        <tr>
-            <td height="296" align="center" bgcolor="#ffffff" style="padding: 35px 35px 20px 35px; background-color: #ffffff;">
-            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                <tr>
-                    <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                    <img src="https://img.icons8.com/ios/100/null/user-male-circle--v2.png" style="display: block; border: 0px;" /><br>
-                        <h4 style="font-size: 20px; font-weight: 600; line-height: 26px; color: #333333; margin: 0;">
-                            ${sendTitle}
-                        </h4>
-                    </td>
-                </tr>
-                <tr>
-                    <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                        <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                        Hello ${sendReceiverName}, ${sendMessage}
-                        </p>
-                    </td>
-                </tr>
-                <tr>
-                      <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                      <h3 style="font-size: 30px; font-weight: 800; line-height: 36px; color: #333333; margin: 0;">
-                       
-                      </h3>
-                          <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                          
-                          </p>
-                      </td>
-                  </tr>
-                <tr>
-                    <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                        <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                        </p>
-                    </td>
-                </tr>
-            </table>
-            
+          </tr>
+
+          <!-- Icon Badge -->
+          <tr>
+            <td align="center" style="padding: 40px 40px 0;">
+              <div style="width:72px; height:72px; background:${light}; border-radius:50%; display:inline-block; text-align:center; line-height:72px; font-size:32px; margin-bottom:16px;">
+                ${icon}
+              </div>
+              <p style="margin:0; color:${color}; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px;">${label}</p>
             </td>
-        </tr>
-        
-        <tr>
-            <td align="center" style=" padding: 35px; background-color: #010A4F;" bgcolor="#010A4F">
-            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                <tr>
-                    <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                        <h5 style="font-size: 18px; font-weight: 600; line-height: 15px; color: #ffffff; margin: 0;">
-                            Contact support for more details.
-                        </h5>
-                    </td>
-                </tr>
-                <tr>
-                    <td align="center" style="padding: 25px 0 15px 0;">
-                        <table border="0" cellspacing="0" cellpadding="0">
-                            <tr>
-                                <td align="center" style="border-radius: 5px;" bgcolor="#66b3b7">
-                                  <a href="https://ozaapp.com/contact-us" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #1D2667; padding: 15px 30px; border: 1px solid #1D2667; display: block;">Contact</a>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-            </table>
+          </tr>
+
+          <!-- Title -->
+          <tr>
+            <td align="center" style="padding: 16px 40px 0;">
+              <h1 style="margin:0; color:#1a1a2e; font-size:26px; font-weight:800; line-height:1.3;">${sendTitle}</h1>
             </td>
-        </tr>
-        <tr>
-            <td align="center" style="padding: 35px; background-color: #ffffff;" bgcolor="#ffffff">
-            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                
-                <tr>
-                    <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px; padding: 5px 0 10px 0;">
-                        <p style="font-size: 14px; font-weight: 800; line-height: 18px; color: #333333;">&nbsp;</p>
-                    </td>
-                </tr>
-                <tr>
-                    <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
-                        <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
-                            
-                            You have received this email because you are a Customer of ${sendCompanyName}<br>
-                            This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of ${sendCompanyName}. It is confidential, private and intended for the address only.
-                        
-                        </p>
-                    </td>
-                </tr>
-            </table>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td align="center" style="padding: 20px 40px;">
+              <div style="width:48px; height:4px; background:${color}; border-radius:4px;"></div>
             </td>
-        </tr>
-    </table>
-    </td>
-</tr>
-</table>
+          </tr>
+
+          <!-- Greeting -->
+          <tr>
+            <td style="padding: 0 40px;">
+              <p style="margin:0 0 16px; color:#374151; font-size:16px; line-height:1.6;">
+                Hello <strong>${sendReceiverName}</strong>,
+              </p>
+            </td>
+          </tr>
+
+          <!-- Message Body -->
+          <tr>
+            <td style="padding: 0 40px 32px;">
+              <div style="background:${light}; border-left:4px solid ${color}; border-radius:0 12px 12px 0; padding:20px 24px;">
+                <p style="margin:0; color:#374151; font-size:15px; line-height:1.8;">
+                  ${sendMessage}
+                </p>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Security Note -->
+          <tr>
+            <td style="padding: 0 40px 32px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F9FAFB; border-radius:12px; padding:16px;">
+                <tr>
+                  <td style="padding:16px;">
+                    <p style="margin:0; color:#6B7280; font-size:13px; line-height:1.6;">
+                      🔒 <strong>Security tip:</strong> ${sendCompanyName} will never ask for your password, PIN or OTP via email or phone. If you did not initiate this action, please contact our support team immediately.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- CTA Button -->
+          <tr>
+            <td align="center" style="padding: 0 40px 40px;">
+              <a href="#" style="display:inline-block; background:linear-gradient(135deg, ${color} 0%, ${color}CC 100%); color:#ffffff; font-size:15px; font-weight:700; text-decoration:none; padding:14px 40px; border-radius:12px; letter-spacing:0.3px;">
+                Visit ${sendCompanyName} &rarr;
+              </a>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#F9FAFB; border-top:1px solid #E5E7EB; padding:32px 40px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center">
+                    <p style="margin:0 0 8px; color:#1a1a2e; font-size:16px; font-weight:800;">${sendCompanyName}</p>
+                    <p style="margin:0 0 16px; color:#9CA3AF; font-size:12px;">The secure and profitable way to manage your virtual funds</p>
+                    <div style="margin-bottom:16px;">
+                      <a href="#" style="color:${color}; font-size:12px; text-decoration:none; margin:0 8px;">Support</a>
+                      <span style="color:#D1D5DB;">|</span>
+                      <a href="#" style="color:${color}; font-size:12px; text-decoration:none; margin:0 8px;">Privacy Policy</a>
+                      <span style="color:#D1D5DB;">|</span>
+                      <a href="#" style="color:${color}; font-size:12px; text-decoration:none; margin:0 8px;">Terms</a>
+                    </div>
+                    <p style="margin:0; color:#9CA3AF; font-size:11px; line-height:1.6;">
+                      &copy; ${year} ${sendCompanyName}. All rights reserved.<br/>
+                      You received this email because you are a registered customer of ${sendCompanyName}.<br/>
+                      This email and its contents are confidential and intended for the addressee only.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+        <!-- End Email Card -->
+
+      </td>
+    </tr>
+  </table>
+
 </body>
-    </html>`
+</html>`;
+};
 
 const loginText = (sendReceiverName, textMessage) =>
-    `Hello ${sendReceiverName}, ${textMessage}`
+  `Hello ${sendReceiverName},\n\n${textMessage}\n\nThank you.`;
 
-module.exports = {newsLetterEmail, loginEmail, loginText}
+const newsLetterEmail = (clientName) =>
+  `<p>Hi ${clientName}, here you have today's news.</p>`;
+
+module.exports = { newsLetterEmail, loginEmail, loginText };

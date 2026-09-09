@@ -1,520 +1,216 @@
+
 const moment = require('moment');
-const registerEmail = (sendCompanyName, sendTitle, sendReceiverName, otpCode, logo) =>
-    `<!DOCTYPE html>
-    <html>
-    <head>
-    <title></title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <style type="text/css">
-    
-    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-    img { -ms-interpolation-mode: bicubic; }
-    
-    img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
-    table { border-collapse: collapse !important; }
-    body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
-    
-    
-    a[x-apple-data-detectors] {
-        color: inherit !important;
-        text-decoration: none !important;
-        font-size: inherit !important;
-        font-family: inherit !important;
-        font-weight: inherit !important;
-        line-height: inherit !important;
-    }
-    
-    @media screen and (max-width: 480px) {
-        .mobile-hide {
-            display: none !important;
-        }
-        .mobile-center {
-            text-align: center !important;
-        }
-    }
-    div[style*="margin: 16px 0;"] { margin: 0 !important; }
-    </style>
-    <body style="margin: 0 !important; padding: 0 !important; background-color: #eeeeee;" bgcolor="#eeeeee">
-    
-    <table border="0" cellpadding="0" cellspacing="0" width="100%">
-        <tr>
-            <td align="center" style="background-color: #eeeeee;" bgcolor="#eeeeee">
-            
-            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
+
+const baseStyles = `
+  body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+  table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+  img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+  table { border-collapse: collapse !important; }
+  body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #F0F4F8; }
+  @media screen and (max-width: 600px) {
+    .otp-digit { font-size: 28px !important; padding: 12px 16px !important; }
+  }
+`;
+
+// ─── REGISTRATION / OTP / 2FA EMAIL
+const registerEmail = (sendCompanyName, sendTitle, sendReceiverName, otpCode, logo) => {
+  const year = new Date().getFullYear();
+  const isWelcome = sendTitle?.toLowerCase().includes('congratulations') || sendTitle?.toLowerCase().includes('welcome');
+  const color = isWelcome ? '#10B981' : '#4C5FD5';
+  const light = isWelcome ? '#D1FAE5' : '#EEF2FF';
+  const icon = isWelcome ? '🎉' : '🔐';
+  const label = isWelcome ? 'Welcome Aboard!' : 'Verify Your Account';
+
+  const logoHtml = logo
+    ? `<img src="${logo}" alt="${sendCompanyName}" style="height:40px; width:40px; border-radius:8px; object-fit:cover;" />`
+    : `<div style="width:40px; height:40px; background:${color}; border-radius:8px; display:inline-block; text-align:center; line-height:40px; color:white; font-weight:800; font-size:18px;">${sendCompanyName?.charAt(0) || 'A'}</div>`;
+
+  // Format OTP as individual digit boxes
+  const otpDigits = String(otpCode).split('').map(d =>
+    `<td style="padding:4px;">
+      <div style="width:44px; height:56px; background:#ffffff; border:2px solid ${color}; border-radius:12px; text-align:center; line-height:56px; font-size:28px; font-weight:800; color:${color}; display:inline-block;">
+        ${d}
+      </div>
+    </td>`
+  ).join('');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>${sendTitle} — ${sendCompanyName}</title>
+  <style type="text/css">${baseStyles}</style>
+</head>
+<body style="margin:0; padding:0; background-color:#F0F4F8; font-family: 'Segoe UI', Arial, sans-serif;">
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F0F4F8;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; background:#ffffff; border-radius:20px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, ${color} 0%, ${color}CC 100%); padding: 32px 40px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                    <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#1D2667">
-                
-                    <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;">
-                        <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                            <tr>
-                                <td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; line-height: 35px;" class="mobile-center">
-                            <h3 style="font-size: 25px; font-weight: 700; margin: 0; color: #ffffff;">${sendCompanyName}</h3>
+                  <td>
+                    <table cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="vertical-align:middle; padding-right:12px;">${logoHtml}</td>
+                        <td style="vertical-align:middle;">
+                          <span style="color:#ffffff; font-size:20px; font-weight:800;">${sendCompanyName}</span>
                         </td>
-                    </tr>
+                      </tr>
+                    </table>
+                  </td>
+                  <td align="right">
+                    <span style="color:rgba(255,255,255,0.7); font-size:12px;">${moment().format('DD MMM YYYY')}</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Icon -->
+          <tr>
+            <td align="center" style="padding: 40px 40px 16px;">
+              <div style="width:80px; height:80px; background:${light}; border-radius:50%; display:inline-block; text-align:center; line-height:80px; font-size:36px;">
+                ${icon}
+              </div>
+            </td>
+          </tr>
+
+          <!-- Label + Title -->
+          <tr>
+            <td align="center" style="padding: 0 40px 8px;">
+              <p style="margin:0 0 8px; color:${color}; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px;">${label}</p>
+              <h1 style="margin:0; color:#1a1a2e; font-size:26px; font-weight:800; line-height:1.3;">${sendTitle}</h1>
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td align="center" style="padding: 16px 40px;">
+              <div style="width:48px; height:4px; background:${color}; border-radius:4px;"></div>
+            </td>
+          </tr>
+
+          <!-- Greeting -->
+          <tr>
+            <td style="padding: 0 40px 24px;">
+              <p style="margin:0; color:#374151; font-size:16px; line-height:1.6;">
+                Hello <strong>${sendReceiverName}</strong>,<br/>
+                ${isWelcome
+                  ? `Welcome to <strong>${sendCompanyName}</strong>! We are excited to have you on board. Your account has been created successfully. Please use the OTP below to verify and activate your account.`
+                  : `Your one-time verification code is below. Please use it to complete your verification. This code expires in <strong>10 minutes</strong>.`}
+              </p>
+            </td>
+          </tr>
+
+          <!-- OTP Box -->
+          <tr>
+            <td align="center" style="padding: 0 40px 32px;">
+              <div style="background:${light}; border-radius:16px; padding:32px 24px; display:inline-block;">
+                <p style="margin:0 0 16px; color:#6B7280; font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:1px;">Your Verification Code</p>
+                <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
+                  <tr>${otpDigits}</tr>
                 </table>
-            </div>
-            
-            <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;" class="mobile-hide">
-                <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                    <tr>
-                        <td align="right" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 48px; font-weight: 400; line-height: 48px;">
-                            <table cellspacing="0" cellpadding="0" border="0" align="right">
-                                <tr>
-                                    <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
-                                        <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
-                                        ${logo} &nbsp;</a></p>
-                                    </td>
-                                   
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-          
+                <p style="margin:16px 0 0; color:#6B7280; font-size:12px;">
+                  ⏰ This code expires in <strong>10 minutes</strong>
+                </p>
+              </div>
             </td>
-        </tr>
-        <tr>
-            <td align="center" style="padding: 35px 35px 20px 35px; background-color: #ffffff;" bgcolor="#ffffff">
-            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
+          </tr>
+
+          <!-- Warning -->
+          <tr>
+            <td style="padding: 0 40px 32px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#FEF3C7; border-radius:12px; border-left:4px solid #F59E0B;">
                 <tr>
-                    <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                    <img src="https://img.icons8.com/ios/100/null/user-male-circle--v2.png" style="display: block; border: 0px;" /><br>
-                        <h4 style="font-size: 30px; font-weight: 800; line-height: 36px; color: #333333; margin: 0;">
-                        
-                        ${sendTitle}
-                        </h4>
-                    </td>
+                  <td style="padding:16px 20px;">
+                    <p style="margin:0; color:#92400E; font-size:13px; line-height:1.6;">
+                      ⚠️ <strong>Never share this code</strong> with anyone. ${sendCompanyName} will never ask for your OTP via phone or chat. If you did not request this, please ignore this email.
+                    </p>
+                  </td>
                 </tr>
-                <tr>
-                    <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                        <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                        Hello ${sendReceiverName}, this is to notify you that your account has been created successfully. <br>Next step is to activate your account, use the OTP code below to activate your account.
-                        </p>
-                    </td>
-                </tr>
-                <tr>
-                      <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 20px; padding-top: 10px;">
-                      <h3 style="font-size: 20px; font-weight: 800; line-height: 36px; color: #333333; margin: 0;">
-                        OTP Code ${otpCode}
-                      </h3>
-                          <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                          Use this code to activate your account before you can be able to login.
-                          </p>
-                      </td>
-                  </tr>
-                <tr>
-                    <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                        <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                        </p>
-                    </td>
-                </tr>
-            </table>
-            
+              </table>
             </td>
-        </tr>
-        
-        <tr>
-            <td align="center" style=" padding: 35px; background-color: #010A4F;" bgcolor="#1b9ba3">
-            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                <tr>
-                    <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                        <h5 style="font-size: 18px; font-weight: 600; line-height: 15px; color: #ffffff; margin: 0;">
-                            Contact support for more details.
-                        </h5>
+          </tr>
+
+          <!-- What's next -->
+          ${isWelcome ? `
+          <tr>
+            <td style="padding: 0 40px 32px;">
+              <p style="margin:0 0 12px; color:#1a1a2e; font-size:15px; font-weight:700;">🚀 Get started with ${sendCompanyName}:</p>
+              <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                ${['Complete your profile to unlock all features', 'Fund your wallet to start transacting', 'Earn rewards and bonuses on every transaction', 'Invite friends and earn referral bonuses'].map((item, i) =>
+                  `<tr>
+                    <td style="padding:6px 0;">
+                      <div style="width:24px; height:24px; background:${color}; border-radius:50%; display:inline-block; text-align:center; line-height:24px; color:white; font-size:11px; font-weight:800; vertical-align:middle; margin-right:10px;">${i + 1}</div>
+                      <span style="color:#374151; font-size:14px; vertical-align:middle;">${item}</span>
                     </td>
-                </tr>
-                <tr>
-                    <td align="center" style="padding: 25px 0 15px 0;">
-                        <table border="0" cellspacing="0" cellpadding="0">
-                            <tr>
-                                <td align="center" style="border-radius: 5px;" bgcolor="#66b3b7">
-                                  <a href="https://ozaapp.com/contact-us" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #1D2667; padding: 15px 30px; border: 1px solid #1D2667; display: block;">Contact</a>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-            </table>
+                  </tr>`
+                ).join('')}
+              </table>
             </td>
-        </tr>
-        <tr>
-            <td align="center" style="padding: 35px; background-color: #ffffff;" bgcolor="#ffffff">
-            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                
+          </tr>` : ''}
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#F9FAFB; border-top:1px solid #E5E7EB; padding:32px 40px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                    <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px; padding: 5px 0 10px 0;">
-                        <p style="font-size: 14px; font-weight: 800; line-height: 18px; color: #333333;">&nbsp;</p>
-                    </td>
+                  <td align="center">
+                    <p style="margin:0 0 8px; color:#1a1a2e; font-size:16px; font-weight:800;">${sendCompanyName}</p>
+                    <p style="margin:0 0 16px; color:#9CA3AF; font-size:12px;">The secure and profitable way to manage your virtual funds</p>
+                    <div style="margin-bottom:16px;">
+                      <a href="#" style="color:${color}; font-size:12px; text-decoration:none; margin:0 8px;">Support</a>
+                      <span style="color:#D1D5DB;">|</span>
+                      <a href="#" style="color:${color}; font-size:12px; text-decoration:none; margin:0 8px;">Privacy Policy</a>
+                      <span style="color:#D1D5DB;">|</span>
+                      <a href="#" style="color:${color}; font-size:12px; text-decoration:none; margin:0 8px;">Terms</a>
+                    </div>
+                    <p style="margin:0; color:#9CA3AF; font-size:11px; line-height:1.6;">
+                      &copy; ${year} ${sendCompanyName}. All rights reserved.<br/>
+                      You received this because you registered on ${sendCompanyName}.<br/>
+                      This code is confidential — do not share with anyone.
+                    </p>
+                  </td>
                 </tr>
-                <tr>
-                    <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
-                        <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
-                            You have received this email because you are a Customer of ${sendCompanyName}<br>
-This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of ${sendCompanyName}. It is confidential, private and intended for the address only.
-                        </p>
-                    </td>
-                </tr>
-            </table>
+              </table>
             </td>
-        </tr>
-    </table>
-    </td>
-</tr>
-</table>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+
 </body>
-    </html> `
+</html>`;
+};
 
 const registerEmailText = (sendReceiverName, otpCode) =>
-    `Hello ${sendReceiverName}, this is to notify you that your account has been opened successfully, your account officer will contact you shortly for further details, thank you. \n
-    OTP Code ${otpCode}, Use this code to verify your account before you can be able to login.`
+  `Hello ${sendReceiverName},\n\nYour verification code is: ${otpCode}\n\nThis code expires in 10 minutes. Do not share it with anyone.\n\nThank you.`;
 
-    const _2FAEmail = (sendCompanyName, sendTitle, sendReceiverName, otpCode, logo) =>
-    `<!DOCTYPE html>
-    <html>
-    <head>
-    <title></title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <style type="text/css">
-    
-    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-    img { -ms-interpolation-mode: bicubic; }
-    
-    img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
-    table { border-collapse: collapse !important; }
-    body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
-    
-    
-    a[x-apple-data-detectors] {
-        color: inherit !important;
-        text-decoration: none !important;
-        font-size: inherit !important;
-        font-family: inherit !important;
-        font-weight: inherit !important;
-        line-height: inherit !important;
-    }
-    
-    @media screen and (max-width: 480px) {
-        .mobile-hide {
-            display: none !important;
-        }
-        .mobile-center {
-            text-align: center !important;
-        }
-    }
-    div[style*="margin: 16px 0;"] { margin: 0 !important; }
-    </style>
-    <body style="margin: 0 !important; padding: 0 !important; background-color: #eeeeee;" bgcolor="#eeeeee">
-    
-    <table border="0" cellpadding="0" cellspacing="0" width="100%">
-        <tr>
-            <td align="center" style="background-color: #eeeeee;" bgcolor="#eeeeee">
-            
-            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                <tr>
-                    <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#1D2667">
-                
-                    <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;">
-                        <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                            <tr>
-                                <td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; line-height: 35px;" class="mobile-center">
-                            <h3 style="font-size: 25px; font-weight: 700; margin: 0; color: #ffffff;">${sendCompanyName}</h3>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-            
-            <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;" class="mobile-hide">
-                <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                    <tr>
-                        <td align="right" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 48px; font-weight: 400; line-height: 48px;">
-                            <table cellspacing="0" cellpadding="0" border="0" align="right">
-                                <tr>
-                                    <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
-                                        <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
-                                        ${logo} &nbsp;</a></p>
-                                    </td>
-                                   
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-          
-            </td>
-        </tr>
-        <tr>
-            <td align="center" style="padding: 35px 35px 20px 35px; background-color: #ffffff;" bgcolor="#ffffff">
-            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                <tr>
-                    <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                    <img src="https://img.icons8.com/ios/100/null/user-male-circle--v2.png" style="display: block; border: 0px;" /><br>
-                        <h4 style="font-size: 30px; font-weight: 800; line-height: 36px; color: #333333; margin: 0;">
-                        
-                        ${sendTitle}
-                        </h4>
-                    </td>
-                </tr>
-                <tr>
-                    <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                        <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                        Hello ${sendReceiverName}, this is your 2FA security code.
-                        </p>
-                    </td>
-                </tr>
-                <tr>
-                      <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                      <h3 style="font-size: 30px; font-weight: 800; line-height: 36px; color: #333333; margin: 0;">
-                        2FA OTP Security Code ${otpCode}
-                      </h3>
-                          <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                          Use this code to confirm your account ownership when ask! Keep the OTP security code safe for future reference and do not share it with an unknown person's.
-                          </p>
-                      </td>
-                  </tr>
-                <tr>
-                    <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                        <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                        </p>
-                    </td>
-                </tr>
-            </table>
-            
-            </td>
-        </tr>
-        
-        <tr>
-            <td align="center" style=" padding: 35px; background-color: #010A4F;" bgcolor="#1b9ba3">
-            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                <tr>
-                    <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                        <h5 style="font-size: 18px; font-weight: 600; line-height: 15px; color: #ffffff; margin: 0;">
-                            Contact support for more details.
-                        </h5>
-                    </td>
-                </tr>
-                <tr>
-                    <td align="center" style="padding: 25px 0 15px 0;">
-                        <table border="0" cellspacing="0" cellpadding="0">
-                            <tr>
-                                <td align="center" style="border-radius: 5px;" bgcolor="#66b3b7">
-                                  <a href="https://ozaapp.com/contact-us" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #1D2667; padding: 15px 30px; border: 1px solid #1D2667; display: block;">Contact</a>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-            </table>
-            </td>
-        </tr>
-        <tr>
-            <td align="center" style="padding: 35px; background-color: #ffffff;" bgcolor="#ffffff">
-            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                
-                <tr>
-                    <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px; padding: 5px 0 10px 0;">
-                        <p style="font-size: 14px; font-weight: 800; line-height: 18px; color: #333333;">&nbsp;</p>
-                    </td>
-                </tr>
-                <tr>
-                    <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
-                        <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
-                            You have received this email because you are a Customer of ${sendCompanyName}<br>
-This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of ${sendCompanyName}. It is confidential, private and intended for the address only.
-                        </p>
-                    </td>
-                </tr>
-            </table>
-            </td>
-        </tr>
-    </table>
-    </td>
-</tr>
-</table>
-</body>
-    </html>`
+// ─── 2FA EMAIL — SAME TEMPLATE AS REGISTER
+const _2FAEmail = (sendCompanyName, sendTitle, sendReceiverName, otpCode, logo) =>
+  registerEmail(sendCompanyName, sendTitle || '2FA Verification', sendReceiverName, otpCode, logo);
 
-    const _2FAEmailText = (sendReceiverName, otpCode) =>
-    `Hello ${sendReceiverName}, this is to notify you that your 2FA OTP code has be sent thank you. \n
-    2FA OTP Code ${otpCode}, Use this code and write in on a white clean paper boldly and take a selfie with it and upload via the mobile app.`
+const _2FAEmailText = (sendReceiverName, otpCode) =>
+  `Hello ${sendReceiverName},\n\nYour 2FA verification code is: ${otpCode}\n\nThis code expires in 10 minutes. Do not share it with anyone.\n\nThank you.`;
 
-    const transactEmail = (sendCompanyName, sendTitle, sendReceiverName, sendMsg, amt, tran_id, logo) =>
-    `<!DOCTYPE html>
-    <html>
-    <head>
-    <title></title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <style type="text/css">
-    
-    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-    img { -ms-interpolation-mode: bicubic; }
-    
-    img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
-    table { border-collapse: collapse !important; }
-    body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
-    
-    
-    a[x-apple-data-detectors] {
-        color: inherit !important;
-        text-decoration: none !important;
-        font-size: inherit !important;
-        font-family: inherit !important;
-        font-weight: inherit !important;
-        line-height: inherit !important;
-    }
-    
-    @media screen and (max-width: 480px) {
-        .mobile-hide {
-            display: none !important;
-        }
-        .mobile-center {
-            text-align: center !important;
-        }
-    }
-    div[style*="margin: 16px 0;"] { margin: 0 !important; }
-    </style>
-    <body style="margin: 0 !important; padding: 0 !important; background-color: #eeeeee;" bgcolor="#eeeeee">
-    
-    <table border="0" cellpadding="0" cellspacing="0" width="100%">
-        <tr>
-            <td align="center" style="background-color: #eeeeee;" bgcolor="#eeeeee">
-            
-            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                <tr>
-                    <td align="center" valign="top" style="font-size:0; padding: 35px;" bgcolor="#1D2667">
-                
-                    <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;">
-                        <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                            <tr>
-                                <td align="left" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; line-height: 35px;" class="mobile-center">
-                            <h3 style="font-size: 25px; font-weight: 700; margin: 0; color: #ffffff;">${sendCompanyName}</h3>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-            
-            <div style="display:inline-block; max-width:50%; min-width:100px; vertical-align:top; width:100%;" class="mobile-hide">
-                <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:300px;">
-                    <tr>
-                        <td align="right" valign="top" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 48px; font-weight: 400; line-height: 48px;">
-                            <table cellspacing="0" cellpadding="0" border="0" align="right">
-                                <tr>
-                                    <td style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400;">
-                                        <p style="font-size: 18px; font-weight: 400; margin: 0; color: #ffffff;"><a href="#" target="_blank" style="color: #ffffff; text-decoration: none;">
-                                        ${logo} &nbsp;</a></p>
-                                    </td>
-                                   
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-          
-            </td>
-        </tr>
-        <tr>
-            <td align="center" style="padding: 35px 35px 20px 35px; background-color: #ffffff;" bgcolor="#ffffff">
-            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                <tr>
-                    <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                    <img src="https://img.icons8.com/ios/100/null/user-male-circle--v2.png" style="display: block; border: 0px;" /><br>
-                        <h4 style="font-size: 30px; font-weight: 800; line-height: 36px; color: #333333; margin: 0;">
-                        
-                        ${sendTitle}
-                        </h4>
-                    </td>
-                </tr>
-                <tr>
-                    <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                        <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                        Hello ${sendReceiverName}, ${sendMsg} \n Transaction ID is ${tran_id}  \n Thank you
-                        </p>
-                    </td>
-                </tr>
-                <tr>
-                      <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                      <h3 style="font-size: 30px; font-weight: 800; line-height: 36px; color: #333333; margin: 0;">
-                        
-                      </h3>
-                          <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                         
-                          </p>
-                      </td>
-                  </tr>
-                <tr>
-                    <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 10px;">
-                        <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #777777;">
-                        </p>
-                    </td>
-                </tr>
-            </table>
-            
-            </td>
-        </tr>
-        
-        <tr>
-            <td align="center" style=" padding: 35px; background-color: #010A4F;" bgcolor="#1b9ba3">
-            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                <tr>
-                    <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px; padding-top: 25px;">
-                        <h5 style="font-size: 18px; font-weight: 600; line-height: 15px; color: #ffffff; margin: 0;">
-                            Contact support for more details.
-                        </h5>
-                    </td>
-                </tr>
-                <tr>
-                    <td align="center" style="padding: 25px 0 15px 0;">
-                        <table border="0" cellspacing="0" cellpadding="0">
-                            <tr>
-                                <td align="center" style="border-radius: 5px;" bgcolor="#66b3b7">
-                                  <a href="https://ozaapp.com/contact-us" target="_blank" style="font-size: 18px; font-family: Open Sans, Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; background-color: #1D2667; padding: 15px 30px; border: 1px solid #1D2667; display: block;">Contact</a>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-            </table>
-            </td>
-        </tr>
-        <tr>
-            <td align="center" style="padding: 35px; background-color: #ffffff;" bgcolor="#ffffff">
-            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
-                
-                <tr>
-                    <td align="center" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px; padding: 5px 0 10px 0;">
-                        <p style="font-size: 14px; font-weight: 800; line-height: 18px; color: #333333;">&nbsp;</p>
-                    </td>
-                </tr>
-                <tr>
-                    <td align="left" style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 24px;">
-                        <p style="font-size: 14px; font-weight: 400; line-height: 20px; color: #777777;">
-                            You have received this email because you are a Customer of ${sendCompanyName}<br>
-This email, its attachment and any rights attaching hereto are, unless the content clearly indicates otherwise are the property of ${sendCompanyName}. It is confidential, private and intended for the address only.
-                        </p>
-                    </td>
-                </tr>
-            </table>
-            </td>
-        </tr>
-    </table>
-    </td>
-</tr>
-</table>
-</body>
-    </html> `
+const transactEmail = registerEmail;
+const transactEmailText = registerEmailText;
 
-    const transactEmailText = (sendReceiverName, msg, tarnsId) =>
-    `Hello ${sendReceiverName}, ${msg}. \n Transaction ID is ${tarnsId}`
-
-module.exports = {registerEmail, registerEmailText,_2FAEmail,_2FAEmailText,transactEmail ,transactEmailText}
+module.exports = {
+  registerEmail,
+  registerEmailText,
+  transactEmail,
+  transactEmailText,
+  _2FAEmail,
+  _2FAEmailText,
+};
