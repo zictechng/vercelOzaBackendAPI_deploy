@@ -3692,7 +3692,6 @@ router.get("/reports/services", isAuth, async (req, res) => {
   }
 });
 
-
 router.get("/reports/export", isAuth, async (req, res) => {
   try {
     const { dateFrom, dateTo, type, status, category } = req.query;
