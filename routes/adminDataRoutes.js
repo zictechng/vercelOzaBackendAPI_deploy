@@ -3703,7 +3703,11 @@ router.get("/reports/export", isAuth, async (req, res) => {
     const filter = { creditOn: { $gte: startDate, $lte: endDate } };
     if (type && type !== '') filter.tran_type = type;
     if (status && status !== '') filter.transaction_status = status;
-    if (category && category !== '') filter.transac_category = { $regex: category, $options: 'i' };
+    if (category && category !== '') {
+      // Bills categories use pipe format — use exact match
+      // Other categories use exact match too
+      filter.transac_category = category;
+    }
 
     const transactions = await TransferFund.find(filter)
       .sort({ creditOn: -1 })
