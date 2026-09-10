@@ -32,6 +32,7 @@ const CompanyBank = require('../models/companyBankDetails')
 const { isAuth } = require('../middleware/auth');
 const DocumentUpload = require('../models/DocumentUpload');
 const Referrals = require('../models/referralUser');
+const BillsTransaction = require('../models/BillsTransaction');
 const moment = require('moment/moment');
 const { getBeginningOfTheWeek } = require('../middleware/getStartDate');
 const { fetchApp } = require('../middleware/appDetails');
