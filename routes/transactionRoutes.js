@@ -176,7 +176,7 @@ router.get('/cancel', (req, res) => {
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_KEY; 
 const PAYPAL_SECRET_KEY = process.env.PAYPAL_SECRET; 
 
-// ✅ Function to get PayPal access token from web app
+// Function to get PayPal access token from web app
 const getPayPalAccessToken = async () => {
   //console.log('PayPal access Key ', PAYPAL_CLIENT_ID +' ', PAYPAL_SECRET_KEY)
   try {
