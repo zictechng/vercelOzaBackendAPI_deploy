@@ -1029,7 +1029,7 @@ router.post("/rejectAccountWithdrawal", isAuth, async (req, res) => {
         alert_browser: '',
         alert_date:  Date.now(),
         alert_user_id: userDetail._id,
-        alert_nature: `Withdrawal Issues\nReason: We are unable to proceed with this transaction with transaction ID: ${userFund.withdrawal_tid}!\nPlease, contact support for more details and possible resolutions` ,
+        alert_nature: `Withdrawal Rejected: Your withdrawal of ₦${new Intl.NumberFormat().format(userFund.amount)} (TID: ${userFund.withdrawal_tid}) was rejected. Reason: ${req.body.reject_reason || 'Please contact support for details.'}`,
         alert_status: 1,
         alert_read_date: ''
         })
@@ -1054,11 +1054,13 @@ router.post("/rejectAccountWithdrawal", isAuth, async (req, res) => {
         appLogo = result.app_logo
         const logoImage = appLogo;
 
-        const mailBody = loginEmail(appName, 'Withdrawal Issue', userDetail.display_name, `this is to notify you that your withdrawal request has been rejected or cancelled after been reviewed.
-        <br> Withdrawal Amount : <b>\u20A6${new Intl.NumberFormat().format(userFund.amount)}</b> <br>
-        With transaction ID <b>${userFund.withdrawal_tid}</b><br> 
-        We are unable to proceed with your withdrawal request! Please you can contact support for more details and possible resolutions.<br><br>
-        Thank you for choosing ${appName}, we hope you continue to enjoy our awesome services.`, logoImage)
+      const rejectReason = req.body.reject_reason || 'No specific reason provided. Please contact support for more details.'
+      const mailBody = loginEmail(appName, 'Withdrawal Issue', userDetail.display_name, `This is to notify you that your withdrawal request has been reviewed and rejected.<br><br>
+        <strong>Withdrawal Amount:</strong> ₦${new Intl.NumberFormat().format(userFund.amount)}<br>
+        <strong>Transaction ID:</strong> ${userFund.withdrawal_tid}<br>
+        <strong>Reason:</strong> ${rejectReason}<br><br>
+        If you have any questions, please contact our support team.<br><br>
+        Thank you for choosing ${appName}.`, logoImage)
         const mailText = loginText(userDetail.display_name, `this is to notify you that your withdrawal request has been rejected or cancelled after been reviewed.
         <br> Withdrawal Amount : <b>\u20A6${new Intl.NumberFormat().format(userFund.amount)}</b> <br>
         With transaction ID <b>${userFund.withdrawal_tid}</b><br> 
