@@ -13,7 +13,7 @@ const withdrawalRequestSchema = new Schema({
         default:0.0
     },
     withdrawal_email: String,
-    withdrawal_note: String,
+    withdrawal_note: { type: String, default: '' },
     withdrawal_type: {
         type: String,
         default:'Withdraw'
@@ -34,6 +34,8 @@ const withdrawalRequestSchema = new Schema({
     createdOn: {type: Date, default: Date.now},
     creditOn: {type: Date, default: Date.now},
     approved_date: {type: Date},
+    processed_by: { type: String, default: '' },
+    processed_date: { type: Date },
 });
 
 withdrawalRequestSchema.plugin(mongoosePaginate)

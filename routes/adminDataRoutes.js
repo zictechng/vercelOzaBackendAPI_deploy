@@ -856,6 +856,8 @@ router.post("/approveAcctWithdrawal", isAuth, async (req, res) => {
       const updateUserWithdrawalStatus = {
         $set: {
           withdrawal_status: 'Approved',
+          processed_by: req.body.processed_by || 'Admin',
+          processed_date: Date.now(),
         },
       };
 
@@ -1005,6 +1007,9 @@ router.post("/rejectAccountWithdrawal", isAuth, async (req, res) => {
       const updateUserWIthdrawalStatus = {
         $set: {
           withdrawal_status: 'Rejected',
+          withdrawal_note: req.body.reject_reason || '',
+          processed_by: req.body.processed_by || 'Admin',
+          processed_date: Date.now(),
         },
       };
 
@@ -1087,6 +1092,22 @@ router.post("/rejectAccountWithdrawal", isAuth, async (req, res) => {
      } catch (err) {
     res.status(500).json(err.message);
     console.log(err.message);
+  }
+});
+
+// get all rejected withdrawal requests
+router.get("/userWithdrawalRejected_details", isAuth, async (req, res) => {
+  let page = parseInt(req.query.pageNumber) || 1;
+  let limit = parseInt(req.query.pageLimit) || 15;
+  const skip = (page - 1) * limit;
+  try {
+    const total = await UserWithdrawal.find({ withdrawal_status: 'Rejected' }).count();
+    const totalPageNumber = Math.ceil(total / limit);
+    const data = await UserWithdrawal.find({ withdrawal_status: 'Rejected' })
+      .sort({ processed_date: -1 }).skip(skip).limit(limit);
+    res.send({ msg: '201', feedAll: data, page, limit, totalPage: totalPageNumber, totalRecord: total });
+  } catch (err) {
+    res.status(500).json(err.message);
   }
 });
 
