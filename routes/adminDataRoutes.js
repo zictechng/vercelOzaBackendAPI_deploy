@@ -3718,9 +3718,16 @@ router.get("/reports/services", isAuth, async (req, res) => {
         { $sort: { revenue: -1 } }
       ]),
       // Revenue by network
+            // Revenue by network
       BillsTransaction.aggregate([
         { $match: { createdAt: { $gte: startDate, $lte: endDate }, status: 'success' } },
-        { $group: { _id: '$network', revenue: { $sum: '$amount' }, count: { $sum: 1 } } },
+        {
+          $group: {
+            _id: { $ifNull: ['$network', 'Other'] },
+            revenue: { $sum: '$amount' },
+            count: { $sum: 1 }
+          }
+        },
         { $sort: { revenue: -1 } },
         { $limit: 10 }
       ]),
