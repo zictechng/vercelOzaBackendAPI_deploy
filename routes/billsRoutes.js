@@ -352,7 +352,7 @@ router.post('/bills/buy_data', isAuth, async (req, res) => {
       userId,
       tag_id,
       user,
-      service_type: 'data',
+      service_type: 'mobile_data',
       service_title: `${network_name || network} Mobile Data`,
       provider: provider?.name || 'VTUGate',
       amount,
