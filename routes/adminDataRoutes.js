@@ -1985,14 +1985,27 @@ router.post("/user_accountAction/", isAuth, async (req, res) => {
         if(!user){
             return res.json({status: 404, message: ' User not found'})
          }
-        else if(user){
+
+            else if(user){
+            const isSuspendOrDelete = ['Suspended', 'Blocked', 'Deleted'].includes(req.body.action_status)
             const updateDocUser = {
                 $set: {
-                acct_status: req.body.action_status,
+                  acct_status: req.body.action_status,
+                  ...(isSuspendOrDelete && {
+                    suspend_reason: req.body.suspend_reason || '',
+                    suspended_by: req.body.suspended_by || 'Admin',
+                    suspended_date: new Date(),
+                  }),
+                  ...(!isSuspendOrDelete && {
+                    suspend_reason: '',
+                    suspended_by: '',
+                    suspended_date: null,
+                  }),
                 },
               };
         const updateUserNow = await User.updateOne(filterUser, updateDocUser);
-              // update user current balance here
+        
+          // update user current balance here
             if(updateUserNow){
               // create log here
            const addLogs = await SystemActivity.create({
