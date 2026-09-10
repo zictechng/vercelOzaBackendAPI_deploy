@@ -3703,9 +3703,14 @@ router.get("/reports/export", isAuth, async (req, res) => {
     if (type && type !== '') filter.tran_type = type;
     if (status && status !== '') filter.transaction_status = status;
     if (category && category !== '') {
-      // Bills categories use pipe format — use exact match
-      // Other categories use exact match too
-      filter.transac_category = category;
+      if (category.startsWith('Bills Payment')) {
+        // Bills use exact match
+        filter.transac_category = category;
+      } else {
+        // PayPal, Payoneer, Bitcoin, Account Funding, Withdraw
+        // Use case-insensitive to catch PayPal/Paypal variations
+        filter.transac_category = { $regex: `^${category}$`, $options: 'i' };
+      }
     }
 
     const transactions = await TransferFund.find(filter)
