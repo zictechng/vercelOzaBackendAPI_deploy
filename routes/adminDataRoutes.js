@@ -3641,11 +3641,12 @@ router.get("/reports/users", isAuth, async (req, res) => {
       : { $dateToString: { format: '%Y-%m', date: '$createdOn' } };
 
     const [userGrowth, statusBreakdown, kycStats, topUsers] = await Promise.all([
-      // User registrations over time
+      // User registrations over time — no date filter to show all history
       User.aggregate([
-        { $match: { createdOn: { $gte: startDate, $lte: endDate } } },
-        { $group: { _id: groupFormat, count: { $sum: 1 } } },
-        { $sort: { _id: 1 } }
+        { $match: { createdOn: { $exists: true } } },
+        { $group: { _id: { $dateToString: { format: '%Y-%m', date: '$createdOn' } }, count: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+        { $limit: 24 }
       ]),
       // Status breakdown
       User.aggregate([
