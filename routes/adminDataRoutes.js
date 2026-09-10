@@ -3545,18 +3545,20 @@ router.post("/closeUserTicket_message", isAuth, async (req, res) => {
 
 // ─── REPORTING ENDPOINTS
 
-// GET /api/reports/financial
-// Financial summary with date range filtering
 router.get("/reports/financial", isAuth, async (req, res) => {
   try {
     const { dateFrom, dateTo, period = 'monthly' } = req.query;
-
     const startDate = dateFrom ? new Date(dateFrom) : new Date(new Date().setMonth(new Date().getMonth() - 6));
     const endDate = dateTo ? new Date(dateTo) : new Date();
     endDate.setHours(23, 59, 59, 999);
 
-    // Overall totals
-    const [totalCredits, totalDebits, pendingTx, completedTx, failedTx] = await Promise.all([
+    const groupFormat = period === 'daily'
+      ? { $dateToString: { format: '%Y-%m-%d', date: '$creditOn' } }
+      : period === 'weekly'
+      ? { $dateToString: { format: '%Y-W%V', date: '$creditOn' } }
+      : { $dateToString: { format: '%Y-%m', date: '$creditOn' } };
+
+    const [totalCredits, totalDebits, pendingTx, completedTx, failedTx, timeSeries, categoryBreakdown, billsRevenue] = await Promise.all([
       TransferFund.aggregate([
         { $match: { creditOn: { $gte: startDate, $lte: endDate }, tran_type: 'Credit', transaction_status: { $in: ['Completed', 'Successful', 'successful'] } } },
         { $group: { _id: null, total: { $sum: '$amount' }, count: { $sum: 1 } } }
@@ -3568,38 +3570,22 @@ router.get("/reports/financial", isAuth, async (req, res) => {
       TransferFund.countDocuments({ creditOn: { $gte: startDate, $lte: endDate }, transaction_status: 'Pending' }),
       TransferFund.countDocuments({ creditOn: { $gte: startDate, $lte: endDate }, transaction_status: { $in: ['Completed', 'Successful', 'successful'] } }),
       TransferFund.countDocuments({ creditOn: { $gte: startDate, $lte: endDate }, transaction_status: { $in: ['Failed', 'Rejected', 'Cancelled'] } }),
-    ]);
-
-    // Time series data for chart
-    const groupFormat = period === 'daily' ? { $dateToString: { format: '%Y-%m-%d', date: '$creditOn' } }
-      : period === 'weekly' ? { $dateToString: { format: '%Y-W%V', date: '$creditOn' } }
-      : { $dateToString: { format: '%Y-%m', date: '$creditOn' } };
-
-    const timeSeries = await TransferFund.aggregate([
-      { $match: { creditOn: { $gte: startDate, $lte: endDate }, transaction_status: { $in: ['Completed', 'Successful', 'successful'] } } },
-      {
-        $group: {
-          _id: { period: groupFormat, type: '$tran_type' },
-          total: { $sum: '$amount' },
-          count: { $sum: 1 }
-        }
-      },
-      { $sort: { '_id.period': 1 } }
-    ]);
-
-    // Service category breakdown
-    const categoryBreakdown = await TransferFund.aggregate([
-      { $match: { creditOn: { $gte: startDate, $lte: endDate }, transaction_status: { $in: ['Completed', 'Successful', 'successful'] } } },
-      { $group: { _id: '$transac_category', total: { $sum: '$amount' }, count: { $sum: 1 } } },
-      { $sort: { total: -1 } },
-      { $limit: 10 }
-    ]);
-
-    // Bills revenue
-    const billsRevenue = await BillsTransaction.aggregate([
-      { $match: { createdAt: { $gte: startDate, $lte: endDate }, status: 'success' } },
-      { $group: { _id: '$service_type', total: { $sum: '$amount' }, count: { $sum: 1 } } },
-      { $sort: { total: -1 } }
+      TransferFund.aggregate([
+        { $match: { creditOn: { $gte: startDate, $lte: endDate }, transaction_status: { $in: ['Completed', 'Successful', 'successful'] } } },
+        { $group: { _id: { period: groupFormat, type: '$tran_type' }, total: { $sum: '$amount' }, count: { $sum: 1 } } },
+        { $sort: { '_id.period': 1 } }
+      ]),
+      TransferFund.aggregate([
+        { $match: { creditOn: { $gte: startDate, $lte: endDate }, transaction_status: { $in: ['Completed', 'Successful', 'successful'] } } },
+        { $group: { _id: { $ifNull: ['$transac_category', 'Other'] }, total: { $sum: '$amount' }, count: { $sum: 1 } } },
+        { $sort: { total: -1 } },
+        { $limit: 10 }
+      ]),
+      BillsTransaction.aggregate([
+        { $match: { createdAt: { $gte: startDate, $lte: endDate }, status: 'success' } },
+        { $group: { _id: '$service_type', revenue: { $sum: '$amount' }, count: { $sum: 1 } } },
+        { $sort: { revenue: -1 } }
+      ]),
     ]);
 
     return res.json({
@@ -3609,17 +3595,10 @@ router.get("/reports/financial", isAuth, async (req, res) => {
         totalDebits: totalDebits[0]?.total || 0,
         creditCount: totalCredits[0]?.count || 0,
         debitCount: totalDebits[0]?.count || 0,
-        pendingTx,
-        completedTx,
-        failedTx,
+        pendingTx, completedTx, failedTx,
         totalTx: pendingTx + completedTx + failedTx,
       },
-      timeSeries,
-      categoryBreakdown,
-      billsRevenue,
-      period,
-      dateFrom: startDate,
-      dateTo: endDate,
+      timeSeries, categoryBreakdown, billsRevenue, period,
     });
   } catch (err) {
     console.log('Financial report error:', err.message);
@@ -3627,44 +3606,24 @@ router.get("/reports/financial", isAuth, async (req, res) => {
   }
 });
 
-// GET /api/reports/users
-// User growth and KYC analytics
+
 router.get("/reports/users", isAuth, async (req, res) => {
   try {
     const { dateFrom, dateTo, period = 'monthly' } = req.query;
-
     const startDate = dateFrom ? new Date(dateFrom) : new Date(new Date().setMonth(new Date().getMonth() - 6));
     const endDate = dateTo ? new Date(dateTo) : new Date();
     endDate.setHours(23, 59, 59, 999);
 
-    const groupFormat = period === 'daily' ? { $dateToString: { format: '%Y-%m-%d', date: '$createdOn' } }
-      : { $dateToString: { format: '%Y-%m', date: '$createdOn' } };
-
     const [userGrowth, statusBreakdown, kycStats, topUsers] = await Promise.all([
-      // User registrations over time — no date filter to show all history
       User.aggregate([
         { $match: { createdOn: { $exists: true } } },
         { $group: { _id: { $dateToString: { format: '%Y-%m', date: '$createdOn' } }, count: { $sum: 1 } } },
         { $sort: { _id: 1 } },
         { $limit: 24 }
       ]),
-      // Status breakdown
-      User.aggregate([
-        { $group: { _id: '$acct_status', count: { $sum: 1 } } }
-      ]),
-      // KYC completion stats
-      User.aggregate([
-        {
-          $group: {
-            _id: '$acct_approved_status',
-            count: { $sum: 1 }
-          }
-        }
-      ]),
-      // Top users by wallet balance
-      User.find({ acct_status: 'Active' })
-        .sort({ amount: -1 })
-        .limit(10)
+      User.aggregate([{ $group: { _id: '$acct_status', count: { $sum: 1 } } }]),
+      User.aggregate([{ $group: { _id: '$acct_approved_status', count: { $sum: 1 } } }]),
+      User.find({ acct_status: 'Active' }).sort({ amount: -1 }).limit(10)
         .select('display_name email tag_id amount acct_approved_status createdOn'),
     ]);
 
@@ -3675,16 +3634,10 @@ router.get("/reports/users", isAuth, async (req, res) => {
     return res.json({
       msg: '201',
       summary: {
-        totalUsers,
-        newUsersInPeriod,
-        verifiedUsers,
+        totalUsers, newUsersInPeriod, verifiedUsers,
         verificationRate: totalUsers > 0 ? ((verifiedUsers / totalUsers) * 100).toFixed(1) : 0,
       },
-      userGrowth,
-      statusBreakdown,
-      kycStats,
-      topUsers,
-      period,
+      userGrowth, statusBreakdown, kycStats, topUsers, period,
     });
   } catch (err) {
     console.log('User report error:', err.message);
@@ -3692,68 +3645,34 @@ router.get("/reports/users", isAuth, async (req, res) => {
   }
 });
 
-// GET /api/reports/services
-// Bills and service performance analytics
+
 router.get("/reports/services", isAuth, async (req, res) => {
   try {
     const { dateFrom, dateTo } = req.query;
-
     const startDate = dateFrom ? new Date(dateFrom) : new Date(new Date().setMonth(new Date().getMonth() - 6));
     const endDate = dateTo ? new Date(dateTo) : new Date();
     endDate.setHours(23, 59, 59, 999);
 
     const [serviceBreakdown, networkBreakdown, dailyBills, totalBills] = await Promise.all([
-      // Revenue by service type
       BillsTransaction.aggregate([
         { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
-        {
-          $group: {
-            _id: '$service_type',
-            revenue: { $sum: '$amount' },
-            count: { $sum: 1 },
-            successful: { $sum: { $cond: [{ $eq: ['$status', 'success'] }, 1, 0] } },
-            failed: { $sum: { $cond: [{ $ne: ['$status', 'success'] }, 1, 0] } },
-          }
-        },
+        { $group: { _id: '$service_type', revenue: { $sum: '$amount' }, count: { $sum: 1 }, successful: { $sum: { $cond: [{ $eq: ['$status', 'success'] }, 1, 0] } }, failed: { $sum: { $cond: [{ $ne: ['$status', 'success'] }, 1, 0] } } } },
         { $sort: { revenue: -1 } }
       ]),
-      // Revenue by network
-            // Revenue by network
       BillsTransaction.aggregate([
         { $match: { createdAt: { $gte: startDate, $lte: endDate }, status: 'success' } },
-        {
-          $group: {
-            _id: { $ifNull: ['$network', 'Other'] },
-            revenue: { $sum: '$amount' },
-            count: { $sum: 1 }
-          }
-        },
+        { $group: { _id: { $ifNull: ['$network', 'Other'] }, revenue: { $sum: '$amount' }, count: { $sum: 1 } } },
         { $sort: { revenue: -1 } },
         { $limit: 10 }
       ]),
-      // Daily bills volume
       BillsTransaction.aggregate([
         { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
-        {
-          $group: {
-            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
-            revenue: { $sum: '$amount' },
-            count: { $sum: 1 }
-          }
-        },
+        { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, revenue: { $sum: '$amount' }, count: { $sum: 1 } } },
         { $sort: { _id: 1 } }
       ]),
-      // Total bills stats
       BillsTransaction.aggregate([
         { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
-        {
-          $group: {
-            _id: null,
-            totalRevenue: { $sum: '$amount' },
-            totalCount: { $sum: 1 },
-            successCount: { $sum: { $cond: [{ $eq: ['$status', 'success'] }, 1, 0] } },
-          }
-        }
+        { $group: { _id: null, totalRevenue: { $sum: '$amount' }, totalCount: { $sum: 1 }, successCount: { $sum: { $cond: [{ $eq: ['$status', 'success'] }, 1, 0] } } } }
       ]),
     ]);
 
@@ -3763,12 +3682,9 @@ router.get("/reports/services", isAuth, async (req, res) => {
         totalRevenue: totalBills[0]?.totalRevenue || 0,
         totalTransactions: totalBills[0]?.totalCount || 0,
         successCount: totalBills[0]?.successCount || 0,
-        successRate: totalBills[0]?.totalCount > 0
-          ? ((totalBills[0].successCount / totalBills[0].totalCount) * 100).toFixed(1) : 0,
+        successRate: totalBills[0]?.totalCount > 0 ? ((totalBills[0].successCount / totalBills[0].totalCount) * 100).toFixed(1) : 0,
       },
-      serviceBreakdown,
-      networkBreakdown,
-      dailyBills,
+      serviceBreakdown, networkBreakdown, dailyBills,
     });
   } catch (err) {
     console.log('Services report error:', err.message);
@@ -3776,20 +3692,18 @@ router.get("/reports/services", isAuth, async (req, res) => {
   }
 });
 
-// GET /api/reports/export
-// Export transactions as CSV-ready data
+
 router.get("/reports/export", isAuth, async (req, res) => {
   try {
     const { dateFrom, dateTo, type, status, category } = req.query;
-
     const startDate = dateFrom ? new Date(dateFrom) : new Date(new Date().setMonth(new Date().getMonth() - 1));
     const endDate = dateTo ? new Date(dateTo) : new Date();
     endDate.setHours(23, 59, 59, 999);
 
     const filter = { creditOn: { $gte: startDate, $lte: endDate } };
-    if (type) filter.tran_type = type;
-    if (status) filter.transaction_status = status;
-    if (category) filter.transac_category = category;
+    if (type && type !== '') filter.tran_type = type;
+    if (status && status !== '') filter.transaction_status = status;
+    if (category && category !== '') filter.transac_category = { $regex: category, $options: 'i' };
 
     const transactions = await TransferFund.find(filter)
       .sort({ creditOn: -1 })
@@ -3810,13 +3724,7 @@ router.get("/reports/export", isAuth, async (req, res) => {
       'Time': tx.creditOn ? new Date(tx.creditOn).toTimeString().split(' ')[0] : '',
     }));
 
-    return res.json({
-      msg: '201',
-      data: exportData,
-      total: exportData.length,
-      dateFrom: startDate,
-      dateTo: endDate,
-    });
+    return res.json({ msg: '201', data: exportData, total: exportData.length });
   } catch (err) {
     console.log('Export report error:', err.message);
     return res.status(500).json({ msg: '400', message: err.message });
