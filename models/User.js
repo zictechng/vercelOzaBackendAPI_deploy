@@ -64,6 +64,11 @@ const userSchema = new mongoose.Schema({
         default: '',
     },
     acct_tax_code: String,
+
+    suspend_reason: { type: String, default: '' },
+    suspended_by: { type: String, default: '' },
+    suspended_date: { type: Date },
+    
     acct_status: {
         type: String,
         default: 'Pending',
