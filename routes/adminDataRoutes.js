@@ -4633,10 +4633,49 @@ router.post("/approveUsdFunding", isAuth, async (req, res) => {
       tran_account: newTranAccount,
     });
 
-    // Update transaction status
+        // Update transaction status
     await TransferFund.findByIdAndUpdate(tran_id, {
       transaction_status: 'Successful',
       approved_date: new Date(),
+    });
+
+    // Create credit history record so user sees it
+    const Trans_ID_Credit = `USD-CREDIT-${Date.now()}`;
+    await TransferFund.create({
+      acct_name: user.display_name,
+      acct_number: user.tag_id,
+      amount: txn.amount,
+      sender_name: 'Platform',
+      sender_acct_number: 'PLATFORM',
+      sender_currency_type: '$',
+      tran_type: 'Credit',
+      transac_nature: `${txn.transac_category} USD Funding Approved`,
+      transac_category: txn.transac_category,
+      tran_desc: `USD wallet funding of $${Number(txn.amount).toLocaleString()} via ${txn.transac_category} approved by admin.`,
+      colorcode: 'green',
+      trans_method: txn.trans_method || 'Manual',
+      currency_level: '2',
+      createdBy: user._id,
+      tid: Trans_ID_Credit,
+      tran_service_type: 'USD Funding Credit',
+      transaction_status: 'Successful',
+      approved_date: new Date(),
+    });
+
+    // System activity audit log
+    await SystemActivity.create({
+      log_username: user.email,
+      log_name: user.display_name,
+      log_acct_number: user.tag_id,
+      log_receiver_name: '',
+      log_receiver_number: '',
+      log_receiver_bank: '',
+      log_country: '',
+      log_swift_code: '',
+      log_desc: `Admin approved USD wallet funding of $${Number(txn.amount).toLocaleString()} via ${txn.transac_category}. New USD balance: $${newUsdBalance.toLocaleString()}`,
+      log_amt: txn.amount,
+      log_status: 'Successful',
+      log_nature: 'USD Funding Approved',
     });
 
     // In-app notification
