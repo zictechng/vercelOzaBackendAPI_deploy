@@ -2640,7 +2640,7 @@ router.post("/approveAcctFunding", isAuth, async (req, res) => {
         appName = result.app_name
         appLogo = result.app_logo
         const logoImage = appLogo;
-        const mailBody = loginEmail(appName, 'Fund Approved', userDetail.display_name, `this is to notify you that your account funding has been approved and your wallet has be credited with the sum of 
+        const mailBody = loginEmail(appName, 'Account Fund Approved', userDetail.display_name, `this is to notify you that your account funding has been approved and your wallet has be credited with the sum of 
         <b>\u20A6${new Intl.NumberFormat().format(userFund.amount)}</b> <br>
         with transaction ID <b>${userFund.fund_number}</b><br>
         thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`, logoImage)
@@ -2650,7 +2650,6 @@ router.post("/approveAcctFunding", isAuth, async (req, res) => {
             with transaction ID <b>${userFund.fund_number}</b><br>
             thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
             let account_issueEMail = {
-              //from: `${appName +' Sales'} <noreply@ozaapp.com>`,
               from: { name: `${appName + ' Sales'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
               //to: userDetail.email,
               to: [{ email: userDetail.email }],
@@ -2905,6 +2904,14 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
             },
           };
 
+          // credit NGN equivalent to main amount wallet
+          const currentNairabal = userDetail.amount + +totalSales
+          const updateUserNairaBal = {
+            $set: {
+              amount: currentNairabal,
+            },
+          };
+
           // update general transaction status here
           const updateGeneralStatus = {
             $set: {
@@ -2914,7 +2921,32 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
           };
 
       const updateUserBal = await User.updateOne(filterUser, updateUserAcctBal);
+      const updateUserNaira = await User.updateOne(filterUser, updateUserNairaBal);
       const updateGeneral = await TransferFund.updateOne(filterGeneral, updateGeneralStatus);
+      
+      // Create NGN credit record in history so user can see it
+      await TransferFund.create({
+        acct_name: userDetail.display_name,
+        acct_number: userDetail.tag_id,
+        amount: totalSales,
+        bank_name: '',
+        sender_name: 'Platform',
+        sender_acct_number: 'PLATFORM',
+        sender_currency_type: '₦',
+        tran_type: 'Credit',
+        transac_nature: `${allSales.transac_category} Sale Approved`,
+        transac_category: allSales.transac_category,
+        tran_desc: `Your ${allSales.transac_category} sale of $${allSales.amount} has been approved. NGN equivalent credited to your wallet.`,
+        tr_year: '',
+        colorcode: 'green',
+        trans_method: allSales.trans_method || 'Manual',
+        currency_level: '1',
+        createdBy: userDetail._id,
+        tid: allSales.tid,
+        tran_rate: allSales.tran_rate,
+        transaction_status: 'Successful',
+        approved_date: Date.now(),
+      });
 
       const addLogs = await SystemActivity.create({
         log_username: userDetail.email,
@@ -2941,7 +2973,7 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
         alert_browser: '',
         alert_date:  Date.now(),
         alert_user_id: userDetail._id,
-        alert_nature: `Funds Sales Approved \nNote: this is to notify you that your ${allSales.transac_category} funds has been approved and your bank account has be credited with the sum of \u20A6${new Intl.NumberFormat().format(totalSales)}.${bonusMoney? `\nYou got a signup bonus awarded to you \$${new Intl.NumberFormat().format(bonusAmount)}. \n`: '\n' }With transaction ID: ${allSales.tid}`,
+        alert_nature: `Funds Sales Approved \nNote: this is to notify you that your ${allSales.transac_category} funds has been approved and your account has been credited with \u20A6${new Intl.NumberFormat().format(totalSales)}. Transaction ID: ${allSales.tid}`,
         alert_status: 1,
         alert_read_date: ''
         })
@@ -2953,11 +2985,10 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
           appName = result.app_name
           appLogo = result.app_logo
           const logoImage = appLogo;
-          const mailBody = loginEmail(appName, 'Fund Sales Approved', userDetail.display_name, `this is to notify you that your ${allSales.transac_category} funds has been approved and your bank account has be credited with the sum of
-          <b>\u20A6${new Intl.NumberFormat().format(totalSales)}</b>. ${bonusMoney? `<br/> Wow... you got some extra money credited to you as signup bonus of <b>\$${new Intl.NumberFormat().format(bonusAmount)}</b>`: ''}
-          ${bonusMoney? ` <br>` :''}
-          With transaction ID <b>${allSales.tid}</b><br>
-          Thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`, logoImage)
+          const mailBody = loginEmail(appName, 'Fund Sales Approved', userDetail.display_name, `This is to notify you that your ${allSales.transac_category} funds has been approved and your account has been credited with the sum of
+          <b>\u20A6${new Intl.NumberFormat().format(totalSales)}</b>.
+          <br/>Transaction ID: <b>${allSales.tid}</b><br/>
+          Thank you for choosing ${appName}, we hope you continue to enjoy our awesome services.`, logoImage)
               const mailText = loginText(userDetail.display_name, `this is to notify you that your ${allSales.transac_category} funds sales has been approved and your bank account has be credited with the sum of \n\n
               <b>\u20A6${new Intl.NumberFormat().format(totalSales)}</b><br>
               with transaction ID <b>${allSales.tid}</b><br>

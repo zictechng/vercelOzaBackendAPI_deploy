@@ -68,7 +68,7 @@ const userSchema = new mongoose.Schema({
     suspend_reason: { type: String, default: '' },
     suspended_by: { type: String, default: '' },
     suspended_date: { type: Date },
-    
+
     acct_status: {
         type: String,
         default: 'Pending',
@@ -83,16 +83,17 @@ const userSchema = new mongoose.Schema({
             },
     amount: {
         type: Number,
-        //type: mongoose.SchemaTypes.Mixed,
+        //the main account,
         default: 0.0,   
     },
     all_withdraw_acct: {
         type: Number,
-        //type: mongoose.SchemaTypes.Mixed,
+        //all withdrawal credited here,
         default: 0.0,   
     },
     all_bonus_acct: {
         type: Number,
+        // User bonus earned goes here
         default: 0.0,
     },
      coins: {
