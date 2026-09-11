@@ -213,12 +213,24 @@ const processPromoterBonus = async ({
     }
 
     // Get promoter user
+        // Get promoter user
     const promoter = await User.findOne({
       tag_id: buyer.promoter_tag_id,
       business_promoter: true,
-    })
+    });
     if (!promoter) {
-      return { success: true, skipped: true, reason: 'Promoter not found or inactive' }
+      return { success: true, skipped: true, reason: 'Promoter not found or inactive' };
+    }
+
+    // Check promoter qualifications
+    if (promoter.acct_status !== 'Active') {
+      return { success: true, skipped: true, reason: 'Promoter account not active' };
+    }
+    if (promoter.acct_approved_status !== 'Approved') {
+      return { success: true, skipped: true, reason: 'Promoter KYC not approved' };
+    }
+    if (promoter.user_bonus_paused === true) {
+      return { success: true, skipped: true, reason: 'Promoter bonus paused by admin' };
     }
 
     // Check promoter individual commission pause

@@ -2877,7 +2877,7 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
       reference: allSales.tid,
     }).catch(err => console.log('Referral bonus error:', err.message))
 
-    // 3. Process promoter commission — non-blocking
+        // 3. Process promoter commission — non-blocking
     processPromoterBonus({
       buyerUserId: userDetail._id,
       buyerTagId: userDetail.tag_id,
@@ -2886,6 +2886,81 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
       reference: allSales.tid,
     }).catch(err => console.log('Promoter commission error:', err.message))
 
+    // 4. Release signup bonus if pending — non-blocking
+    ;(async () => {
+      try {
+          if (userDetail.signup_account > 0 && !userDetail.signup_bonus_activated) {
+          const appSettings = await AppSetting.findOne()
+          if (!appSettings?.app_signup_bonus) return
+
+          // Qualification checks
+          if (userDetail.acct_status !== 'Active') return
+          if (userDetail.acct_approved_status !== 'Approved') return
+          if (userDetail.user_bonus_paused === true) return
+
+          const getCurrentRate = await GetRate.findOne()
+          const signupUSD = Number(userDetail.signup_account || 0)
+
+          // Convert USD signup bonus to NGN using paypal_buying rate
+          const paypalBuyRate = Number(getCurrentRate?.paypal_buying || 1)
+          const signupNGN = signupUSD * paypalBuyRate
+
+          // Credit NGN equivalent to all_bonus_acct
+          const newBonusBalance = Number(userDetail.all_bonus_acct || 0) + signupNGN
+
+          // Record USD in tran_account
+          const newTranAccount = Number(userDetail.tran_account || 0) + signupUSD
+
+          await User.findByIdAndUpdate(userDetail._id, {
+            all_bonus_acct: newBonusBalance,
+            tran_account: newTranAccount,
+            signup_account: 0,
+            signup_bonus_activated: true,
+          })
+
+          // Create history record — NGN credit
+          await TransferFund.create({
+            acct_name: userDetail.display_name,
+            acct_number: userDetail.tag_id,
+            amount: signupNGN,
+            sender_name: 'Signup Bonus',
+            sender_acct_number: 'PLATFORM',
+            sender_currency_type: '₦',
+            tran_type: 'Credit',
+            transac_nature: 'Signup Bonus',
+            transac_category: 'Bonus',
+            tran_desc: `Signup bonus of $${signupUSD} converted to ₦${signupNGN.toLocaleString()} at rate ₦${paypalBuyRate}/$`,
+            colorcode: 'green',
+            trans_method: 'Auto',
+            currency_level: '1',
+            createdBy: userDetail._id,
+            tid: `SIGNUP-${allSales.tid}`,
+            transaction_status: 'Successful',
+            approved_date: new Date(),
+          })
+
+          // In-app notification
+          if (userDetail.receive_app_message) {
+            await Notification.create({
+              alert_username: userDetail.display_name,
+              alert_name: userDetail.display_name,
+              alert_user_ip: '',
+              alert_country: '',
+              alert_browser: '',
+              alert_date: new Date(),
+              alert_user_id: userDetail._id,
+              alert_nature: `🎉 Signup Bonus Activated!\nYour signup bonus of $${signupUSD} has been converted to ₦${signupNGN.toLocaleString()} and credited to your bonus wallet!`,
+              alert_status: 1,
+              alert_read_date: '',
+            })
+          }
+
+          console.log(`Signup bonus released: $${signupUSD} → ₦${signupNGN} for ${userDetail.display_name}`)
+        }
+      } catch (err) {
+        console.log('Signup bonus release error:', err.message)
+      }
+    })()
     // ── SELLER CREDIT
     const currentBal = userDetail.tran_account + +allSales.amount
     const filterUser = { _id: userDetail._id }

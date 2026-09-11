@@ -381,10 +381,21 @@ const processReferralBonus = async ({
       return { success: true, skipped: true, reason: 'No pending referral found' }
     }
 
-    // Get referrer
-    const referrer = await User.findOne({ tag_id: referral.ref_mainTag })
+       // Get referrer user
+    const referrer = await User.findOne({ tag_id: referral.ref_mainTag });
     if (!referrer) {
-      return { success: true, skipped: true, reason: 'Referrer not found' }
+      return { success: true, skipped: true, reason: 'Referrer not found' };
+    }
+
+    // Check referrer qualifications
+    if (referrer.acct_status !== 'Active') {
+      return { success: true, skipped: true, reason: 'Referrer account not active' };
+    }
+    if (referrer.acct_approved_status !== 'Approved') {
+      return { success: true, skipped: true, reason: 'Referrer KYC not approved' };
+    }
+    if (referrer.user_bonus_paused === true) {
+      return { success: true, skipped: true, reason: 'Referrer bonus paused by admin' };
     }
 
     // Check referrer individual eligibility

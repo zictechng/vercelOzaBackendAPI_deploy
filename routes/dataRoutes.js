@@ -15,6 +15,8 @@ const sendEmail = require("../services/emailService");
 const transporterMailer = require('../controllers/signupMailer');
 const User = require('../models/User');
 const TransferFund = require('../models/fundTransfer');
+const RewardsSettings = require('../models/RewardsSettings');
+const CoinsTransaction = require('../models/CoinsTransaction');
 const AppSetting = require('../models/AppSettingDetails')
 const Ticket = require('../models/ticketData');
 const UserNewsLetter = require('../models/newsLetter');
@@ -2049,6 +2051,129 @@ router.get("/user_transaction_summary/:id", isAuth, async (req, res) => {
   }
 });
 
+
+// ─── COINS REDEMPTION 
+// POST /api/redeem_coins
+router.post('/redeem_coins', isAuth, async (req, res) => {
+  const { userId, coinsToRedeem } = req.body
+  try {
+    if (!userId) return res.json({ msg: '400', message: 'User ID required' })
+    if (!coinsToRedeem || Number(coinsToRedeem) <= 0) {
+      return res.json({ msg: '400', message: 'Invalid coins amount' })
+    }
+
+    const user = await User.findById(userId)
+    if (!user) return res.json({ msg: '404', message: 'User not found' })
+
+    const settings = await RewardsSettings.findOne()
+    if (!settings?.rewards_active) {
+      return res.json({ msg: '400', message: 'Rewards system is currently disabled' })
+    }
+
+    const minRedeem = Number(settings?.min_redeem_coins || 100)
+    const coinNGNValue = Number(settings?.coin_ngn_value || 1)
+    const userCoins = Number(user.coins || 0)
+    const coins = Number(coinsToRedeem)
+
+    if (coins < minRedeem) {
+      return res.json({ msg: '400', message: `Minimum redemption is ${minRedeem} coins` })
+    }
+    if (coins > userCoins) {
+      return res.json({ msg: '400', message: 'Insufficient coins balance' })
+    }
+
+    // Calculate NGN value
+    const ngnValue = coins * coinNGNValue
+    const newCoins = userCoins - coins
+    const newAmount = Number(user.amount || 0) + ngnValue
+
+    // Credit NGN to main wallet, deduct coins
+    await User.findByIdAndUpdate(userId, {
+      coins: newCoins,
+      amount: newAmount,
+    })
+
+    // Create history record
+    const tid = `COINS-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`
+    await TransferFund.create({
+      acct_name: user.display_name,
+      acct_number: user.tag_id,
+      amount: ngnValue,
+      sender_name: 'Coins Redemption',
+      sender_acct_number: 'COINS',
+      sender_currency_type: '₦',
+      tran_type: 'Credit',
+      transac_nature: 'Coins Redemption',
+      transac_category: 'Coins',
+      tran_desc: `${coins.toLocaleString()} coins redeemed for ₦${ngnValue.toLocaleString()} (₦${coinNGNValue} per coin)`,
+      colorcode: 'green',
+      trans_method: 'Auto',
+      currency_level: '1',
+      createdBy: userId,
+      tid,
+      transaction_status: 'Successful',
+      approved_date: new Date(),
+    })
+
+    // In-app notification
+    if (user.receive_app_message) {
+      await Notification.create({
+        alert_username: user.display_name,
+        alert_name: user.display_name,
+        alert_user_ip: '',
+        alert_country: '',
+        alert_browser: '',
+        alert_date: new Date(),
+        alert_user_id: user._id,
+        alert_nature: `🪙 Coins Redeemed!\n${coins.toLocaleString()} coins have been converted to ₦${ngnValue.toLocaleString()} and credited to your main wallet.`,
+        alert_status: 1,
+        alert_read_date: '',
+      })
+    }
+
+    return res.json({
+      msg: '200',
+      message: `${coins.toLocaleString()} coins redeemed successfully`,
+      ngnValue,
+      newCoins,
+      newAmount,
+      tid,
+    })
+  } catch (err) {
+    console.log('Redeem coins error:', err.message)
+    return res.status(500).json({ msg: '500', message: err.message })
+  }
+})
+
+// GET /api/coins_history/:tag_id
+router.get('/coins_history/:tag_id', isAuth, async (req, res) => {
+  try {
+    const { tag_id } = req.params
+    const page = parseInt(req.query.pageNumber) || 1
+    const limit = parseInt(req.query.pageLimit) || 20
+    const skip = (page - 1) * limit
+
+    const user = await User.findOne({ tag_id })
+    if (!user) return res.json({ msg: '404', message: 'User not found' })
+
+    const total = await CoinsTransaction.countDocuments({ userId: user._id })
+    const history = await CoinsTransaction.find({ userId: user._id })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+
+    return res.json({
+      msg: '200',
+      history,
+      totalPage: Math.ceil(total / limit),
+      totalRecord: total,
+      currentCoins: user.coins || 0,
+    })
+  } catch (err) {
+    console.log('Coins history error:', err.message)
+    return res.status(500).json({ msg: '500', message: err.message })
+  }
+})
 
 
 module.exports = router;
