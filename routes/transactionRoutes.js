@@ -1386,7 +1386,7 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
     });
 
 
-    // POST /api/usd_account_funding
+// POST /api/usd_account_funding
 // User submits USD funding request via PayPal/Payoneer/BTC
 // Same flow as selling — admin approves → usd_balance credited
 router.post("/usd_account_funding", isAuth, async (req, res) => {
@@ -1492,7 +1492,6 @@ router.post("/usd_account_withdrawal", isAuth, async (req, res) => {
     return res.status(500).json({ msg: '500', message: err.message });
   }
 });
-
 
 
   // process user sales/purchase request fund goes here...
