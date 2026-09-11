@@ -4577,72 +4577,40 @@ router.post('/user/bonus_pause', isAuth, async (req, res) => {
 })
 
 
-// POST /api/approveUsdFunding
-// Admin approves USD wallet funding → credits usd_balance
-router.post("/approveUsdFunding", isAuth, async (req, res) => {
+// GET /api/allUsdFunding_details
+// Admin gets all pending USD funding requests
+router.get("/allUsdFunding_details", isAuth, async (req, res) => {
+  let page = parseInt(req.query.pageNumber) || 1;
+  let limit = parseInt(req.query.pageLimit) || 15;
+  const skip = (page - 1) * limit;
   try {
-    const { tran_id } = req.body;
-    if (!tran_id) return res.json({ msg: '400', message: 'Transaction ID required' });
-
-    const txn = await TransferFund.findById(tran_id);
-    if (!txn) return res.json({ msg: '404', message: 'Transaction not found' });
-    if (txn.transaction_status === 'Successful') {
-      return res.json({ msg: '400', message: 'Already approved' });
-    }
-
-    const user = await User.findOne({ tag_id: txn.acct_number });
-    if (!user) return res.json({ msg: '404', message: 'User not found' });
-
-    const newUsdBalance = Number(user.usd_balance || 0) + Number(txn.amount);
-    const newTranAccount = Number(user.tran_account || 0) + Number(txn.amount);
-
-    // Credit usd_balance + update tran_account record
-    await User.findByIdAndUpdate(user._id, {
-      usd_balance: newUsdBalance,
-      tran_account: newTranAccount,
+    const total = await TransferFund.countDocuments({
+      tran_service_type: 'USD Funding',
+      transaction_status: 'Pending',
     });
-
-    // Update transaction status
-    await TransferFund.findByIdAndUpdate(tran_id, {
-      transaction_status: 'Successful',
-      approved_date: new Date(),
-    });
-
-    // In-app notification
-    if (user.receive_app_message) {
-      await Notification.create({
-        alert_username: user.display_name,
-        alert_name: user.display_name,
-        alert_date: new Date(),
-        alert_user_id: user._id,
-        alert_nature: `💰 USD Wallet Funded!\nYour USD wallet has been credited with $${Number(txn.amount).toLocaleString()}. New balance: $${newUsdBalance.toLocaleString()}. TID: ${txn.tid}`,
-        alert_status: 1,
-        alert_read_date: '',
-      });
-    }
-
-    // Email
-    fetchApp().then(async (result) => {
-      const appName = result.app_name;
-      const logoImage = result.app_logo;
-      const mailBody = loginEmail(appName, 'USD Wallet Funded', user.display_name,
-        `Your USD wallet funding of <b>$${Number(txn.amount).toLocaleString()}</b> via ${txn.transac_category} has been approved and credited to your USD wallet.<br/>
-        New USD Balance: <b>$${newUsdBalance.toLocaleString()}</b><br/>
-        Transaction ID: <b>${txn.tid}</b>`, logoImage);
-      await sendEmail({
-        from: { name: `${appName} Payments`, email: `<${result.app_email || 'noreply@ota.com'}>` },
-        to: [{ email: user.email }],
-        subject: `USD Wallet Funded — ${appName}`,
-        html: mailBody,
-      });
-    }).catch(console.error);
-
-    return res.json({ msg: '201', message: 'USD funding approved successfully' });
+    const data = await TransferFund.find({
+      tran_service_type: 'USD Funding',
+      transaction_status: 'Pending',
+    }).sort({ createdOn: -1 }).skip(skip).limit(limit);
+    res.json({ msg: '201', feedAll: data, totalPage: Math.ceil(total / limit), totalRecord: total });
   } catch (err) {
-    console.log('approveUsdFunding error:', err.message);
-    return res.status(500).json({ msg: '500', message: err.message });
+    res.status(500).json({ msg: '500', message: err.message });
   }
 });
+
+// GET /api/getUsdFunding_details/:id
+router.get("/getUsdFunding_details/:id", isAuth, async (req, res) => {
+  try {
+    const data = await TransferFund.findById(req.params.id);
+    if (!data) return res.json({ msg: '404', message: 'Record not found' });
+    const user = await User.findOne({ tag_id: data.acct_number });
+    res.json({ msg: '201', feedAll: data, userData: user });
+  } catch (err) {
+    res.status(500).json({ msg: '500', message: err.message });
+  }
+});
+
+// POST /api/approveUsdFunding
 
 
 module.exports = router;
