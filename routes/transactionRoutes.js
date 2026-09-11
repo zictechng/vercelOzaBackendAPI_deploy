@@ -418,11 +418,14 @@ const processPaymentDetails = async(data, paymentId) =>{
                 }
 
               // For bonus → main transfer, check bonus balance
-              if(dataReceive.account_source === '2' && isSelfTransfer){
+             // Balance check based on account source
+              if(dataReceive.account_source === '2'){
+                // Any bonus transfer — check bonus balance
                 if(userFund.all_bonus_acct < dataReceive.amt){
                   return res.json({status: 404, message: 'Insufficient bonus balance' })
                 }
               } else if(userFund.amount < dataReceive.amt){
+                // Main wallet transfer — check main balance
                 return res.json({status: 404, message: 'Low balance' })
               }
               //sender account sending source check
@@ -442,14 +445,14 @@ const processPaymentDetails = async(data, paymentId) =>{
               {
                 var senderBalance  = userFund.all_bonus_acct - dataReceive.amt
                  // update sender balance
-              var updateSenderBalance = {
-                $set: {
-                  all_bonus_acct: senderBalance,
-                  last_transaction: dataReceive.amt,
-                  acct_balance: senderBalance,
-                },
-              };
-              }
+                var updateSenderBalance = {
+                    $set: {
+                      all_bonus_acct: senderBalance,
+                      last_transaction: dataReceive.amt,
+                      acct_balance: senderBalance,
+                    },
+                  };
+                }
                             
               // receiver balance check
               if(dataReceive.account_source == '1')
@@ -466,7 +469,20 @@ const processPaymentDetails = async(data, paymentId) =>{
                 }
                 else if(dataReceive.account_source == '2' && isSelfTransfer)
                 {
-                  var currentReceiverBal = receiverUser.all_bonus_acct+ +dataReceive.amt
+                  // Bonus → Main self-transfer: credit MAIN wallet
+                  var currentReceiverBal = receiverUser.amount + +dataReceive.amt
+                  var updateReceiverBalance = {
+                    $set: {
+                      amount: currentReceiverBal,
+                      last_transaction: dataReceive.amt,
+                      acct_balance: currentReceiverBal,
+                    },
+                  };
+                }
+                else if(dataReceive.account_source == '2')
+                {
+                  // Bonus → Bonus to another user
+                  var currentReceiverBal = receiverUser.all_bonus_acct + +dataReceive.amt
                   var updateReceiverBalance = {
                     $set: {
                       all_bonus_acct: currentReceiverBal,
