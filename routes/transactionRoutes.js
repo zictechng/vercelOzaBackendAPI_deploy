@@ -394,26 +394,36 @@ const processPaymentDetails = async(data, paymentId) =>{
          return res.status(401).send({ message: "Invalid user access" }); // cot code required
         }
     try {
-          let userFund = await User.findOne({ _id:  dataReceive.userId }); // here I am checking if user exist then I will get user details
+          let userFund = await User.findOne({ _id:  dataReceive.userId });
           let receiverUser = await User.findOne({ tag_id:  dataReceive.tagId });
-          const filterReceiver = { _id: receiverUser._id };
-          
+
           if(!receiverUser){
             return res.json({status: 404, message: 'Receiver record not found' })
           }
           if (!userFund) {
-            //console.log("User details: ", userDetails)
-            return res.json({status: 401, message: 'Invalid access' }) // user not found
-          } 
-          else if (userFund){
-            //console.log("Current balance: ", userCurrentBalance)
+            return res.json({status: 401, message: 'Invalid access' })
+          }
+
+          const filterReceiver = { _id: receiverUser._id };
+          const isSelfTransfer = userFund.tag_id === dataReceive.tagId;
+
+          // Block same account main → main transfer
+          if(isSelfTransfer && dataReceive.account_source !== '2'){
+            return res.json({status: 404, message: 'You cannot send funds to your own account' })
+          }
+
+            else if (userFund){
                 if(userFund.acct_cot_pin !== dataReceive.acctPin){
-                  //console.log("wrong Pin id: ")
-                  return res.json({status: 404, message: 'Invalid Pin entered' }) // wrong pin
+                  return res.json({status: 404, message: 'Invalid Pin entered' })
                 }
 
-              if(userFund.amount < dataReceive.amt){
-                return res.json({status: 404, message: 'Low balance ' }) // low balance
+              // For bonus → main transfer, check bonus balance
+              if(dataReceive.account_source === '2' && isSelfTransfer){
+                if(userFund.all_bonus_acct < dataReceive.amt){
+                  return res.json({status: 404, message: 'Insufficient bonus balance' })
+                }
+              } else if(userFund.amount < dataReceive.amt){
+                return res.json({status: 404, message: 'Low balance' })
               }
               //sender account sending source check
               if(dataReceive.account_source == '1')
@@ -454,7 +464,7 @@ const processPaymentDetails = async(data, paymentId) =>{
                       },
                     };
                 }
-                else if(dataReceive.account_source == '2')
+                else if(dataReceive.account_source == '2' && isSelfTransfer)
                 {
                   var currentReceiverBal = receiverUser.all_bonus_acct+ +dataReceive.amt
                   var updateReceiverBalance = {
