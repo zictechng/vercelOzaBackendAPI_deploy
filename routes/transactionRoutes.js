@@ -1786,4 +1786,26 @@ router.post("/usd_account_withdrawal", isAuth, async (req, res) => {
       }
     });
 
+    
+  router.get("/user_wallet_profile/:id", async (req, res) => {
+  const userId = req.params.id;
+  try {
+    const userDetails = await User.findOne({ _id: userId });
+    if (!userDetails) {
+      return res.status(404).json({ msg: '404', message: 'No record found' });
+    }
+
+    const { password, ...others } = userDetails._doc;
+
+    return res.status(200).json({
+      msg: '200',
+      userData: others,
+    });
+
+  } catch (err) {
+    console.log(err.message);
+    return res.status(500).json({ msg: '500', message: err.message });
+  }
+});
+
 module.exports = router;
