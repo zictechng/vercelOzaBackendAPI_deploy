@@ -2889,7 +2889,7 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
     // 4. Release signup bonus if pending — non-blocking
     ;(async () => {
       try {
-          if (userDetail.signup_account > 0 && !userDetail.signup_bonus_activated) {
+                if (userDetail.signup_account > 0 && !userDetail.signup_bonus_activated) {
           const appSettings = await AppSetting.findOne()
           if (!appSettings?.app_signup_bonus) return
 
@@ -4575,6 +4575,74 @@ router.post('/user/bonus_pause', isAuth, async (req, res) => {
     return res.json({ msg: '400', message: 'Could not process request.' })
   }
 })
+
+
+// POST /api/approveUsdFunding
+// Admin approves USD wallet funding → credits usd_balance
+router.post("/approveUsdFunding", isAuth, async (req, res) => {
+  try {
+    const { tran_id } = req.body;
+    if (!tran_id) return res.json({ msg: '400', message: 'Transaction ID required' });
+
+    const txn = await TransferFund.findById(tran_id);
+    if (!txn) return res.json({ msg: '404', message: 'Transaction not found' });
+    if (txn.transaction_status === 'Successful') {
+      return res.json({ msg: '400', message: 'Already approved' });
+    }
+
+    const user = await User.findOne({ tag_id: txn.acct_number });
+    if (!user) return res.json({ msg: '404', message: 'User not found' });
+
+    const newUsdBalance = Number(user.usd_balance || 0) + Number(txn.amount);
+    const newTranAccount = Number(user.tran_account || 0) + Number(txn.amount);
+
+    // Credit usd_balance + update tran_account record
+    await User.findByIdAndUpdate(user._id, {
+      usd_balance: newUsdBalance,
+      tran_account: newTranAccount,
+    });
+
+    // Update transaction status
+    await TransferFund.findByIdAndUpdate(tran_id, {
+      transaction_status: 'Successful',
+      approved_date: new Date(),
+    });
+
+    // In-app notification
+    if (user.receive_app_message) {
+      await Notification.create({
+        alert_username: user.display_name,
+        alert_name: user.display_name,
+        alert_date: new Date(),
+        alert_user_id: user._id,
+        alert_nature: `💰 USD Wallet Funded!\nYour USD wallet has been credited with $${Number(txn.amount).toLocaleString()}. New balance: $${newUsdBalance.toLocaleString()}. TID: ${txn.tid}`,
+        alert_status: 1,
+        alert_read_date: '',
+      });
+    }
+
+    // Email
+    fetchApp().then(async (result) => {
+      const appName = result.app_name;
+      const logoImage = result.app_logo;
+      const mailBody = loginEmail(appName, 'USD Wallet Funded', user.display_name,
+        `Your USD wallet funding of <b>$${Number(txn.amount).toLocaleString()}</b> via ${txn.transac_category} has been approved and credited to your USD wallet.<br/>
+        New USD Balance: <b>$${newUsdBalance.toLocaleString()}</b><br/>
+        Transaction ID: <b>${txn.tid}</b>`, logoImage);
+      await sendEmail({
+        from: { name: `${appName} Payments`, email: `<${result.app_email || 'noreply@ota.com'}>` },
+        to: [{ email: user.email }],
+        subject: `USD Wallet Funded — ${appName}`,
+        html: mailBody,
+      });
+    }).catch(console.error);
+
+    return res.json({ msg: '201', message: 'USD funding approved successfully' });
+  } catch (err) {
+    console.log('approveUsdFunding error:', err.message);
+    return res.status(500).json({ msg: '500', message: err.message });
+  }
+});
 
 
 module.exports = router;

@@ -192,6 +192,13 @@ const userSchema = new mongoose.Schema({
         type: Number,
         default: 0.0,
     },
+    // Spendable USD wallet
+    // Funded via PayPal/Payoneer/BTC
+    // Withdrawable and transferable
+    usd_balance: {
+        type: Number,
+        default: 0.0,
+    },
     signup_account: {
         type: Number,
         default: 0.0,

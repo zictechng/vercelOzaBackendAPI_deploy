@@ -1385,6 +1385,116 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
       }
     });
 
+
+    // POST /api/usd_account_funding
+// User submits USD funding request via PayPal/Payoneer/BTC
+// Same flow as selling — admin approves → usd_balance credited
+router.post("/usd_account_funding", isAuth, async (req, res) => {
+  const dataReceive = req.body;
+  const Trans_ID = transactionID(25);
+  if (!dataReceive.userId) {
+    return res.status(401).json({ message: 'Invalid user access' });
+  }
+  try {
+    const userFund = await User.findOne({ _id: dataReceive.userId });
+    if (!userFund) return res.status(404).json({ message: 'User not found' });
+
+    const getCurrentRate = await GetRate.findOne();
+
+    // Create pending TransferFund record
+    await TransferFund.create({
+      acct_name: userFund.display_name,
+      acct_number: userFund.tag_id,
+      amount: dataReceive.amt,
+      sender_name: userFund.display_name,
+      sender_acct_number: userFund.tag_id,
+      sender_currency_type: '$',
+      tran_type: 'Credit',
+      transac_nature: `${dataReceive.serviceName} USD Funding`,
+      transac_category: dataReceive.serviceName,
+      tran_desc: `USD wallet funding via ${dataReceive.serviceName}. ${dataReceive.note || ''}`,
+      colorcode: 'green',
+      trans_method: dataReceive.method || 'Manual',
+      currency_level: '2',
+      createdBy: dataReceive.userId,
+      tid: Trans_ID,
+      tran_service_type: 'USD Funding',
+      tran_rate: dataReceive.serviceName === 'PayPal' ? getCurrentRate?.paypal_buying
+        : dataReceive.serviceName === 'Payoneer' ? getCurrentRate?.payoneer_buying
+        : dataReceive.serviceName === 'Bitcoin' ? getCurrentRate?.btc_buying : 1,
+      transaction_status: 'Pending',
+    });
+
+    // In-app notification
+    if (userFund.receive_app_message) {
+      await Notification.create({
+        alert_username: userFund.display_name,
+        alert_name: userFund.display_name,
+        alert_date: new Date(),
+        alert_user_id: userFund._id,
+        alert_nature: `USD Wallet Funding Request\nYour ${dataReceive.serviceName} funding of $${dataReceive.amt} has been submitted and is pending admin approval. TID: ${Trans_ID}`,
+        alert_status: 1,
+        alert_read_date: '',
+      });
+    }
+
+    return res.json({ msg: '200', message: 'USD funding request submitted successfully', tid: Trans_ID });
+  } catch (err) {
+    console.log('USD funding error:', err.message);
+    return res.status(500).json({ msg: '500', message: err.message });
+  }
+});
+
+// POST /api/usd_account_withdrawal
+// User requests withdrawal from usd_balance
+router.post("/usd_account_withdrawal", isAuth, async (req, res) => {
+  const { userId, amt, serviceName, walletAddress, note } = req.body;
+  if (!userId) return res.status(401).json({ message: 'Invalid user access' });
+  try {
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const usdBalance = Number(user.usd_balance || 0);
+    const amount = Number(amt);
+
+    if (amount <= 0) return res.json({ msg: '400', message: 'Invalid amount' });
+    if (amount > usdBalance) return res.json({ msg: '403', message: 'Insufficient USD balance' });
+
+    const Trans_ID = transactionID(25);
+
+    // Deduct from usd_balance immediately (hold pending withdrawal)
+    await User.findByIdAndUpdate(userId, {
+      usd_balance: usdBalance - amount,
+    });
+
+    // Create withdrawal record
+    await TransferFund.create({
+      acct_name: user.display_name,
+      acct_number: user.tag_id,
+      amount,
+      sender_currency_type: '$',
+      tran_type: 'Debit',
+      transac_nature: `${serviceName} USD Withdrawal`,
+      transac_category: serviceName,
+      tran_desc: `USD withdrawal via ${serviceName}. Wallet: ${walletAddress}. ${note || ''}`,
+      colorcode: 'red',
+      trans_method: 'Manual',
+      currency_level: '2',
+      createdBy: userId,
+      tid: Trans_ID,
+      tran_service_type: 'USD Withdrawal',
+      transaction_status: 'Pending',
+    });
+
+    return res.json({ msg: '200', message: 'USD withdrawal request submitted', tid: Trans_ID });
+  } catch (err) {
+    console.log('USD withdrawal error:', err.message);
+    return res.status(500).json({ msg: '500', message: err.message });
+  }
+});
+
+
+
   // process user sales/purchase request fund goes here...
   router.post("/fundBuy_funding", isAuth, async (req, res) => {
       const dataReceive = req.body;
