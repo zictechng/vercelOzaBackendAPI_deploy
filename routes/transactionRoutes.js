@@ -1446,6 +1446,7 @@ router.post("/usd_account_funding", isAuth, async (req, res) => {
         : dataReceive.serviceName === 'Payoneer' ? getCurrentRate?.payoneer_buying
         : dataReceive.serviceName === 'Bitcoin' ? getCurrentRate?.btc_buying : 1,
       transaction_status: 'Pending',
+      createdOn: Date.now()
     });
 
     // In-app notification

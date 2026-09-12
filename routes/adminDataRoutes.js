@@ -4589,7 +4589,7 @@ router.get("/allUsdFunding_details", isAuth, async (req, res) => {
     const data = await TransferFund.find({
       tran_service_type: 'USD Funding',
       transaction_status: 'Pending',
-    }).sort({ createdOn: -1 }).skip(skip).limit(limit);
+    }).sort({_id: -1 }).skip(skip).limit(limit);
     res.json({ msg: '201', feedAll: data, totalPage: Math.ceil(total / limit), totalRecord: total });
   } catch (err) {
     res.status(500).json({ msg: '500', message: err.message });
