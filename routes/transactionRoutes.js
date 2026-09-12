@@ -406,265 +406,296 @@ const processPaymentDetails = async(data, paymentId) =>{
     }
 
  // user request route to send fund to other user account goes here...
- router.post("/userSending_funding", isAuth, async (req, res) => {
-    const dataReceive = req.body;
-    //console.log("My Blocked ID: ", req.body)
-    const Trans_ID = transactionID(25);
-   
-    // get the transfer record ID here
-    const filter = { _id: dataReceive.userId };
-        if (dataReceive.userId == "" || dataReceive.userId == null) {
-         return res.status(401).send({ message: "Invalid user access" }); // cot code required
+router.post("/userSending_funding", isAuth, async (req, res) => {
+  const dataReceive = req.body;
+  const Trans_ID = transactionID(25);
+  const filter = { _id: dataReceive.userId };
+
+  if (dataReceive.userId == "" || dataReceive.userId == null) {
+    return res.status(401).send({ message: "Invalid user access" });
+  }
+
+  try {
+    let userFund = await User.findOne({ _id: dataReceive.userId });
+    let receiverUser = await User.findOne({ tag_id: dataReceive.tagId });
+
+    if (!receiverUser) {
+      return res.json({ status: 404, message: 'Receiver record not found' });
+    }
+    if (!userFund) {
+      return res.json({ status: 401, message: 'Invalid access' });
+    }
+
+    const filterReceiver = { _id: receiverUser._id };
+    const isSelfTransfer = userFund.tag_id === dataReceive.tagId;
+
+    // ✅ FIX 1 — Only block self-transfer for source 1 (bonus→bonus is not allowed)
+    // Self transfer source 1 = "move to main" = bonus → main wallet = ALLOWED
+    // Self transfer source 2 = USD → USD self credit = NOT ALLOWED
+    if (isSelfTransfer && dataReceive.account_source === '2') {
+      return res.json({ status: 404, message: 'You cannot send USD funds to your own account' }); // ✅ FIX 4 — message corrected
+    }
+
+    // PIN check
+    if (userFund.acct_cot_pin !== dataReceive.acctPin) {
+      return res.json({ status: 404, message: 'Invalid Pin entered' });
+    }
+
+    // ✅ FIX 2 — Balance checks (correct field per source)
+   if (dataReceive.account_source === '2') {
+  // USD transfer — check sender usd_balance
+      if (userFund.usd_balance < dataReceive.amt) {
+        return res.json({ status: 404, message: 'Insufficient USD balance' });
+      }
+      } else if (dataReceive.account_source === '1' && isSelfTransfer) {
+        // Move to Main — check bonus balance
+        if (userFund.all_bonus_acct < dataReceive.amt) {
+          return res.json({ status: 404, message: 'Insufficient bonus balance to move to main wallet' });
         }
-    try {
-          let userFund = await User.findOne({ _id:  dataReceive.userId });
-          let receiverUser = await User.findOne({ tag_id:  dataReceive.tagId });
+      } else if (dataReceive.account_source === '1' && !isSelfTransfer) {
+        // Send NGN to another user — check main wallet (amount)
+        if (userFund.amount < dataReceive.amt) {
+          return res.json({ status: 404, message: 'Insufficient main wallet balance' });
+        }
+    }
 
-          if(!receiverUser){
-            return res.json({status: 404, message: 'Receiver record not found' })
-          }
-          if (!userFund) {
-            return res.json({status: 401, message: 'Invalid access' })
-          }
+    // Sender balance update
+    let senderBalance;
+    let senderBalance_usd;
+    let currentReceiverBal;
 
-          const filterReceiver = { _id: receiverUser._id };
-          const isSelfTransfer = userFund.tag_id === dataReceive.tagId;
+    if (isSelfTransfer) {
+    // Move to Main: bonus → main (same user, handled atomically below)
+    senderBalance = userFund.all_bonus_acct - +dataReceive.amt;
+    currentReceiverBal = userFund.amount + +dataReceive.amt;
 
-          // Block same account main → main transfer
-          if(isSelfTransfer && dataReceive.account_source !== '2'){
-            return res.json({status: 404, message: 'You cannot send funds to your own account' })
-          }
+    } else if (dataReceive.account_source === '1') {
+      // NGN to another user: deduct sender main wallet, credit receiver main wallet
+      senderBalance = userFund.amount - +dataReceive.amt;
+      currentReceiverBal = receiverUser.amount + +dataReceive.amt;
 
-            else if (userFund){
-                if(userFund.acct_cot_pin !== dataReceive.acctPin){
-                  return res.json({status: 404, message: 'Invalid Pin entered' })
-                }
+    } else if (dataReceive.account_source === '2') {
+      // USD to another user: deduct sender usd_balance, credit receiver usd_balance
+      senderBalance_usd = userFund.usd_balance - +dataReceive.amt;
+      currentReceiverBal = receiverUser.usd_balance + +dataReceive.amt;
+    }
 
-              // For bonus → main transfer, check bonus balance
-             // Balance check based on account source
-              if(dataReceive.account_source === '2'){
-                // Any bonus transfer — check bonus balance
-                if(userFund.all_bonus_acct < dataReceive.amt){
-                  return res.json({status: 404, message: 'Insufficient bonus balance' })
-                }
-              } else if(userFund.amount < dataReceive.amt){
-                // Main wallet transfer — check main balance
-                return res.json({status: 404, message: 'Low balance' })
-              }
-              //sender account sending source check
-              if(dataReceive.account_source == '1')
-              {
-                var senderBalance = userFund.amount - dataReceive.amt;
-                 // update sender balance
-                var updateSenderBalance = {
-                  $set: {
-                    amount: senderBalance,
-                    last_transaction: dataReceive.amt,
-                    acct_balance: senderBalance,
-                  },
-                };
-              }
-              else if(dataReceive.account_source == '2')
-              {
-                var senderBalance  = userFund.all_bonus_acct - dataReceive.amt
-                 // update sender balance
-                var updateSenderBalance = {
-                    $set: {
-                      all_bonus_acct: senderBalance,
-                      last_transaction: dataReceive.amt,
-                      acct_balance: senderBalance,
-                    },
-                  };
-                }
-                            
-              // receiver balance check
-              if(dataReceive.account_source == '1')
-                {
-                  var currentReceiverBal = receiverUser.amount+ +dataReceive.amt
-                  //update receiver balance
-                    var updateReceiverBalance = {
-                      $set: {
-                        amount: currentReceiverBal,
-                        last_transaction: dataReceive.amt,
-                        acct_balance: currentReceiverBal,
-                      },
-                    };
-                }
-                else if(dataReceive.account_source == '2' && isSelfTransfer)
-                {
-                  // Bonus → Main self-transfer: credit MAIN wallet
-                  var currentReceiverBal = receiverUser.amount + +dataReceive.amt
-                  var updateReceiverBalance = {
-                    $set: {
-                      amount: currentReceiverBal,
-                      last_transaction: dataReceive.amt,
-                      acct_balance: currentReceiverBal,
-                    },
-                  };
-                }
-                else if(dataReceive.account_source == '2')
-                {
-                  // Bonus → Bonus to another user
-                  var currentReceiverBal = receiverUser.all_bonus_acct + +dataReceive.amt
-                  var updateReceiverBalance = {
-                    $set: {
-                      all_bonus_acct: currentReceiverBal,
-                      last_transaction: dataReceive.amt,
-                      acct_balance: currentReceiverBal,
-                    },
-                  };
-                }
-                
-              //console.log(currentReceiverBal)
-              const updateSender = await User.updateOne(filter, updateSenderBalance);
-              
-              const updateReceiver = await User.updateOne(filterReceiver, updateReceiverBalance);
-                
-              // create record for receiver history purposes
-              const fundAccount = TransferFund.create({
-                acct_name: receiverUser.display_name,
-                acct_number: receiverUser.tag_id,
-                amount: req.body.amt,
-                sender_name: userFund.display_name,
-                tran_type: 'Credit',
-                transac_nature: 'In-app Credit',
-                tran_desc: req.body.note,
-                trans_balance: currentReceiverBal,
-                createdBy: receiverUser._id,
-                tid: Trans_ID,
-                colorcode:'green',
-                currency_level: dataReceive.account_source == '2'?'2':'',
-                sender_acct_number: userFund.tag_id,
-                transaction_status: 'Successful',
-                createdOn: Date.now(),
-              });
-              // create record for sender history purposes
-              const TransfersHistory = TransferFund.create({
-                acct_name: userFund.display_name,
-                acct_number: userFund.tag_id,
-                amount: req.body.amt,
-                sender_name: userFund.display_name,
-                tran_type: 'Debit',
-                transac_nature: 'In-app Debit',
-                tran_desc: req.body.note,
-                trans_balance: senderBalance,
-                createdBy: userFund._id,
-                tid: Trans_ID,
-                colorcode:'red',
-                currency_level: dataReceive.account_source == '2'?'2':'',
-                sender_acct_number: userFund.tag_id,
-                transaction_status: 'Successful',
-                createdOn: Date.now(),
-              });
-              // check if sender user activate in-app notification and send notification
-              if(userFund.receive_app_message == true) {
-                 const userLogs = Notification.create({
-                  alert_username: userFund.display_name,
-                  alert_name: userFund.display_name,
-                  alert_user_ip: '',
-                  alert_country: '',
-                  alert_browser: '',
-                  alert_date:  Date.now(),
-                  alert_user_id: userFund._id,
-                  alert_nature: `Your transaction of ${dataReceive.account_source == '2'? `\$${new Intl.NumberFormat().format(dataReceive.amt)}`:`\u20A6${new Intl.NumberFormat().format(dataReceive.amt)}`}.\nWith transaction ID: ${Trans_ID} \nTo ${receiverUser.display_name} was successful.`,
-                  alert_status: 1,
-                  alert_read_date: ''
-                  })
-              }
-  
-              // check if receiver user activate in-app notification and send notification
-              if(receiverUser.receive_app_message == true) {
-                const userLogs = Notification.create({
-                 alert_username: receiverUser.display_name,
-                 alert_name: receiverUser.display_name,
-                 alert_user_ip: '',
-                 alert_country: '',
-                 alert_browser: '',
-                 alert_date:  Date.now(),
-                 alert_user_id: receiverUser._id,
-                 alert_nature: `Your account was credited with ${dataReceive.account_source == '2'? `\$${new Intl.NumberFormat().format(dataReceive.amt)}`:`\u20A6${new Intl.NumberFormat().format(dataReceive.amt)}`}.\nWith transaction ID: ${Trans_ID} \nFrom ${userFund.display_name}.`,
-                 alert_status: 1,
-                 alert_read_date: ''
-                 })
-             }
-  
-              // create log here
-              const addLogs = await SystemActivity.create({
-                log_username: userFund.email,
-                log_name: userFund.display_name,
-                log_acct_number: userFund?.tag_id,
-                log_receiver_name: '',
-                log_receiver_number: '',
-                log_receiver_bank: '',
-                log_country: '',
-                log_swift_code: '',
-                log_desc:'Funds transfer request made',
-                log_amt: '',
-                log_status: 'Successful',
-                log_nature:'Transfer request',
-                })
-              // check if the sender user activate email notification and send notification
-              if(userFund.receive_email_notification === true){
-                 // send email notification to user
-                 fetchApp().then((result) =>{
-                    appName = result.app_name
-                    appLogo = result.app_logo
-                    const logoImage = appLogo;
-                    const mailBody = loginEmail(appName, 'Account Debit Notification', userFund.display_name, `This is to notify you that your transfer request of
-                      <b>${dataReceive.account_source == '2'? `\$${new Intl.NumberFormat().format(req.body.amt)}`:`\u20A6${new Intl.NumberFormat().format(req.body.amt)}`}</b> to
-                      ${receiverUser.display_name} was successful and your account has been debited.
-                      Transaction ID: ${Trans_ID}`, logoImage)
-                    const TextBody = loginText(userFund.display_name, `This is to notify you that your transfer request was successful and your account has been debited with ${dataReceive.account_source == '2'? `$${new Intl.NumberFormat().format(req.body.amt)}`:`₦${new Intl.NumberFormat().format(req.body.amt)}`}. Transaction ID: ${Trans_ID}`);
-                    let sendFundMailOptions = {
-                    from: { name: `${appName} Payments`, email: `<${result.app_email || 'noreply@ota.com'}>` },
-                    to: [{ email: userFund.email }],
-                    subject: 'Account Debit Notification!',
-                    text: TextBody,
-                    html: mailBody,
-                }
-                  
-                   sendEmail(sendFundMailOptions).catch((err) => {
-                      console.error("❌ Email sending completely failed:", err.message);
-                    });
+    // ── Apply DB Updates
+      if (isSelfTransfer) {
+        // Atomic single update — deduct bonus, credit main wallet
+        await User.updateOne(filter, {
+          $set: {
+            all_bonus_acct: senderBalance,
+            amount: currentReceiverBal,
+            acct_balance: currentReceiverBal,
+            last_transaction: dataReceive.amt,
+          },
+        });
 
-                // async..await is not allowed in global scope, must use a wrapper
-               }).catch(console.error.bind(console))
-                   
-              }  
-              // check if the receiver user activate email notification and send notification
-              if(receiverUser.receive_email_notification == true){
-                // send email notification to user
-                fetchApp().then((result) =>{
-                    appName = result.app_name
-                    appLogo = result.app_logo
-                    const logoImage = appLogo;
-                    const mailBody = loginEmail(appName, 'Account Credit Notification', receiverUser.display_name, `This is to notify you that your account was credited with 
-                      <b>${dataReceive.account_source == '2'? `\\$${new Intl.NumberFormat().format(dataReceive.amt)}`:`\\u20A6${new Intl.NumberFormat().format(dataReceive.amt)}`}</b> from a wallet transfer. Transaction ID: ${Trans_ID}`, logoImage)
-                    const TextBody = loginText(receiverUser.display_name, `This is to notify you that your account was credited with ${dataReceive.account_source == '2'? `$${new Intl.NumberFormat().format(dataReceive.amt)}`:`₦${new Intl.NumberFormat().format(dataReceive.amt)}`}. Transaction ID: ${Trans_ID}`);
-                    let getFundMailOptions = {
-                    from: { name: `${appName} Payments`, email: `<${result.app_email || 'noreply@ota.com'}>` },
-                    to: [{ email: receiverUser.email }],
-                    subject: 'Account Credit Notification!',
-                    text: TextBody,
-                    html: mailBody,
-                }
-                sendEmail(getFundMailOptions).catch((err) => {
-                      console.error("❌ Email sending completely failed:", err.message);
-                    });
+      } else if (dataReceive.account_source === '1') {
+        // Deduct sender main wallet
+        await User.updateOne(filter, {
+          $set: {
+            amount: senderBalance,
+            acct_balance: senderBalance,
+            last_transaction: dataReceive.amt,
+          },
+        });
+        // Credit receiver main wallet
+        await User.updateOne(filterReceiver, {
+          $set: {
+            amount: currentReceiverBal,
+            acct_balance: currentReceiverBal,
+            last_transaction: dataReceive.amt,
+          },
+        });
 
-                // async..await is not allowed in global scope, must use a wrapper
-                }).catch(console.error.bind(console))     
-             }  
-             const newUserDetail = await User.findOne({ _id:  dataReceive.userId });
-         // success message
-          res.status(201).json({msg: '200', userData: newUserDetail})
-          }
+      } else if (dataReceive.account_source === '2') {
+        // Deduct sender USD
+        await User.updateOne(filter, {
+          $set: {
+            usd_balance: senderBalance_usd,
+            last_transaction: dataReceive.amt,
+          },
+        });
+        // Credit receiver USD
+        await User.updateOne(filterReceiver, {
+          $set: {
+            usd_balance: currentReceiverBal,
+            last_transaction: dataReceive.amt,
+          },
+        });
+      }
+    // Receiver balance update
+    let updateReceiverBalance;
+
+    if (dataReceive.account_source === '1' && isSelfTransfer) {
+      // ✅ FIX 1 — "Move to main": deduct bonus, credit main wallet (amount) on same user
+      currentReceiverBal = receiverUser.amount + +dataReceive.amt;
+      updateReceiverBalance = {
+        $set: {
+          amount: currentReceiverBal,
+          acct_balance: currentReceiverBal,
+          last_transaction: dataReceive.amt,
+        },
+      };
+    } else if (dataReceive.account_source === '1') {
+      // source 1 to another user — credit their main amount
+      currentReceiverBal = receiverUser.amount + +dataReceive.amt;
+      updateReceiverBalance = {
+        $set: {
+          amount: currentReceiverBal,
+          acct_balance: currentReceiverBal,
+          last_transaction: dataReceive.amt,
+        },
+      };
+    } else if (dataReceive.account_source === '2') {
+      // USD to another user — credit their usd_balance
+      currentReceiverBal = receiverUser.usd_balance + +dataReceive.amt;
+      updateReceiverBalance = {
+        $set: {
+          usd_balance: currentReceiverBal,
+          last_transaction: dataReceive.amt,
+        },
+      };
+    }
+    const isCurrency2 = dataReceive.account_source === '2';
+    const formatAmt = (amt) => isCurrency2
+      ? `$${new Intl.NumberFormat().format(amt)}`
+      : `₦${new Intl.NumberFormat().format(amt)}`;
+
+    // Receiver history
+    await TransferFund.create({
+      acct_name: receiverUser.display_name,
+      acct_number: receiverUser.tag_id,
+      amount: dataReceive.amt,
+      sender_name: userFund.display_name,
+      sender_currency_type: isCurrency2 ? '$': '₦',
+      tran_type: 'Credit',
+      transac_nature: 'In-app Credit',
+      transac_category:'Account Funding',
+      tran_desc: dataReceive.note,
+      trans_balance: currentReceiverBal,
+      createdBy: receiverUser._id,
+      tid: Trans_ID,
+      colorcode: 'green',
+      currency_level: isCurrency2 ? '2' : '1',
+      sender_acct_number: userFund.tag_id,
+      transaction_status: 'Successful',
+      createdOn: Date.now(),
+    });
+
+    // Sender history — ✅ FIX 3: use correct balance variable per source
+    await TransferFund.create({
+      acct_name: userFund.display_name,
+      acct_number: userFund.tag_id,
+      amount: dataReceive.amt,
+      sender_name: userFund.display_name,
+      sender_currency_type: isCurrency2 ? '$': '₦',
+      tran_type: 'Debit',
+      transac_nature: 'In-app Debit',
+      transac_category:'Fund Transfer',
+      tran_desc: dataReceive.note,
+      trans_balance: isCurrency2 ? senderBalance_usd : senderBalance, // ✅ FIX 3
+      createdBy: userFund._id,
+      tid: Trans_ID,
+      colorcode: 'red',
+      currency_level: isCurrency2 ? '2' : '1',
+      sender_acct_number: userFund.tag_id,
+      transaction_status: 'Successful',
+      createdOn: Date.now(),
+    });
+
+    // In-app notification — sender
+    if (userFund.receive_app_message === true) {
+      await Notification.create({
+        alert_username: userFund.display_name,
+        alert_name: userFund.display_name,
+        alert_user_ip: '',
+        alert_country: '',
+        alert_browser: '',
+        alert_date: Date.now(),
+        alert_user_id: userFund._id,
+        alert_nature: `Your transfer of ${formatAmt(dataReceive.amt)}.\nTransaction ID: ${Trans_ID}\nTo ${receiverUser.display_name} was successful.`,
+        alert_status: 1,
+        alert_read_date: '',
+      });
+    }
+
+    // In-app notification — receiver (skip if self transfer to avoid duplicate)
+    if (receiverUser.receive_app_message === true && !isSelfTransfer) {
+      await Notification.create({
+        alert_username: receiverUser.display_name,
+        alert_name: receiverUser.display_name,
+        alert_user_ip: '',
+        alert_country: '',
+        alert_browser: '',
+        alert_date: Date.now(),
+        alert_user_id: receiverUser._id,
+        alert_nature: `Your account was credited with ${formatAmt(dataReceive.amt)}.\nTransaction ID: ${Trans_ID}\nFrom ${userFund.display_name}.`,
+        alert_status: 1,
+        alert_read_date: '',
+      });
+    }
+
+    await SystemActivity.create({
+      log_username: userFund.email,
+      log_name: userFund.display_name,
+      log_acct_number: userFund?.tag_id,
+      log_receiver_name: receiverUser.display_name,
+      log_receiver_number: receiverUser.tag_id,
+      log_receiver_bank: '',
+      log_country: '',
+      log_swift_code: '',
+      log_desc: 'Funds transfer request made',
+      log_amt: dataReceive.amt,
+      log_status: 'Successful',
+      log_nature: 'Transfer request',
+    });
+
+    // ✅ Email always sent to both sender and receiver in ALL cases
+    const sendEmailNotification = async (user, subject, heading, bodyMsg) => {
+      if (user.receive_email_notification !== true) return;
+      try {
+        const result = await fetchApp();
+        const mailBody = loginEmail(result.app_name, heading, user.display_name, bodyMsg, result.app_logo);
+        const textBody = loginText(user.display_name, bodyMsg.replace(/<[^>]+>/g, ''));
+        await sendEmail({
+          from: { name: `${result.app_name} Payments`, email: `<${result.app_email || 'noreply@ota.com'}>` },
+          to: [{ email: user.email }],
+          subject,
+          text: textBody,
+          html: mailBody,
+        });
       } catch (err) {
-         // err message
-       console.log(err)
-        return res.json({status: 500, message: 'Technical issues occurred' })
-     }
-  });
+        console.error("❌ Email sending failed:", err.message);
+      }
+    };
+
+    // Sender debit email
+    await sendEmailNotification(
+      userFund,
+      'Account Debit Notification!',
+      'Account Debit Notification',
+      `Your transfer of <b>${formatAmt(dataReceive.amt)}</b> to ${receiverUser.display_name} was successful. Transaction ID: ${Trans_ID}`
+    );
+
+    // Receiver credit email — always send, even on self transfer (move to main)
+    await sendEmailNotification(
+      receiverUser,
+      'Account Credit Notification!',
+      'Account Credit Notification',
+      `Your account was credited with <b>${formatAmt(dataReceive.amt)}</b> from a wallet transfer. Transaction ID: ${Trans_ID}`
+    );
+
+    const newUserDetail = await User.findOne({ _id: dataReceive.userId });
+    res.status(201).json({ msg: '200', userData: newUserDetail });
+
+  } catch (err) {
+    console.log(err);
+    return res.json({ status: 500, message: 'Technical issues occurred' });
+  }
+});
 
 
 // POST /api/verify_paystack_payment
@@ -959,15 +990,14 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
         if (dataReceive.userId == "" || dataReceive.userId == null) {
         return res.status(401).send({ message: "Invalid user access" }); // cot code required
         }
-
           const fundingLimit = await AppSetting.find();
           let userFund = await User.findOne({ _id:  dataReceive.userId }); // here I am checking if user exist then I will get user details
           
           if(dataReceive.amt < fundingLimit[0]?.app_mini_withdrawal ){
-            return res.json({status: 403, message: `Minimum withdrawal amount of \$${new Intl.NumberFormat().format(fundingLimit[0].app_mini_withdrawal)} accepted` })
+            return res.json({status: 403, message: `Minimum withdrawal amount of \₦${new Intl.NumberFormat().format(fundingLimit[0].app_mini_withdrawal)} accepted` })
           }
           if(dataReceive.amt > fundingLimit[0]?.app_maxi_withdrawal ){
-            return res.json({status: 403, message: `Withdrawal amount should not exceed \$${new Intl.NumberFormat().format(fundingLimit[0].app_maxi_withdrawal)}` })
+            return res.json({status: 403, message: `Withdrawal amount should not exceed \₦${new Intl.NumberFormat().format(fundingLimit[0].app_maxi_withdrawal)}` })
           }
           
     try {
@@ -1123,18 +1153,14 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
         if (dataReceive.userId == "" || dataReceive.userId == null) {
         return res.status(401).send({ message: "Invalid user access" }); // cot code required
         }
-
           //console.log("maxi ", fundingLimit[0].app_maxi_funding)
     try {
-          //console.log("All App ", fundingLimit)
-
-          let userWithdrawal = await User.findOne({ _id:  dataReceive.userId }); // here I am checking if user exist then I will get user details
+          let userWithdrawal = await User.findOne({ _id:  dataReceive.userId });
           if (!userWithdrawal) {
             //console.log("User details: ", userDetails)
             res.status(404).send({ message: 'User not found' }); // user not found
           } 
           else if (userWithdrawal){
-        
               // create record for funding purposes
               const fundAccount = UserWithdrawal.create({
                 withdrawal_name: userFund.display_name,
@@ -1269,7 +1295,6 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
           if(dataReceive.amt < fundingLimit[0].app_minim_funding ){
             return res.json({status: 403, message: `Minimum of amount of \u20A6${new Intl.NumberFormat().format(fundingLimit[0].app_minim_funding)} accepted` })
           }
-          
           else{       
         // success message
           res.status(200).json({msg: '200'})
@@ -1678,136 +1703,6 @@ router.post("/usd_account_withdrawal", isAuth, async (req, res) => {
         return res.json({status: 500, message: 'Technical issues occurred' })
     }
   });
-
-  // process user sales/purchase request fund goes here...
-  // router.post("/paypal_checkout", isAuth, async (req, res) => {
-  //     const dataReceive = req.body;
-  //     //console.log("My data: ", req.body)
-  //     const TransID = transactionID(25)
-  //     const nowRate = '';
-  //     // get the transfer record ID here
-  //     const filter = { _id: dataReceive.myId };
-  //         if (dataReceive.myId == "" || dataReceive.myId == null) {
-  //         return res.json({status: 401, message: 'Invalid user access'})
-  //         }
-  //         const getCurrentRate = await GetRate.findOne();
-          
-  //     try {
-  //           let userFund = await User.findOne({ _id:  dataReceive.myId }); // here I am checking if user exist then I will get user details
-  //           if (!userFund) {
-  //             //console.log("User details: ", userDetails)
-  //             return res.json({status: 404, message: 'User not found'})// user not found
-  //           } 
-  //           else if (userFund){
-  //               // create record for funding purposes
-  //               const createRecord = TransferFund.create({
-  //                 acct_name: userFund.display_name,
-  //                 acct_number: userFund.tag_id,
-  //                 amount: dataReceive.amt,
-  //                 bank_name: '',
-  //                 sender_name: userFund.display_name,
-  //                 sender_acct_number: userFund.tag_id,
-  //                 sender_currency_type: '$',
-  //                 tran_type: 'Credit',
-  //                 transac_nature:dataReceive.serviceName+' '+dataReceive.serviceCategory,
-  //                 transac_category: dataReceive.serviceName,
-  //                 tran_desc:'Request for virtual funds exchange with '+dataReceive.serviceName+" \n "+dataReceive.sell_note,
-  //                 tr_year:'',
-  //                 colorcode:'green',
-  //                 trans_method: dataReceive.method,
-  //                 currency_level:'2',
-  //                 createdBy: dataReceive.myId,
-  //                 tid: TransID,
-  //                 pay_tran: dataReceive.orderId,
-  //                 tran_rate: dataReceive.serviceName == 'PayPal'? getCurrentRate.paypal_selling: dataReceive.serviceName == 'Payoneer'? getCurrentRate.payooner_selling: dataReceive.serviceName=='Bitcoin'? getCurrentRate.btc_selling: ''
-  //                 });
-                  
-  //               // check if user activate in-app notification and send notification
-  //               if(userFund.receive_app_message == true) {
-  //                 const userLogs = Notification.create({
-  //                   alert_username: userFund.display_name,
-  //                   alert_name: userFund.display_name,
-  //                   alert_user_ip: '',
-  //                   alert_country: '',
-  //                   alert_browser: '',
-  //                   alert_date:  Date.now(),
-  //                   alert_user_id: userFund._id,
-  //                   alert_nature: 'Request for virtual funds exchange with '+dataReceive.serviceName,
-  //                   alert_status: 1,
-  //                   alert_read_date: ''
-  //                   })
-  //               }
-    
-  //               // create log here
-  //               const addLogs = await SystemActivity.create({
-  //                 log_username: userFund.email,
-  //                 log_name: userFund.display_name,
-  //                 log_acct_number: userFund?.tag_id,
-  //                 log_receiver_name: '',
-  //                 log_receiver_number: '',
-  //                 log_receiver_bank: '',
-  //                 log_country: '',
-  //                 log_swift_code: '',
-  //                 log_desc:'Funds exchange request made',
-  //                 log_amt: '',
-  //                 log_status: 'Successful',
-  //                 log_nature:'Fund exchange request',
-  //                 })
-  //               // check if the user activate email notification and send notification
-  //               if(userFund.receive_email_notification == true){
-  //                 // send email notification to user
-  //                 fetchApp().then((result) =>{
-  //                 appName = result.app_name
-  //                 appLogo = result.app_logo
-  //                 const logoImage = appLogo;
-  //                 const mailBody = loginEmail(appName, 'Account Funding Notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment received. \n Request reference / Transaction ID is ${TransID}, \n 
-  //                 Order ID is ${dataReceive.orderId} Thank you`, logoImage)
-  //                 const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n Order ID is ${dataReceive.orderId}`);
-  //                 let fundAcctUser = {
-  //                 from: { name: `${appName + ' Support'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
-  //                 to: [{ email: userFund.email }],
-  //                 subject: 'Account Funding Notification!',
-  //                 text: TextBody,
-  //                 html: mailBody,
-  //             }
-  //                 sendEmail(fundAcctUser).catch((err) => {
-  //                   console.error("❌ Email sending completely failed:", err.message);
-  //                 });
-  //             // async..await is not allowed in global scope, must use a wrapper
-              
-  //                 }).catch(console.error.bind(console))
-  //             } 
-  //             // send email notification to admin
-  //             fetchApp().then((result) =>{
-  //               appName = result.app_name
-  //               appLogo = result.app_logo
-  //               const logoImage = appLogo;
-  //               const mailBody = loginEmail(appName, 'Account Funding Notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} made fund exchange request and it has been logged, kindly treat as soon as possible. \n Request reference / Transaction ID is ${TransID}, \n 
-  //               Order ID is ${dataReceive.orderId} Thank you`, logoImage)
-  //               const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n Order ID is ${dataReceive.orderId}`);
-  //               let fundAcctUserAdmin = {
-  //               from: { name: `${appName + ' Sales'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
-  //               to: [{ email: `<${result.app_email || 'noreply@ota.com'}>` }],
-  //               subject: 'Account Funding Notification!',
-  //               text: TextBody,
-  //               html: mailBody,
-  //           }
-  //             sendEmail(fundAcctUserAdmin).catch((err) => {
-  //               console.error("❌ Email sending completely failed:", err.message);
-  //             });
-  //           // async..await is not allowed in global scope, must use a wrapper
-            
-  //               }).catch(console.error.bind(console))     
-  //         // success message
-  //           res.status(201).json({msg: '200'})
-  //           }
-  //       } catch (err) {
-  //         // err message
-  //       console.log(err)
-  //         return res.json({status: 500, message: 'Technical issues occurred' })
-  //     }
-  //   });
-
 
   router.get("/user_wallet_profile/:id", async (req, res) => {
   const userId = req.params.id;

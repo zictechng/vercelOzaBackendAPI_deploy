@@ -4129,32 +4129,6 @@ router.get("/search_systemLogs_pagination", isAuth, async (req, res) => {
   }
 });
 
-// get all system referral activities logs details here..
-// router.get("/fetchAll_referral", isAuth, async (req, res) => {
-//   let page = parseInt(req.query.pageNumber);
-//   let limit = parseInt(req.query.pageLimit);
-//   if(!page) page = 1;
-//   if(!limit) limit = 15;
-
-//   const skip = (page - 1) * limit;
-
-//   try {
-//     //get all user count details
-//     const pageCount = await Referrals.find().count(); // get total records
-    
-//     const totalPageNumber = Math.ceil(pageCount / limit); // get the number of pages
-
-//     //get all user count details
-//      const all_systemLogs = await Referrals.find().sort({ createdOn: -1 }).skip(skip).limit(limit);
-//       console.log("final Result ", all_systemLogs)
-//      res.send({ msg: '201', 
-//       feedAll: all_systemLogs, page: page, limit: limit, totalPage: totalPageNumber, totalRecord: pageCount})
-//     } catch (err) {
-//     res.status(500).json(err.message);
-//     console.log(err.message);
-//   }
-// });
-
 router.get("/fetchAll_referral", isAuth, async (req, res) => {
   let page = parseInt(req.query.pageNumber);
   let limit = parseInt(req.query.pageLimit);
@@ -4518,7 +4492,6 @@ router.get("/user_acct_summary/:id", async (req, res) => {
   }
 });
 
-
 // POST /api/update_bonusConfig
 // Admin updates bonus configuration
 router.post('/update_bonusConfig', isAuth, async (req, res) => {
@@ -4542,7 +4515,6 @@ router.post('/update_bonusConfig', isAuth, async (req, res) => {
     return res.json({ msg: '400', message: 'Failed to update bonus configuration.' })
   }
 })
-
 
 // POST /api/user/bonus_pause
 // Admin pause or restore individual user bonus earning
@@ -4573,7 +4545,6 @@ router.post('/user/bonus_pause', isAuth, async (req, res) => {
     return res.json({ msg: '400', message: 'Could not process request.' })
   }
 })
-
 
 // GET /api/allUsdFunding_details
 // Admin gets all pending USD funding requests
