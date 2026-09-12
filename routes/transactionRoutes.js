@@ -341,61 +341,68 @@ const processPaymentDetails = async(data, paymentId) =>{
               log_status: 'Successful',
               log_nature: isUsdFunding ? 'USD Funding Request' : 'Fund exchange request',
               })
-            // check if the user activate email notification and send notification
-            if(userFund.receive_email_notification == true){
-               // send email notification to user
-               fetchApp().then((result) =>{
-                appName = result.app_name
-                appLogo = result.app_logo
-                const logoImage = appLogo;
-                const mailBody = loginEmail(appName, 'Payment notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment received. \n Request reference / Transaction ID is ${TransID}, \n 
-                Order ID is ${paymentId} Thank you`, logoImage)
-                const mailText = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n Order ID is ${paymentId}`)
-                let payPal_mailOptions = {
-                    from: { name: `${appName + ' Sales'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
-                    to: [{ email: userFund.email }],
-                    subject: 'Payment notification!',
-                    text: mailText,
-                    html: mailBody,
-                }
-                // mailTransporter.send(payPal_mailOptions).then(console.log)
-	              //   .catch('Email Sending Error ', console.error);
-                sendEmail(payPal_mailOptions).catch((err) => {
-                  console.error("❌ Email sending completely failed:", err.message);
-                });
 
-               }).catch(console.error.bind(console))
-               
-            }  
-            // send email notification to admin
-            fetchApp().then((result) =>{
-              appName = result.app_name
-              appLogo = result.app_logo
-              const logoImage = appLogo;
-              const mailBody = loginEmail(appName, 'Paypal Fund notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} as requested for fund exchanging. \n Request reference / Transaction ID is ${TransID}, \n 
-              Order ID is ${paymentId} Thank you`, logoImage)
-              const mailText = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n Order ID is ${paymentId}`)
-              let payPal_mailOptions = {
-                  from: { name: `${appName + ' Sales'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
-                  to: [{ email: `<${result.app_email || 'noreply@ota.com'}>`}],
-                  subject: 'Payment notification!',
+            // ── EMAIL TO USER
+            if (userFund.receive_email_notification === true) {
+              fetchApp().then((result) => {
+                const appName = result.app_name;
+                const appLogo = result.app_logo;
+
+                const userSubject = isUsdFunding
+                  ? 'USD Wallet Funding Request Received'
+                  : 'Payment Notification';
+
+                const userMessage = isUsdFunding
+                  ? `This is to notify you that your USD wallet funding request of $${data.amount} via ${data.serviceName} has been logged and is pending admin approval.\n\nTransaction ID: ${TransID}\nOrder ID: ${paymentId}\n\nThank you.`
+                  : `This is to notify you that your fund exchange request has been logged and we will treat it as soon as your payment is received.\n\nTransaction ID: ${TransID}\nOrder ID: ${paymentId}\n\nThank you.`;
+
+                const mailBody = loginEmail(appName, userSubject, userFund.display_name, userMessage, appLogo);
+                const mailText = loginText(userFund.display_name, userMessage);
+
+                sendEmail({
+                  from: { name: `${appName} Sales`, email: result.app_email || 'noreply@ozaapp.com' },
+                  to: [{ email: userFund.email }],
+                  subject: userSubject,
                   text: mailText,
                   html: mailBody,
-              }
-                // mailTransporter.send(payPal_mailOptions).then(console.log)
-	              //   .catch('Email Sending Error ', console.error);
-                sendEmail(payPal_mailOptions).catch((err) => {
-                  console.error("❌ Email sending completely failed:", err.message);
+                }).catch((err) => {
+                  console.error('❌ User email failed:', err.message);
                 });
-
-              }).catch(console.error.bind(console))     
-            // success message
+              }).catch(console.error);
             }
-        } catch (err) {
-        // err message
-        console.log(err)
-        // return res.json({status: 500, message: 'Technical issues occurred' })
-        }
+
+            // ── EMAIL TO ADMIN 
+            fetchApp().then((result) => {
+              const appName = result.app_name;
+              const appLogo = result.app_logo;
+
+              const adminSubject = isUsdFunding
+                ? 'New USD Funding Request'
+                : 'New PayPal Fund Exchange Request';
+
+              const adminMessage = isUsdFunding
+                ? `${userFund.display_name} has submitted a USD wallet funding request of $${data.amount} via ${data.serviceName}.\n\nTransaction ID: ${TransID}\nOrder ID: ${paymentId}\n\nPlease review and approve.`
+                : `${userFund.display_name} has requested a fund exchange.\n\nTransaction ID: ${TransID}\nOrder ID: ${paymentId}\n\nPlease treat as soon as possible.`;
+
+              const mailBody = loginEmail(appName, adminSubject, 'Hello Admin', adminMessage, appLogo);
+              const mailText = loginText('Admin', adminMessage);
+
+              sendEmail({
+                from: { name: `${appName} Sales`, email: result.app_email || 'noreply@ozaapp.com' },
+                to: [{ email: result.app_email || 'noreply@ozaapp.com' }],
+                subject: adminSubject,
+                text: mailText,
+                html: mailBody,
+              }).catch((err) => {
+                console.error('❌ Admin email failed:', err.message);
+              });
+            }).catch(console.error);
+          }
+            } catch (err) {
+            // err message
+            console.log(err)
+            // return res.json({status: 500, message: 'Technical issues occurred' })
+            }
     }
 
  // user request route to send fund to other user account goes here...
