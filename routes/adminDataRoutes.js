@@ -1653,6 +1653,9 @@ router.post("/update_appStatus", isAuth, async (req, res, next) => {
         app_mode_message: req.body.appMode_message,
         app_referral_percent: req.body.referral_percent,
         app_promoter_bonus: req.body.promoter_bonus_status,
+        app_mini_withdrawal: req.body.mini_withdrawal,
+        app_maxi_withdrawal: req.body.maxi_withdrawal,
+        app_email: req.body.app_email,
         
         //user_policy
         });
@@ -1678,6 +1681,9 @@ router.post("/update_appStatus", isAuth, async (req, res, next) => {
           app_baseurl: req.body.baseUrl,
           app_paypayKey: req.body.payPayToken,
           app_textEditor_key: req.body.textEditorKey,
+          app_mini_withdrawal: req.body.mini_withdrawal,
+          app_maxi_withdrawal: req.body.maxi_withdrawal,
+          app_email: req.body.app_email,
           app_minim_funding: req.body.mini_funding,
           app_maxi_funding: req.body.maxi_funding,
           app_payStack_btn: req.body.payStack_btn,

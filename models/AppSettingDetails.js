@@ -11,6 +11,10 @@ const systemSettingSchema = new mongoose.Schema({
     app_paypayKey: String,
     app_textEditor_key: String,
     app_mode_message: String,
+    app_email: {
+        type: String,
+        default: '',
+    },
     app_minim_funding:{
         type: Number,
         default: 0.0
@@ -112,10 +116,6 @@ const systemSettingSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
-        app_operation_status:{
-        type: Boolean,
-        default: false,
-    },
     // Ongoing purchase rewards toggle
     app_purchase_reward:{
         type: Boolean,
@@ -126,11 +126,7 @@ const systemSettingSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
-        // Ongoing purchase rewards toggle
-    app_purchase_reward:{
-        type: Boolean,
-        default: false,
-    },
+    
     // Business promoter commission toggle
     app_promoter_bonus:{
         type: Boolean,
