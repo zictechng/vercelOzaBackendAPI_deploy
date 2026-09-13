@@ -1606,12 +1606,12 @@ router.post("/update_appName", isAuth, async (req, res, next) => {
         app_version: req.body.appVersion,
         app_update_note: req.body.updateNote,
         app_update_btn_text: req.body.updateBtnText,
-        app_updateShowIcon: req.body.updateIcon,
+        app_updateShowIcon: req.body.updateIcon === true || req.body.updateIcon === 'true',
         app_updateTitle: req.body.updateTitle,
         app_description: req.body.appDescription,
           },
       }
-      const updateRead = await AppSetting.updateOne(updateDoc);
+     const updateRead = await AppSetting.updateOne({}, updateDoc);
       if(updateRead.modifiedCount == 1) {
           res.send({ msg: '201', message: ' Record updated successfully'})
         }
