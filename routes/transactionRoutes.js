@@ -339,6 +339,7 @@ const processPaymentDetails = async(data, paymentId) =>{
               log_desc: isUsdFunding ? 'USD wallet funding request via PayPal' : 'Funds exchange request made',
               log_amt: data.amount,
               log_status: 'Successful',
+              log_currency: isUsdFunding ? '$' : '$',
               log_nature: isUsdFunding ? 'USD Funding Request' : 'Fund exchange request',
               })
 
@@ -649,6 +650,7 @@ router.post("/userSending_funding", isAuth, async (req, res) => {
       log_swift_code: '',
       log_desc: 'Funds transfer request made',
       log_amt: dataReceive.amt,
+      log_currency: dataReceive.account_source === '2' ? '$' : '₦',
       log_status: 'Successful',
       log_nature: 'Transfer request',
     });
@@ -918,8 +920,9 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                   log_country: '',
                   log_swift_code: '',
                   log_desc:'Account funding request made',
-                  log_amt: '',
-                  log_status: 'Successful',
+                  log_amt: dataReceive.amt || 0,
+                  log_currency: '₦',
+                  log_status: 'Pending',
                   log_nature:'Funding request',
                   })
                 // check if the user activate email notification and send notification
@@ -1083,7 +1086,8 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                 log_country: '',
                 log_swift_code: '',
                 log_desc:'Withdrawal request made',
-                log_amt: '',
+                log_amt: dataReceive.amt || 0,
+                log_currency: '₦',
                 log_status: 'Successful',
                 log_nature:'Withdrawal request',
                 })
@@ -1376,7 +1380,8 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                   log_country: '',
                   log_swift_code: '',
                   log_desc:'Funds exchange request made',
-                  log_amt: '',
+                  log_amt: dataReceive.amt || 0,
+                  log_currency: '$',
                   log_status: 'Successful',
                   log_nature:'Fund exchange request',
                   })

@@ -890,7 +890,8 @@ router.post("/approveAcctWithdrawal", isAuth, async (req, res) => {
         log_country: '',
         log_swift_code: '',
         log_desc:'Admin staff approved user withdrawal request',
-        log_amt: '',
+        log_amt: userFund?.amount || 0,
+        log_currency: '₦',
         log_status: 'Successful',
         log_nature:'Withdrawal Approved',
        })
@@ -1049,8 +1050,9 @@ router.post("/rejectAccountWithdrawal", isAuth, async (req, res) => {
         log_country: '',
         log_swift_code: '',
         log_desc:'Admin staff rejected user withdrawal request',
-        log_amt: '',
-        log_status: 'Successful',
+        log_amt: userFund?.amount || 0,
+        log_currency: '₦',
+        log_status: 'Rejected',
         log_nature:'Withdrawal Request Rejected ',
        })
       // send email to the account owner
@@ -2628,7 +2630,8 @@ router.post("/approveAcctFunding", isAuth, async (req, res) => {
         log_country: '',
         log_swift_code: '',
         log_desc:'Admin staff approved user account funding request',
-        log_amt: '',
+        log_amt: userDetail?.amount || 0,
+        log_currency: '₦',
         log_status: 'Successful',
         log_nature:'Funding Approved',
        })
@@ -2758,8 +2761,9 @@ router.post("/rejectApproveAcctFunding", isAuth, async (req, res) => {
         log_country: '',
         log_swift_code: '',
         log_desc:'Admin staff rejected user account funding request',
-        log_amt: '',
-        log_status: 'Successful',
+        log_amt: userDetail?.amount || 0,
+        log_currency: '₦',
+        log_status: 'Rejected',
         log_nature:'Funding Rejected ',
        })
       // Send rejection email — non-blocking
@@ -3047,7 +3051,7 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
         log_country: '',
         log_swift_code: '',
         log_desc:'Admin staff approved user funds sale request',
-        log_amt: '',
+        log_amt: allSales?.amount || 0,
         log_status: 'Successful',
         log_nature:'Sale fund Approved',
         log_currency: '$',
