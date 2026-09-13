@@ -4712,6 +4712,57 @@ router.post("/approveUsdFunding", isAuth, async (req, res) => {
   }
 });
 
+// POST /api/rejectUsdFunding
+router.post("/rejectUsdFunding", isAuth, async (req, res) => {
+  try {
+    const { tran_id, reject_note } = req.body;
+    if (!tran_id) return res.json({ msg: '400', message: 'Transaction ID required' });
 
+    const txn = await TransferFund.findById(tran_id);
+    if (!txn) return res.json({ msg: '404', message: 'Transaction not found' });
+    if (txn.transaction_status !== 'Pending') {
+      return res.json({ msg: '400', message: 'Transaction already processed' });
+    }
+
+    const user = await User.findOne({ tag_id: txn.acct_number });
+    if (!user) return res.json({ msg: '404', message: 'User not found' });
+
+    await TransferFund.findByIdAndUpdate(tran_id, {
+      transaction_status: 'Rejected',
+      withdrawal_note: reject_note || '',
+      approved_date: new Date(),
+    });
+
+    await SystemActivity.create({
+      log_username: user.email,
+      log_name: user.display_name,
+      log_acct_number: user.tag_id,
+      log_desc: `Admin rejected USD wallet funding of $${Number(txn.amount).toLocaleString()} via ${txn.transac_category}. Reason: ${reject_note || 'No reason provided'}`,
+      log_amt: txn.amount,
+      log_status: 'Rejected',
+      log_nature: 'USD Funding Rejected',
+    });
+
+    if (user.receive_app_message) {
+      await Notification.create({
+        alert_username: user.display_name,
+        alert_name: user.display_name,
+        alert_user_ip: '',
+        alert_country: '',
+        alert_browser: '',
+        alert_date: new Date(),
+        alert_user_id: user._id,
+        alert_nature: `❌ USD Funding Rejected\nYour USD wallet funding of $${Number(txn.amount).toLocaleString()} via ${txn.transac_category} was rejected. ${reject_note ? `Reason: ${reject_note}` : 'Please contact support for details.'}`,
+        alert_status: 1,
+        alert_read_date: '',
+      });
+    }
+
+    return res.json({ msg: '201', message: 'USD funding rejected successfully' });
+  } catch (err) {
+    console.log('rejectUsdFunding error:', err.message);
+    return res.status(500).json({ msg: '500', message: err.message });
+  }
+});
 
 module.exports = router;
