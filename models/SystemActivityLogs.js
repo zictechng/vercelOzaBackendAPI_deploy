@@ -15,12 +15,17 @@ const systemActivityLogSchema = new mongoose.Schema({
         type: Number,
         default: 0,
         },
+    log_currency: {
+        type: String,
+        default: '₦',
+        },
     log_status:{
         type: String
     },
     log_nature:{
         type: String
     },
+    
 createdOn: {type: Date, default: Date.now},
  })
  systemActivityLogSchema.plugin(mongoosePaginate)

@@ -3050,6 +3050,7 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
         log_amt: '',
         log_status: 'Successful',
         log_nature:'Sale fund Approved',
+        log_currency: '$',
        })
 
        // check if user enabled in-app notifications and send notification
@@ -3174,6 +3175,7 @@ router.post("/rejectSaleFunding", isAuth, async (req, res) => {
         log_amt: '',
         log_status: 'Successful',
         log_nature:'Funds Sales Rejected ',
+        log_currency: '$',
        })
       // Send rejection email — non-blocking
       try {
@@ -4661,6 +4663,7 @@ router.post("/approveUsdFunding", isAuth, async (req, res) => {
       log_amt: txn.amount,
       log_status: 'Successful',
       log_nature: 'USD Funding Approved',
+      log_currency: '$',
     });
 
     // In-app notification
@@ -4741,6 +4744,7 @@ router.post("/rejectUsdFunding", isAuth, async (req, res) => {
       log_amt: txn.amount,
       log_status: 'Rejected',
       log_nature: 'USD Funding Rejected',
+      log_currency: '$',
     });
 
     if (user.receive_app_message) {
