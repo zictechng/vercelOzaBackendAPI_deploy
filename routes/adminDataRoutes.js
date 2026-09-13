@@ -1585,7 +1585,8 @@ router.post("/update_appName", isAuth, async (req, res, next) => {
         app_update_note: req.body.updateNote,
         app_update_btn_text: req.body.updateBtnText,
         app_updateShowIcon: req.body.updateIcon,
-        app_updateTitle: req.body.updateTitle
+        app_updateTitle: req.body.updateTitle,
+        app_description: req.body.appDescription,
         //user_policy
         });
        
@@ -1606,7 +1607,8 @@ router.post("/update_appName", isAuth, async (req, res, next) => {
         app_update_note: req.body.updateNote,
         app_update_btn_text: req.body.updateBtnText,
         app_updateShowIcon: req.body.updateIcon,
-        app_updateTitle: req.body.updateTitle
+        app_updateTitle: req.body.updateTitle,
+        app_description: req.body.appDescription,
           },
       }
       const updateRead = await AppSetting.updateOne(updateDoc);
