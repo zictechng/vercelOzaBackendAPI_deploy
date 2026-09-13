@@ -4758,10 +4758,37 @@ router.post("/rejectUsdFunding", isAuth, async (req, res) => {
       });
     }
 
+    // Email notification
+    if (user.receive_email_notification) {
+      fetchApp().then(async (result) => {
+        try {
+          const appName = result.app_name;
+          const logoImage = result.app_logo;
+          const mailBody = loginEmail(
+            appName,
+            'USD Funding Rejected',
+            user.display_name,
+            `Your USD wallet funding request of <b>$${Number(txn.amount).toLocaleString()}</b> via ${txn.transac_category} has been reviewed and rejected.<br/><br/>
+            ${reject_note ? `<strong>Reason:</strong> ${reject_note}<br/><br/>` : ''}
+            If you have any questions, please contact our support team.<br/><br/>
+            Transaction ID: <b>${txn.tid}</b>`,
+            logoImage
+          );
+          await sendEmail({
+            from: { name: `${appName} Support`, email: `<${result.app_email || 'noreply@ota.com'}>` },
+            to: [{ email: user.email }],
+            subject: `USD Funding Request Rejected — ${appName}`,
+            html: mailBody,
+          });
+        } catch (emailErr) {
+          console.log('rejectUsdFunding email error:', emailErr.message);
+        }
+      }).catch(console.error);
+    }
+
     return res.json({ msg: '201', message: 'USD funding rejected successfully' });
   } catch (err) {
-    console.log('rejectUsdFunding error:', err.message);
-    return res.status(500).json({ msg: '500', message: err.message });
+    console.log('rejectUsdFunding error:', err.message)
   }
 });
 

@@ -1969,8 +1969,6 @@ router.post("/system_setup", upload.single("file"), async (req, res) => {
   }
 });
 
-
-
 // GET /api/user_tickets/:userId
 // Get all tickets submitted by a specific user with pagination
 router.get("/user_tickets/:userId", isAuth, async (req, res) => {

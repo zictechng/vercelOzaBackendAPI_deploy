@@ -832,7 +832,6 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
   }
 });
 
-
   // user request route to fund account goes here...
   router.post("/userAccount_funding", isAuth, async (req, res) => {
       const dataReceive = req.body;
