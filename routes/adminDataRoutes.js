@@ -1312,36 +1312,45 @@ router.get("/allUser_transaction", isAuth, async (req, res) => {
 
 router.get('/allUser_messages', isAuth, async (req, res) => {
   try {
-  const allTickets = await Ticket.aggregate([
-      {
-      $lookup: {
-      from: 'users', // The name of the User collection
-      localField: 'createdBy',
-      foreignField: '_id',
-      as: 'userDetails',},},
-      {
-      $sort: { createdOn: -1 },
-      },
-      {
-      $limit: 20,
-      },
+        const page = parseInt(req.query.pageNumber) || 1;
+        const limit = parseInt(req.query.pageLimit) || 15;
+        const skip = (page - 1) * limit;
+        const totalCount = await Ticket.countDocuments();
+
+        const allTickets = await Ticket.aggregate([
+            { $lookup: {
+                from: 'users',
+                localField: 'createdBy',
+                foreignField: '_id',
+                as: 'userDetails',
+            }},
+            { $sort: { createdOn: -1 }},
+            { $skip: skip },
+            { $limit: limit },
       ]);
 
   //console.log(allTickets.userDetails);
   // Extract relevant information from the aggregation result
   const formattedTickets = allTickets.map((ticket) => ({
   _id: ticket._id,
-  subject: ticket.subject,
-  ticket_message: ticket.ticket_message,
-  ticket_status: ticket.ticket_status,
-  ticket_type: ticket.ticket_type,
-  ticket_closed: ticket.ticket_closed,
-  //"userDetails.display_name": 1
-  user: ticket.userDetails[0], // Assuming there is only one user associated with a ticket
+    tick_id: ticket.tick_id,
+    subject: ticket.subject,
+    ticket_message: ticket.ticket_message,
+    ticket_status: ticket.ticket_status,
+    ticket_type: ticket.ticket_type,
+    ticket_closed: ticket.ticket_closed,
+    sender_name: ticket.sender_name,
+    email: ticket.email,
+    createdOn: ticket.createdOn,
+    user: ticket.userDetails[0], // Assuming there is only one user associated with a ticket
   }));
   
   //console.log("All Message ", formattedTickets)
-  res.send({ msg: '201', feedAll: formattedTickets });
+  res.send({ 
+    msg: '201', 
+    feedAll: formattedTickets,
+    totalPage: Math.ceil(totalCount / limit),
+    totalRecord: totalCount, });
   } catch (err) {
   res.status(500).json({ error: err.message });
   console.error(err.message);
