@@ -93,22 +93,38 @@ router.post("/login", async (req, res, next) => {
             log_receiver_name: '',
             log_receiver_number: '',
             log_receiver_bank: '',
-            log_country: '',
+            log_country: userExist.user_country || '',
             log_swift_code: '',
-            log_desc:'Account login successfully',
+            log_desc: `Account login successfully from ${browserName} · IP: ${userIP || 'Unknown'}`,
             log_amt: '',
             log_status: 'Successful',
             log_nature:'User login',
         })
 
-        // user logs status here.
+        // Capture IP address
+        const userIP = req.headers['x-forwarded-for']?.split(',')[0]?.trim()
+          || req.headers['x-real-ip']
+          || req.connection?.remoteAddress
+          || req.socket?.remoteAddress
+          || '';
+
+        // Capture browser/device from User-Agent
+        const userAgent = req.headers['user-agent'] || '';
+        let browserName = 'Unknown';
+        if (userAgent.includes('Chrome') && !userAgent.includes('Edg')) browserName = 'Chrome';
+        else if (userAgent.includes('Firefox')) browserName = 'Firefox';
+        else if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) browserName = 'Safari';
+        else if (userAgent.includes('Edg')) browserName = 'Edge';
+        else if (userAgent.includes('MSIE') || userAgent.includes('Trident')) browserName = 'Internet Explorer';
+        else if (userAgent.includes('okhttp') || userAgent.includes('Dart')) browserName = 'Mobile App';
+
         const userLogs = UserLogs.create({
             login_username: userExist.email,
             login_name: userExist.display_name,
-            login_user_ip: '',
-            login_country: '',
-            login_browser: '',
-            login_date:  Date.now(),
+            login_user_ip: userIP,
+            login_country: userExist.user_country || '',
+            login_browser: browserName,
+            login_date: Date.now(),
             user_log_id: userExist._id,
             logout_date: '',
             login_nature: 'User logged in',
