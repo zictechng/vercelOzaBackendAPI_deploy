@@ -41,6 +41,7 @@ const UserBankDetails = require('../models/UserBankDetails');
 const TermCondition = require('../models/companyTermsCondition');
 const { isNull } = require('lodash');
 const UserWithdrawal = require('../models/withdrawalRequest');
+const UserNewsLetter = require('../models/newsLetter');
 
 const {
       processSignupBonus,
@@ -4808,5 +4809,28 @@ router.post("/rejectUsdFunding", isAuth, async (req, res) => {
     console.log('rejectUsdFunding error:', err.message)
   }
 });
+
+// GET /api/all_newsletter_subscribers
+router.get('/all_newsletter_subscribers', isAuth, async (req, res) => {
+  try {
+    const page = parseInt(req.query.pageNumber) || 1;
+    const limit = parseInt(req.query.pageLimit) || 20;
+    const skip = (page - 1) * limit;
+    const total = await UserNewsLetter.countDocuments();
+    const subscribers = await UserNewsLetter.find()
+      .sort({ createdOn: -1 })
+      .skip(skip)
+      .limit(limit);
+    res.json({
+      msg: '201',
+      feedAll: subscribers,
+      totalPage: Math.ceil(total / limit),
+      totalRecord: total,
+    });
+  } catch (err) {
+    res.status(500).json({ msg: '500', message: err.message });
+  }
+});
+
 
 module.exports = router;
