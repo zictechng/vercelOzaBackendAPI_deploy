@@ -74,7 +74,27 @@ router.post("/login", async (req, res, next) => {
         return res.json({status: 403, message: ' Error occured'})
         //return res.status(403).json({msg: '403'}); // error occurred
         }
-            
+        // Capture IP address
+        const userIP = req.headers['x-forwarded-for']?.split(',')[0]?.trim()
+        || req.headers['x-real-ip']
+        || req.socket?.remoteAddress
+        || '';
+
+        // Capture browser/device from User-Agent
+        const userAgent = req.headers['user-agent'] || '';
+
+        const getBrowserName = (ua) => {
+        if (ua.includes('okhttp') || ua.includes('Dart')) return 'Mobile App';
+        if (ua.includes('Edg')) return 'Edge';
+        if (ua.includes('Chrome')) return 'Chrome';
+        if (ua.includes('Firefox')) return 'Firefox';
+        if (ua.includes('Safari')) return 'Safari';
+        if (ua.includes('MSIE') || ua.includes('Trident')) return 'Internet Explorer';
+        return 'Unknown';
+        };
+
+        const browserName = getBrowserName(userAgent);
+
         if (!matches){
             return res.json({status: 404, message: ' Wrong password entered'})
             //res.status(404).json({msg: '404'}); // wrong password entered
@@ -101,24 +121,7 @@ router.post("/login", async (req, res, next) => {
             log_nature:'User login',
         })
 
-        // Capture IP address
-        const userIP = req.headers['x-forwarded-for']?.split(',')[0]?.trim()
-          || req.headers['x-real-ip']
-          || req.connection?.remoteAddress
-          || req.socket?.remoteAddress
-          || '';
-
-        // Capture browser/device from User-Agent
-        const userAgent = req.headers['user-agent'] || '';
-        let browserName = 'Unknown';
-        if (userAgent.includes('Chrome') && !userAgent.includes('Edg')) browserName = 'Chrome';
-        else if (userAgent.includes('Firefox')) browserName = 'Firefox';
-        else if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) browserName = 'Safari';
-        else if (userAgent.includes('Edg')) browserName = 'Edge';
-        else if (userAgent.includes('MSIE') || userAgent.includes('Trident')) browserName = 'Internet Explorer';
-        else if (userAgent.includes('okhttp') || userAgent.includes('Dart')) browserName = 'Mobile App';
-
-        const userLogs = UserLogs.create({
+            UserLogs.create({
             login_username: userExist.email,
             login_name: userExist.display_name,
             login_user_ip: userIP,
@@ -129,8 +132,8 @@ router.post("/login", async (req, res, next) => {
             logout_date: '',
             login_nature: 'User logged in',
             login_token: token,
-            login_status: 1
-        });
+            login_status: 1,
+            });
             // send email notification
             //console.log("Loaded Mailtrap Token:", process.env.EMAIL_API_PASSWORD);
 
@@ -630,5 +633,22 @@ router.post("/sendUserOTP", async (req, res) => {
         res.status(500).send({ msg: "500" });
     }
     });
+
+// Public app status check — no token required
+router.get('/app_status_check', async (req, res) => {
+  try {
+    const settings = await AppSetting.findOne();
+    if (!settings) return res.status(404).json({ msg: '404' });
+    res.status(200).json({
+      msg: '200',
+      app_operation_status: settings.app_operation_status,   // true = platform DOWN
+      app_new_signup_status: settings.app_new_signup_status, // true = signup OPEN
+      app_stop_login_status: settings.app_stop_login_status, // true = login BLOCKED
+      app_mode_message: settings.app_mode_message,           // custom message to show
+    });
+  } catch (err) {
+    res.status(500).json({ msg: '500', message: err.message });
+  }
+});
 
 module.exports = router;
