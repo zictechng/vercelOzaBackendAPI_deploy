@@ -3910,6 +3910,59 @@ router.get("/reports/export", isAuth, async (req, res) => {
   }
 });
 
+
+// GET /api/reports/users-export
+// Export users for marketing campaigns
+router.get('/reports/users-export', isAuth, async (req, res) => {
+  try {
+    const { fields, status, accountStatus, dateFrom, dateTo } = req.query
+
+    // Build filter
+    const filter = {}
+    if (status === 'pending') {
+      filter.acct_approved_status = { $ne: 'Approved' }
+    } else if (status === 'approved') {
+      filter.acct_approved_status = 'Approved'
+    }
+    if (accountStatus && accountStatus !== 'all') {
+      filter.acct_status = accountStatus
+    }
+    if (dateFrom || dateTo) {
+      filter.createdOn = {}
+      if (dateFrom) filter.createdOn.$gte = new Date(dateFrom)
+      if (dateTo) {
+        const end = new Date(dateTo)
+        end.setHours(23, 59, 59, 999)
+        filter.createdOn.$lte = end
+      }
+    }
+
+    const users = await User.find(filter)
+      .sort({ createdOn: -1 })
+      .limit(50000)
+      .select('display_name email phone tag_id acct_status acct_approved_status createdOn user_country')
+
+    // Build export based on selected fields
+    const exportData = users.map(u => {
+      const row = {}
+      if (!fields || fields.includes('name')) row['Name'] = u.display_name || ''
+      if (!fields || fields.includes('email')) row['Email'] = u.email || ''
+      if (!fields || fields.includes('phone')) row['Phone'] = u.phone || ''
+      if (!fields || fields.includes('tag_id')) row['Tag ID'] = u.tag_id || ''
+      if (!fields || fields.includes('country')) row['Country'] = u.user_country || ''
+      if (!fields || fields.includes('status')) row['Account Status'] = u.acct_status || ''
+      if (!fields || fields.includes('kyc')) row['KYC Status'] = u.acct_approved_status || ''
+      if (!fields || fields.includes('date')) row['Date Joined'] = u.createdOn ? new Date(u.createdOn).toISOString().split('T')[0] : ''
+      return row
+    })
+
+    return res.json({ msg: '201', data: exportData, total: exportData.length })
+  } catch (err) {
+    console.log('Users export error:', err.message)
+    return res.status(500).json({ msg: '500', message: err.message })
+  }
+})
+
 // ─── END REPORTING ENDPOINTS
 
 // get all system loge activities details here..
