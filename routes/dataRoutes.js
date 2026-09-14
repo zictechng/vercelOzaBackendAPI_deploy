@@ -337,67 +337,6 @@ router.get("/getTransactionInfo/:id", isAuth, async (req, res) => {
     }
   });
   
-  // get recent transaction of the user financial details here..
-  // router.get("/all_transaction/:id", async (req, res) => {
-
-  // const page = 1;
-  // const userId = req.params.id;
-  // const limit = 5;
-  // const totalItems = 0;
-  // const skip = (page - 1) * limit;
-  //   try {
-  //     const recentTransaction = await TransferFund.find({createdBy: userId})
-  //     .sort({ creditOn: -1 });
-  //     res.send(recentTransaction)
-  //    } catch (err) {
-  //     res.status(500).json(err.message);
-  //     console.log(err.message);
-  //   }
-  // });
-
-  // router.get("/all_statement/:id", async (req, res) => {
-  //   const userId = req.params.id;
-  //   const itemsPerPage = 5; // Number of transactions per page
-  //   const page = parseInt(req.query.page) || 1; // Get page number from query or default to 1
-  //   const skip = (page - 1) * itemsPerPage;
-    
-  //   console.log("Details got from frontend", req.params.id + ' / ' + page );
-  //   const countAll = await TransferFund.find({createdBy: userId }).count();
-    
-  //   const pageTotal = (Math.ceil(countAll / itemsPerPage));
-  //       if (countAll == 0 || countAll < 1){
-  //         console.log(" No record found: ", pageTotal);
-  //         return res.json({status: 404, message: 'No record found'})
-  //       }
-    
-  //       if (page > pageTotal){
-  //           console.log(" No more pages to display")
-  //         return res.json({status: 401, message: 'No more records'})
-  //       }
-  //       else{
-  //       console.log(" Page Total is: ", pageTotal);
-
-  //       console.log(" Total Records is: ", countAll);
-
-  //       console.log(" Current Page is: ", page);
-
-  //         try {
-  //           const recentTransaction = await TransferFund.find({createdBy: userId }) // Use the user ID in the query
-  //           .sort({ creditOn: -1 })
-  //           .skip(skip)
-  //           .limit(itemsPerPage);
-        
-  //           if(!recentTransaction || recentTransaction < 1){
-  //             console.log(" No record: ", pageTotal);
-  //             return res.json({status: 405, message: 'No more records'})
-  //           }
-  //           console.log(recentTransaction)
-  //           res.send({result: recentTransaction, all_page: pageTotal, all_records: countAll });
-  //           } catch (err) {
-  //           res.status(500).json({ error: err.message });
-  //           }
-  //       }
-  //   });
 
   // get recent transaction of the user financial details here..
   
@@ -1999,7 +1938,6 @@ router.get("/user_tickets/:userId", isAuth, async (req, res) => {
   }
 });
 
-
 // GET /api/user_transaction_summary/:id
 // Returns all-time approved transaction totals for a user
 router.get("/user_transaction_summary/:id", isAuth, async (req, res) => {
@@ -2048,7 +1986,6 @@ router.get("/user_transaction_summary/:id", isAuth, async (req, res) => {
     return res.status(500).json({ msg: '400', message: err.message });
   }
 });
-
 
 // ─── COINS REDEMPTION 
 // POST /api/redeem_coins
