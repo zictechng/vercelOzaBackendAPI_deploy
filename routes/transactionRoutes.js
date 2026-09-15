@@ -1068,7 +1068,7 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                 tid: Trans_ID,
                 colorcode:'red',
                 pay_tran: req.body?.payId ? req.body?.payId:'', 
-                currency_level: '2',
+                currency_level: '1',
                 sender_acct_number: userFund.tag_id,
                 transaction_status: 'Pending',
                 createdOn: Date.now(),
