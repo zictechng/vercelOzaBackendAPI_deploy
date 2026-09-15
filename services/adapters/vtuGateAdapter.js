@@ -100,8 +100,19 @@ class VTUGateAdapter extends BaseAdapter {
       if (res.data?.status !== true) {
         return this.error(res.data?.message || 'Failed to fetch data plans');
       }
-      // Extract data_plans array from response
-      const plans = res.data?.data?.data_plans || res.data?.data || [];
+      
+      // Extract and normalize data_plans from VTUGate response
+      const rawPlans = res.data?.data?.data_plans || res.data?.data || [];
+      const plans = rawPlans.map(p => ({
+        id:       p.plan_id   || p.id   || p.plan_code || '',
+        name:     p.plan_name || p.name || p.allowance  || '',
+        label:    p.plan_name || p.name || p.allowance  || '',
+        validity: p.month_validate || p.validity || p.duration || '',
+        price:    p.plan_amount || p.price || p.amount || 0,
+        code:     p.plan_code  || p.plan_id || p.id || '',
+        plan_code:p.plan_code  || p.plan_id || p.id || '',
+        allowance:p.allowance  || p.plan_name || '',
+      }));
       return this.success({ plans });
     } catch (error) {
       return this.error(

@@ -699,7 +699,6 @@ router.post("/userSending_funding", isAuth, async (req, res) => {
   }
 });
 
-
 // POST /api/verify_paystack_payment
 // Verifies PayStack payment and instantly credits user wallet
 router.post("/verify_paystack_payment", isAuth, async (req, res) => {
@@ -1437,7 +1436,6 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
       }
     });
 
-
 // POST /api/usd_account_funding
 // User submits USD funding request via PayPal/Payoneer/BTC
 // Same flow as selling — admin approves → usd_balance credited
@@ -1546,160 +1544,131 @@ router.post("/usd_account_withdrawal", isAuth, async (req, res) => {
   }
 });
 
-
-  // process user sales/purchase request fund goes here...
-  router.post("/fundBuy_funding", isAuth, async (req, res) => {
-      const dataReceive = req.body;
-      //console.log("My data: ", req.body)
-      const TransID = transactionID(25)
-      const nowRate = '';
-      // get the transfer record ID here
-      const filter = { _id: dataReceive.myId };
-          if (dataReceive.myId == "" || dataReceive.myId == null) {
-          return res.json({status: 401, message: 'Invalid user access'})
-          }
-          const getCurrentRate = await GetRate.findOne();
-          
-      try {
-            let userFund = await User.findOne({ _id:  dataReceive.myId }); // here I am checking if user exist then I will get user details
-            if (!userFund) {
-              //console.log("User details: ", userDetails)
-              return res.json({status: 404, message: 'User not found'})// user not found
-            } 
-            else if (userFund){
-                // create record for funding purposes
-                const createRecord = TransferFund.create({
-                  acct_name: userFund.display_name,
-                  acct_number: userFund.tag_id,
-                  amount: dataReceive.buy_amt,
-                  bank_name: '',
-                  sender_name: userFund.display_name,
-                  sender_acct_number: userFund.tag_id,
-                  sender_currency_type: '$',
-                  tran_type: 'Debit',
-                  transac_nature:dataReceive.serviceName+' '+dataReceive.serviceCategory,
-                  transac_category: dataReceive.serviceName,
-                  tran_desc:'Request for virtual funds exchange for '+dataReceive.serviceName+" \n "+dataReceive.buy_note? dataReceive.buy_note:'',
-                  tr_year:'',
-                  colorcode:'red',
-                  trans_method: dataReceive.method,
-                  currency_level:'2',
-                  createdBy: dataReceive.myId,
-                  tid: TransID,
-                  tran_service_type: dataReceive.serviceType,
-                  trans_balance: dataReceive.total_money,
-                  pay_tran: dataReceive.method =='Paystack Checkout'? dataReceive.payId : null,
-                  tran_rate: dataReceive.serviceName == 'PayPal' || dataReceive.serviceName =='Paypal'? getCurrentRate.paypal_selling: dataReceive.serviceName == 'Payoneer' || dataReceive.serviceName =='Payooner'? getCurrentRate.payoneer_selling: dataReceive.serviceName=='Bitcoin'? getCurrentRate.btc_selling: ''
-                  });
-                  
-                // check if user activate in-app notification and send notification
-                if(userFund.receive_app_message == true) {
-                  const userLogs = Notification.create({
-                    alert_username: userFund.display_name,
-                    alert_name: userFund.display_name,
-                    alert_user_ip: '',
-                    alert_country: '',
-                    alert_browser: '',
-                    alert_date:  Date.now(),
-                    alert_user_id: userFund._id,
-                    alert_nature: 'Request for virtual funds exchange for '+dataReceive.serviceName + ' was successful, your account with be credited once approved',
-                    alert_status: 1,
-                    alert_read_date: ''
-                    })
-                }
-    
-                // create log here
-                const addLogs = await SystemActivity.create({
-                  log_username: userFund.email,
-                  log_name: userFund.display_name,
-                  log_acct_number: userFund?.tag_id,
-                  log_receiver_name: '',
-                  log_receiver_number: '',
-                  log_receiver_bank: '',
-                  log_country: '',
-                  log_swift_code: '',
-                  log_desc:'Funds exchange request made',
-                  log_amt: '',
-                  log_status: 'Successful',
-                  log_nature:'Fund exchange request',
-                  })
-                // check if the user activate email notification and send notification
-                if(userFund.receive_email_notification == true){
-                  // send email notification to user
-                  fetchApp().then((result) =>{
-                      appName = result.app_name
-                      appLogo = result.app_logo
-                      const logoImage = appLogo;
-                      const mailBody = loginEmail(appName, 'Transaction Notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment is received. \n Request reference / Transaction ID is ${TransID}, \n
-                      \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId: ''}
-                      \n Thank you`, logoImage)
-                      const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId:''}`);
-                      let fundAcctMailUserBuy = {
-                      from: { name: `${appName + ' Sales'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
-                      to: [{ email: userFund.email }],
-                      subject: 'Transaction Notification!',
-                      text: TextBody,
-                      html: mailBody,
-                  }
-                    sendEmail(fundAcctMailUserBuy).catch((err) => {
-                      console.error("❌ Email sending completely failed:", err.message);
-                    });
-                    
-                    }).catch(console.error.bind(console))
-                } 
-                
-              // send email notification to admin
-                fetchApp().then((result) =>{
-                  appName = result.app_name
-                  appLogo = result.app_logo
-                  const logoImage = appLogo;
-                  const mailBody = loginEmail(appName, 'Transaction Notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} made fund exchange request and it has been logged, kindly treat as soon as possible. \n Request reference / Transaction ID is ${TransID}, \n
-                  \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId: ''}
-                  \n Thank you`, logoImage)
-                  const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId:''}`);
-                  let fundAcctMailBuyAdmin = {
-                  from: { name: `${appName + ' Sales'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
-                  to: [{ email: `<${result.app_email || 'noreply@ota.com'}>` }],
-                  subject: 'Transaction Notification!',
-                  text: TextBody,
-                  html: mailBody,
-              }
-              sendEmail(fundAcctMailBuyAdmin).catch((err) => {
-                console.error("❌ Email sending completely failed:", err.message);
-              });
-              // async..await is not allowed in global scope, must use a wrapper
-              }).catch(console.error.bind(console))
-              
-          // success message
-            res.status(201).json({msg: '200', feedback: TransID})
-            }
-        } catch (err) {
-          // err message
-        console.log(err)
-          return res.json({status: 500, message: 'Technical issues occurred' })
-      }
-    });
-
-  // process user sales/purchase request fund goes here...
-  router.post("/fetch_AccountDetailsMobile", async (req, res) => {
+// process user sales/purchase request fund goes here...
+router.post("/fundBuy_funding", isAuth, async (req, res) => {
     const dataReceive = req.body;
+    //console.log("My data: ", req.body)
+    const TransID = transactionID(25)
+    const nowRate = '';
     // get the transfer record ID here
     const filter = { _id: dataReceive.myId };
-        if (dataReceive == "" || dataReceive == null) {
-        return res.json({status: 404, message: 'Invalid data'})
+        if (dataReceive.myId == "" || dataReceive.myId == null) {
+        return res.json({status: 401, message: 'Invalid user access'})
         }
+        const getCurrentRate = await GetRate.findOne();
         
     try {
-      let receiverUser = await User.findOne({ tag_id:  req.body.data }); // here I am checking if user exist then I will get user details
-      
-      if (!receiverUser) {
+          let userFund = await User.findOne({ _id:  dataReceive.myId }); // here I am checking if user exist then I will get user details
+          if (!userFund) {
             //console.log("User details: ", userDetails)
             return res.json({status: 404, message: 'User not found'})// user not found
           } 
-          else if (receiverUser){
-            console.log("User details: ", receiverUser.display_name)
+          else if (userFund){
+              // create record for funding purposes
+              const createRecord = TransferFund.create({
+                acct_name: userFund.display_name,
+                acct_number: userFund.tag_id,
+                amount: dataReceive.buy_amt,
+                bank_name: '',
+                sender_name: userFund.display_name,
+                sender_acct_number: userFund.tag_id,
+                sender_currency_type: '$',
+                tran_type: 'Debit',
+                transac_nature:dataReceive.serviceName+' '+dataReceive.serviceCategory,
+                transac_category: dataReceive.serviceName,
+                tran_desc:'Request for virtual funds exchange for '+dataReceive.serviceName+" \n "+dataReceive.buy_note? dataReceive.buy_note:'',
+                tr_year:'',
+                colorcode:'red',
+                trans_method: dataReceive.method,
+                currency_level:'2',
+                createdBy: dataReceive.myId,
+                tid: TransID,
+                tran_service_type: dataReceive.serviceType,
+                trans_balance: dataReceive.total_money,
+                pay_tran: dataReceive.method =='Paystack Checkout'? dataReceive.payId : null,
+                tran_rate: dataReceive.serviceName == 'PayPal' || dataReceive.serviceName =='Paypal'? getCurrentRate.paypal_selling: dataReceive.serviceName == 'Payoneer' || dataReceive.serviceName =='Payooner'? getCurrentRate.payoneer_selling: dataReceive.serviceName=='Bitcoin'? getCurrentRate.btc_selling: ''
+                });
+                
+              // check if user activate in-app notification and send notification
+              if(userFund.receive_app_message == true) {
+                const userLogs = Notification.create({
+                  alert_username: userFund.display_name,
+                  alert_name: userFund.display_name,
+                  alert_user_ip: '',
+                  alert_country: '',
+                  alert_browser: '',
+                  alert_date:  Date.now(),
+                  alert_user_id: userFund._id,
+                  alert_nature: 'Request for virtual funds exchange for '+dataReceive.serviceName + ' was successful, your account with be credited once approved',
+                  alert_status: 1,
+                  alert_read_date: ''
+                  })
+              }
+  
+              // create log here
+              const addLogs = await SystemActivity.create({
+                log_username: userFund.email,
+                log_name: userFund.display_name,
+                log_acct_number: userFund?.tag_id,
+                log_receiver_name: '',
+                log_receiver_number: '',
+                log_receiver_bank: '',
+                log_country: '',
+                log_swift_code: '',
+                log_desc:'Funds exchange request made',
+                log_amt: '',
+                log_status: 'Successful',
+                log_nature:'Fund exchange request',
+                })
+              // check if the user activate email notification and send notification
+              if(userFund.receive_email_notification == true){
+                // send email notification to user
+                fetchApp().then((result) =>{
+                    appName = result.app_name
+                    appLogo = result.app_logo
+                    const logoImage = appLogo;
+                    const mailBody = loginEmail(appName, 'Transaction Notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment is received. \n Request reference / Transaction ID is ${TransID}, \n
+                    \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId: ''}
+                    \n Thank you`, logoImage)
+                    const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId:''}`);
+                    let fundAcctMailUserBuy = {
+                    from: { name: `${appName + ' Sales'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
+                    to: [{ email: userFund.email }],
+                    subject: 'Transaction Notification!',
+                    text: TextBody,
+                    html: mailBody,
+                }
+                  sendEmail(fundAcctMailUserBuy).catch((err) => {
+                    console.error("❌ Email sending completely failed:", err.message);
+                  });
+                  
+                  }).catch(console.error.bind(console))
+              } 
+              
+            // send email notification to admin
+              fetchApp().then((result) =>{
+                appName = result.app_name
+                appLogo = result.app_logo
+                const logoImage = appLogo;
+                const mailBody = loginEmail(appName, 'Transaction Notification', 'Hello Admin', `this is to notify you that ${userFund.display_name} made fund exchange request and it has been logged, kindly treat as soon as possible. \n Request reference / Transaction ID is ${TransID}, \n
+                \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId: ''}
+                \n Thank you`, logoImage)
+                const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId:''}`);
+                let fundAcctMailBuyAdmin = {
+                from: { name: `${appName + ' Sales'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
+                to: [{ email: `<${result.app_email || 'noreply@ota.com'}>` }],
+                subject: 'Transaction Notification!',
+                text: TextBody,
+                html: mailBody,
+            }
+            sendEmail(fundAcctMailBuyAdmin).catch((err) => {
+              console.error("❌ Email sending completely failed:", err.message);
+            });
+            // async..await is not allowed in global scope, must use a wrapper
+            }).catch(console.error.bind(console))
+            
         // success message
-          res.json({msg: '200', userData: receiverUser.display_name})
+          res.status(201).json({msg: '200', feedback: TransID})
           }
       } catch (err) {
         // err message
@@ -1708,7 +1677,35 @@ router.post("/usd_account_withdrawal", isAuth, async (req, res) => {
     }
   });
 
-  router.get("/user_wallet_profile/:id", async (req, res) => {
+// process user sales/purchase request fund goes here...
+router.post("/fetch_AccountDetailsMobile", async (req, res) => {
+  const dataReceive = req.body;
+  // get the transfer record ID here
+  const filter = { _id: dataReceive.myId };
+      if (dataReceive == "" || dataReceive == null) {
+      return res.json({status: 404, message: 'Invalid data'})
+      }
+      
+  try {
+    let receiverUser = await User.findOne({ tag_id:  req.body.data }); // here I am checking if user exist then I will get user details
+    
+    if (!receiverUser) {
+          //console.log("User details: ", userDetails)
+          return res.json({status: 404, message: 'User not found'})// user not found
+        } 
+        else if (receiverUser){
+          console.log("User details: ", receiverUser.display_name)
+      // success message
+        res.json({msg: '200', userData: receiverUser.display_name})
+        }
+    } catch (err) {
+      // err message
+    console.log(err)
+      return res.json({status: 500, message: 'Technical issues occurred' })
+  }
+});
+
+router.get("/user_wallet_profile/:id", async (req, res) => {
   const userId = req.params.id;
   try {
     const userDetails = await User.findOne({ _id: userId });
