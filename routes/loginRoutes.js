@@ -97,7 +97,6 @@ router.post("/login", async (req, res, next) => {
 
         if (!matches){
             return res.json({status: 404, message: ' Wrong password entered'})
-            //res.status(404).json({msg: '404'}); // wrong password entered
             //console.log('The password does NOT match!');
         }
         else {

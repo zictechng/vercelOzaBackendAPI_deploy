@@ -733,6 +733,23 @@ router.post('/bills/buy_exam_cards', isAuth, async (req, res) => {
   }
 });
 
+
+// GET /api/bills/transaction/:id
+// Get single bills transaction detail
+// ------------------------------------------------
+router.get('/bills/transaction/:id', isAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const transaction = await BillsTransaction.findById(id).lean();
+    if (!transaction) {
+      return res.json({ msg: '404', message: 'Transaction not found' });
+    }
+    return res.json({ msg: '200', dataInfo: transaction });
+  } catch (error) {
+    console.log('Bills transaction detail error:', error.message);
+    return res.json({ msg: '500', message: 'Could not fetch transaction.' });
+  }
+});
 // ------------------------------------------------
 // GET /api/bills/history/:userId
 // Get bills transaction history for a user
