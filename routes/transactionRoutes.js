@@ -1694,9 +1694,15 @@ router.post("/fetch_AccountDetailsMobile", async (req, res) => {
           return res.json({status: 404, message: 'User not found'})// user not found
         } 
         else if (receiverUser){
-          console.log("User details: ", receiverUser.display_name)
-      // success message
-        res.json({msg: '200', userData: receiverUser.display_name})
+          //console.log("User details: ", receiverUser.display_name)
+          res.json({
+            msg: '200',
+            userData: {
+              display_name: receiverUser.display_name,
+              tag_id:       receiverUser.tag_id,
+              email:        receiverUser.email,
+            }
+          })
         }
     } catch (err) {
       // err message
