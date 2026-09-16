@@ -1330,7 +1330,7 @@ router.post("/reset_AccountPINMobile", isAuth, async (req, res) => {
 
 // submit ticket details from mobile app here..
 router.post("/submit_ticketMobile", isAuth, async (req, res) => {
-    //console.log("Backend Data receive ", req.body)
+    console.log("Backend Data receive ", req.body)
     const ticketNumber = generateTagID();
    try {
      let checkUser = await User.findOne({ _id:  req.body.createdBy }); // here I am checking if user exist then I will get user details
@@ -1349,7 +1349,8 @@ router.post("/submit_ticketMobile", isAuth, async (req, res) => {
         ticket_type: req.body.ticket_type,
         createdBy: req.body.createdBy,
         tick_id: ticketNumber,
-        ticket_closed:'Opened'
+        ticket_closed:'Opened',
+        createdOn:      new Date(),
        })
 
          // create log here

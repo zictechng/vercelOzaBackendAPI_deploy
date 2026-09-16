@@ -1251,57 +1251,6 @@ router.get("/allUser_transaction", isAuth, async (req, res) => {
   }
 });
 
-// get all support ticket message list details here..
-// router.get("/allUser_messages", isAuth, async (req, res) => {
-//   try {
-//     //get all user count details
-//      const allTickets = await Ticket.find().sort({ createdOn: -1 }).limit(5);
-//    // console.log(allTickets)
-//       res.send({ msg: '201', feedAll: allTickets})
-//     } catch (err) {
-//     res.status(500).json(err.message);
-//     console.log(err.message);
-//   }
-// });
-
-// router.get("/allUser_messages", isAuth, async (req, res) => {
-//   try {
-//   const allTickets = await Ticket.aggregate([
-//   {
-//   $lookup: {
-//   from: 'users',
-//   localField: 'createdBy',
-//   foreignField: '_id',
-//   as: 'userDetails'
-//   }
-//   },
-//   {
-//   $unwind: '$userDetails' // Unwind the array created by $lookup
-//   },
-//   {
-//   $project: {
-//   _id: 1, // Include the fields you need from the message collection
-//   messageText: 1,
-//   createdOn: 1,
-//   'userDetails.mail': 1,
-//   'userDetails.name': 1
-//   }
-//   },
-//   {
-//   $sort: { createdOn: -1 }
-//   },
-//   {
-//   $limit: 5
-//   }
-//   ]);
-//   console.log("All Message ", allTickets)
-
-//   res.send({ msg: '201', feedAll: allTickets });
-//   } catch (err) {
-//   res.status(500).json(err.message);
-//   console.error(err.message);
-//   }
-//   });
 
 router.get('/allUser_messages', isAuth, async (req, res) => {
   try {
@@ -2372,6 +2321,21 @@ router.post("/adminApprove_document", isAuth, async (req, res) => {
             log_nature:'User Document Approved ',
            })
 
+           if(user.receive_app_message === true){
+                const userLogs = Notification.create({
+                  alert_username: user.email,
+                  alert_name: user.display_name,
+                  alert_user_ip: '',
+                  alert_country: '',
+                  alert_browser: '',
+                  alert_date:  Date.now(),
+                  alert_user_id: user._id,
+                  alert_nature: `Document Approved: this is to notify you that your ${documentName} document has been approved after been carefully reviewed the documents`,
+                  alert_status: 1,
+                  alert_read_date: ''
+                });
+              }
+
            // send email to the account owner
            fetchApp().then((result) => {
             appName = result.app_name
@@ -2529,7 +2493,7 @@ router.post("/adminRejected_documentUpload", isAuth, async (req, res) => {
                 alert_browser: '',
                 alert_date:  Date.now(),
                 alert_user_id: user._id,
-                alert_nature: documentName +' Issues \n Reason: ' + documentReason,
+                alert_nature: documentName +' Issues \n Reason: ' + documentReason ? documentReason:' Not given',
                 alert_status: 1,
                 alert_read_date: ''
                 })

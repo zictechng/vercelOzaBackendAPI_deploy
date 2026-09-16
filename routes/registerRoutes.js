@@ -1191,52 +1191,94 @@ router.post("/user_notice_request", isAuth, async (req, res) => {
   // Update user password via mobile app
   
 router.post("/updateUser_passwordMobile", isAuth, async (req, res, next) => {
-    //console.log("Data see", req.body);
     const filterUser = { _id: req.body.userId };
     try {
-        const user = await User.findOne({ _id: req.body.userId})
-        if(!user){
-            return res.json({status: 404, message: ' User not found'})
-         }
-        else if(user){
-            const hashedPwd = await bcrypt.hash(req.body.password, 10) // salt rounds
+        const user = await User.findOne({ _id: req.body.userId });
+        if (!user) {
+            return res.status(404).json({ status: 404, message: 'User not found' });
+        } else if (user) {
+            const hashedPwd = await bcrypt.hash(req.body.password, 10); // salt rounds
             const updateDocUser = {
                 $set: {
-                password_plain: req.body.password,
-                password: hashedPwd 
+                    password_plain: req.body.password,
+                    password: hashedPwd 
                 },
-              };
-        const updateUserNow = await User.updateOne(filterUser, updateDocUser);
-              // update user current balance here
-            if(updateUserNow){
-              // create log here
-           const addLogs = await SystemActivity.create({
-            log_username: user.email,
-            log_name: user.display_name,
-            log_acct_number: user.tag_id,
-            log_receiver_name: '',
-            log_receiver_number: '',
-            log_receiver_bank: '',
-            log_country: '',
-            log_swift_code: '',
-            log_desc:'Password account updated successfully',
-            log_amt: '',
-            log_status: 'Successful',
-            log_nature:'Password details updated',
-           })
-           res.status(201).json({msg: '201'}) // success message
-            //console.log("Updated Details", updateUserNow.modifiedCount)
-                } else{
-                res.status(401).json({ msg: '401'})  // invalid user details
-                }
+            };
+            
+            const updateUserNow = await User.updateOne(filterUser, updateDocUser);
+            
+            if (updateUserNow) {
+                // Create activity log
+                const addLogs = await SystemActivity.create({
+                    log_username: user.email,
+                    log_name: user.display_name,
+                    log_acct_number: user.tag_id,
+                    log_receiver_name: '',
+                    log_receiver_number: '',
+                    log_receiver_bank: '',
+                    log_country: '',
+                    log_swift_code: '',
+                    log_desc: 'Password account updated successfully',
+                    log_amt: '',
+                    log_status: 'Successful',
+                    log_nature: 'Password details updated',
+                });
+
+            if(user.receive_app_message === true){
+                    const userLogs = Notification.create({
+                      alert_username: user.email,
+                      alert_name: user.display_name,
+                      alert_user_ip: '',
+                      alert_country: '',
+                      alert_browser: '',
+                      alert_date:  Date.now(),
+                      alert_user_id: user._id,
+                      alert_nature: `Security Alert: This is a security notification to inform you that your account password was successfully updated`,
+                      alert_status: 1,
+                      alert_read_date: ''
+                    });
+                  }
+
+                // ── Send security notification email ──────────────
+                fetchApp().then((result) => {
+                    const appName = result.app_name;
+                    const logoImage = result.app_logo;
+                    
+                    const notificationMessage = `This is a security notification to inform you that your account password was successfully updated. If you did not make this change, please contact our support team immediately to secure your account.`;
+                    
+                    const mailBody = loginEmail(
+                        appName, 
+                        'Security Alert: Password Updated', 
+                        user.display_name, 
+                        notificationMessage, 
+                        logoImage
+                    );
+                    
+                    const TextBody = loginText(user.display_name, notificationMessage + '\n');
+                    
+                    let securityMailOptions = {
+                        from: { name: `${appName} Support`, email: `<${result.app_email || 'noreply@ota.com'}>` },
+                        to: [{ email: user.email }],
+                        subject: 'Security Alert: Your Password Was Changed',
+                        text: TextBody,
+                        html: mailBody,
+                    };
+                    
+                    sendEmail(securityMailOptions).catch((err) => {
+                        console.error("❌ Password update email sending failed:", err.message);
+                    });
+                }).catch(console.error.bind(console));
+
+                return res.status(201).json({ msg: '201' }); // success message
+            } else {
+                return res.status(401).json({ msg: '401' });  // invalid user details
+            }
         }
-        
     } catch (error) {
         res.status(500).send({ msg: "500" });
         console.log("Error Message", error);
     }
-
-  });
+});
 
   // Update user password via mobile app
 router.post("/updateUser_passwordMobileWebiitApp", isAuth, async (req, res, next) => {
