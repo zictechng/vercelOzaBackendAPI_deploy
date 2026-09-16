@@ -33,7 +33,7 @@ const ticketSchema = new mongoose.Schema({
     },
     tick_id: String,
     tick_response_date: {type: Date},
-    createdOn: {type: Date},
+    createdOn: {type: Date, default: Date.now},
        
     // Thread of replies between admin and user
     replies: [{
