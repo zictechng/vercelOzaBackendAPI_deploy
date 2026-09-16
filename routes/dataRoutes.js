@@ -203,6 +203,61 @@ router.get("/user_bankDetails/:id", isAuth, async (req, res) => {
       console.log(err.message);
   }
 });
+
+
+// GET /api/fetch_banks — Fetch Nigerian banks list from Paystack
+router.get("/fetch_banks", isAuth, async (req, res) => {
+  try {
+    const getAppSetting = await AppSetting.findOne();
+    const paystackKey = getAppSetting?.app_paypayKey || process.env.PAYSTACK_SECRET_KEY;
+    const response = await fetch('https://api.paystack.co/bank?country=nigeria&use_cursor=false&perPage=100', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${paystackKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    const data = await response.json();
+    if (data.status) {
+      return res.json({ msg: '200', banks: data.data });
+    }
+    return res.json({ msg: '400', message: 'Could not fetch banks' });
+  } catch (err) {
+    console.log('Fetch banks error:', err.message);
+    return res.json({ msg: '500', message: 'Technical error fetching banks' });
+  }
+});
+
+// POST /api/verify_bankAccount — Resolve account name via Paystack
+router.post("/verify_bankAccount", isAuth, async (req, res) => {
+  try {
+    const { account_number, bank_code } = req.body;
+    if (!account_number || !bank_code) {
+      return res.json({ msg: '400', message: 'Account number and bank code are required' });
+    }
+    const getAppSetting = await AppSetting.findOne();
+    const paystackKey = getAppSetting?.app_paypayKey || process.env.PAYSTACK_SECRET_KEY;
+    const response = await fetch(
+      `https://api.paystack.co/bank/resolve?account_number=${account_number}&bank_code=${bank_code}`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${paystackKey}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    const data = await response.json();
+    if (data.status) {
+      return res.json({ msg: '200', account_name: data.data.account_name });
+    }
+    return res.json({ msg: '400', message: data.message || 'Account not found' });
+  } catch (err) {
+    console.log('Verify bank error:', err.message);
+    return res.json({ msg: '500', message: 'Technical error verifying account' });
+  }
+});
+
   
 // get company name details here..
 router.get("/company_name", async (req, res) => {
