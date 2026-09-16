@@ -988,6 +988,28 @@ router.post("/complete_registration", isAuth, async (req, res) => {
         }
   });
 
+
+    // Verify 2FA OTP code
+  router.post("/user_verify2fa_code", isAuth, async (req, res) => {
+    try {
+      const { userId, otp_code } = req.body;
+      const userInfo = await User.findOne({ _id: userId }).lean().exec();
+      if (!userInfo) return res.json({ status: 401, message: 'User not found' });
+      const stored = String(userInfo.verify2fa_code || '').trim();
+      const entered = String(otp_code || '').trim();
+      if (!stored || !entered) {
+        return res.json({ msg: '400', message: 'Invalid OTP' });
+      }
+      if (stored === entered) {
+        return res.json({ msg: '200', message: 'OTP verified' });
+      }
+      return res.json({ msg: '400', message: 'Incorrect OTP code' });
+    } catch (error) {
+      return res.json({ status: 500, message: 'Server error' });
+    }
+  });
+
+
   // updated email notification status route when click
 router.post("/user_activate_email", isAuth, async (req, res) => {
     const url = req.protocol + '://' + req.get('host') // this will get the host url directly
