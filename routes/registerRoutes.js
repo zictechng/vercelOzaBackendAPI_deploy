@@ -755,7 +755,7 @@ router.post("/complete_registration", isAuth, async (req, res) => {
                         btc_address: req.body.btc_address
                         },
                     };
-                const updateUserBank = await User.updateOne(filterUserBank, updateBankDoc);
+                const updateUserBank = await userBankDetails.updateOne(filterUserBank, updateBankDoc);
                 }
                 // if no previous bank details, create new one
                 if(!oldBankDetails){
