@@ -638,6 +638,105 @@ router.post("/register", async (req, res, next) => {
         }
   });
 
+
+    // ── Mobile document upload — handles front/back separately ──
+  router.post("/user_uploadDocument_mobile", isAuth, async (req, res) => {
+    const { userId, image_url, document_name, document_side, public_id } = req.body;
+    const TransID = transactionID(25);
+    try {
+      const userInfo = await User.findOne({ _id: userId }).lean().exec();
+      if (!userInfo) {
+        return res.json({ status: 402, message: 'You need to login to do this' });
+      }
+
+      // Build unique document name for this side
+      const fullDocName = `${document_name} - ${document_side === 'front' ? 'Front' : 'Back'}`;
+
+      // Find and delete existing record for this side
+      const existingDoc = await DocumentUpload.findOne({
+        owners_tag_id: userInfo.tag_id,
+        document_name: fullDocName,
+      });
+
+      if (existingDoc) {
+        // Delete old image from Cloudinary
+        if (existingDoc.document_url) {
+          const oldUrl   = existingDoc.document_url;
+          const parts    = oldUrl.split('/');
+          const folder   = parts[7];
+          const pubId    = parts[8]?.split('.')[0];
+          if (folder && pubId) {
+            await cloudinary.uploader.destroy(`${folder}/${pubId}`,
+              (err, result) => console.log('Delete old doc:', result));
+          }
+        }
+        await DocumentUpload.deleteOne({ _id: existingDoc._id });
+      }
+
+      // Create new document record
+      await DocumentUpload.create({
+        document_name:     fullDocName,
+        document_category: 'Document',
+        document_type:     'Document',
+        owners_tag_id:     userInfo.tag_id,
+        document_url:      image_url || '',
+        user_id:           userId,
+        owners_name:       userInfo.display_name,
+        owners_email:      userInfo.email,
+        document_action:   'Pending',
+        document_status:   'Pending',
+        track_document:    TransID,
+      });
+
+      // Check if both front and back exist — set reg_stage4 if both uploaded
+      const frontDoc = await DocumentUpload.findOne({
+        owners_tag_id:  userInfo.tag_id,
+        document_name:  `${document_name} - Front`,
+      });
+      const backDoc = await DocumentUpload.findOne({
+        owners_tag_id: userInfo.tag_id,
+        document_name: `${document_name} - Back`,
+      });
+
+      // Set reg_stage4 when front is uploaded (some docs only need front)
+      // Set it definitively when both sides are present
+      const hasEnough = frontDoc !== null;
+      if (hasEnough) {
+        await User.updateOne({ _id: userId }, { $set: { reg_stage4: 'Yes' } });
+      }
+
+      // Log activity
+      await SystemActivity.create({
+        log_username:       userInfo.email,
+        log_name:           userInfo.display_name,
+        log_acct_number:    userInfo?.tag_id,
+        log_desc:           `User uploaded ${fullDocName}`,
+        log_status:         'Successful',
+        log_nature:         'Document uploaded',
+        log_receiver_name:  '',
+        log_receiver_number:'',
+        log_receiver_bank:  '',
+        log_country:        '',
+        log_swift_code:     '',
+        log_amt:            '',
+      });
+
+      const userProfile = await User.findOne({ _id: userId });
+      const { password, ...others } = userProfile._doc;
+      return res.status(201).json({
+        msg: '201',
+        userData: others,
+        frontUploaded: !!frontDoc || document_side === 'front',
+        backUploaded:  !!backDoc  || document_side === 'back',
+      });
+
+    } catch (error) {
+      console.error('uploadDocument_mobile error:', error);
+      return res.json({ status: 500, message: 'Server error' });
+    }
+  });
+
+  
   // send 2FA OTP code when get started is click route
   router.post("/user_2fa_otpSend", isAuth, async (req, res) => {
     //const url = req.protocol + '://' + req.get('host') // this will get the host url directly

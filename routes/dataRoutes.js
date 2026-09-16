@@ -239,8 +239,8 @@ router.post("/verify_bankAccount", isAuth, async (req, res) => {
     }
     // Resolve account requires SECRET key not public key
     const paystackKey = process.env.PAYSTACK_SECRET_KEY;
-    // console.log('Paystack key exists:', !!paystackKey);
-    // console.log('Resolving:', account_number, bank_code);
+    console.log('Paystack key exists:', !!paystackKey);
+    console.log('Resolving:', account_number, bank_code);
     if (!paystackKey) {
       return res.json({ msg: '400', message: 'Paystack secret key not configured' });
     }
@@ -255,7 +255,7 @@ router.post("/verify_bankAccount", isAuth, async (req, res) => {
       }
     );
     const data = await response.json();
-    //console.log('Paystack resolve response:', JSON.stringify(data));
+    console.log('Paystack resolve response:', JSON.stringify(data));
     if (data.status) {
       return res.json({ msg: '200', account_name: data.data.account_name });
     }
