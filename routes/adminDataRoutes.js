@@ -599,17 +599,9 @@ router.get("/pendingDocument_details", isAuth, async (req, res) => {
     //   }
     // ])
 
-    const allPendingDocument = await DocumentUpload.aggregate([
-            // Match only pending records
-              {
-                $match: {
-                  document_status: 'Pending'
-                }
-              },
-              // Group by tag ID and create an array of users with that tag ID
-             {"$group":{"_id":"$owners_tag_id", "doc":{"$first":"$$ROOT"}}},
-             {"$replaceRoot":{"newRoot":"$doc"}},
-          ]).sort({ createdOn: -1 }).skip(skip).limit(limit);
+    const allPendingDocument = await DocumentUpload.find({
+      document_status: 'Pending'
+    }).sort({ createdOn: -1 }).skip(skip).limit(limit);
 
       res.send({ msg: '201', feedAll: allPendingDocument, page: page, limit: limit, totalPage: totalPageNumber, totalRecord: pageCount})
     } catch (err) {
