@@ -208,8 +208,10 @@ router.get("/user_bankDetails/:id", isAuth, async (req, res) => {
 // GET /api/fetch_banks — Fetch Nigerian banks list from Paystack
 router.get("/fetch_banks", isAuth, async (req, res) => {
   try {
-    const getAppSetting = await AppSetting.findOne();
-    const paystackKey = getAppSetting?.app_paypayKey || process.env.PAYSTACK_SECRET_KEY;
+    const paystackKey = process.env.PAYSTACK_SECRET_KEY;
+    if (!paystackKey) {
+      return res.json({ msg: '400', message: 'Paystack secret key not configured' });
+    }
     const response = await fetch('https://api.paystack.co/bank?country=nigeria&use_cursor=false&perPage=100', {
       method: 'GET',
       headers: {
@@ -235,8 +237,11 @@ router.post("/verify_bankAccount", isAuth, async (req, res) => {
     if (!account_number || !bank_code) {
       return res.json({ msg: '400', message: 'Account number and bank code are required' });
     }
-    const getAppSetting = await AppSetting.findOne();
-    const paystackKey = getAppSetting?.app_paypayKey || process.env.PAYSTACK_SECRET_KEY;
+    // Resolve account requires SECRET key not public key
+    const paystackKey = process.env.PAYSTACK_SECRET_KEY;
+    if (!paystackKey) {
+      return res.json({ msg: '400', message: 'Paystack secret key not configured' });
+    }
     const response = await fetch(
       `https://api.paystack.co/bank/resolve?account_number=${account_number}&bank_code=${bank_code}`,
       {
