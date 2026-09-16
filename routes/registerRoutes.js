@@ -907,6 +907,7 @@ router.post("/complete_registration", isAuth, async (req, res) => {
   router.post("/user_uploadProof_address", isAuth, upload.single("FileAddress"), multerErrorHandling, async (req, res) => {
     const file = req.documentData;
     const TransID = transactionID(25)
+    console.log("user Document ", req.body)
     
     const filterUser = { _id: req.body.userId };
 
