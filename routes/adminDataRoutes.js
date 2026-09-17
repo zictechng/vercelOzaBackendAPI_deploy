@@ -4715,14 +4715,17 @@ router.post("/approveUsdFunding", isAuth, async (req, res) => {
       try {
         const appName = result.app_name;
         const logoImage = result.app_logo;
-        const mailBody = loginEmail(
-          appName,
-          'USD Wallet Funded',
-          user.display_name,
-          `Your USD wallet funding of <b>$${Number(txn.amount).toLocaleString()}</b> via ${txn.transac_category} has been approved and credited to your USD wallet.<br/>
-          New USD Balance: <b>$${newUsdBalance.toLocaleString()}</b><br/>
-          Transaction ID: <b>${txn.tid}</b><br/><br/>
-          Thank you for choosing ${appName}.`,
+        const mailBody = transactionEmail(
+          appName, 'USD Wallet Funded ✅', user.display_name,
+          [
+            { label: 'Transaction ID',  value: txn.tid || '—',                              highlight: false },
+            { label: 'Amount Credited', value: `$${Number(txn.amount).toLocaleString()}`,   highlight: true  },
+            { label: 'Method',          value: txn.transac_category || '—',                 highlight: false },
+            { label: 'New USD Balance', value: `$${newUsdBalance.toLocaleString()}`,         highlight: false },
+            { label: 'Status',          value: '✅ Approved & Credited',                    highlight: false },
+            { label: 'Date',            value: moment().format('DD MMM YYYY, hh:mm A'),      highlight: false },
+          ],
+          `Your USD wallet has been funded successfully. Thank you for choosing ${appName}.`,
           logoImage
         );
         await sendEmail({
@@ -4796,14 +4799,17 @@ router.post("/rejectUsdFunding", isAuth, async (req, res) => {
         try {
           const appName = result.app_name;
           const logoImage = result.app_logo;
-          const mailBody = loginEmail(
-            appName,
-            'USD Funding Rejected',
-            user.display_name,
-            `Your USD wallet funding request of <b>$${Number(txn.amount).toLocaleString()}</b> via ${txn.transac_category} has been reviewed and rejected.<br/><br/>
-            ${reject_note ? `<strong>Reason:</strong> ${reject_note}<br/><br/>` : ''}
-            If you have any questions, please contact our support team.<br/><br/>
-            Transaction ID: <b>${txn.tid}</b>`,
+          const mailBody = transactionEmail(
+            appName, 'USD Funding Rejected', user.display_name,
+            [
+              { label: 'Transaction ID', value: txn.tid || '—',                             highlight: false },
+              { label: 'Amount',         value: `$${Number(txn.amount).toLocaleString()}`,  highlight: true  },
+              { label: 'Method',         value: txn.transac_category || '—',                highlight: false },
+              { label: 'Status',         value: '❌ Rejected',                              highlight: false },
+              { label: 'Reason',         value: reject_note || 'Please contact support',    highlight: false },
+              { label: 'Date',           value: moment().format('DD MMM YYYY, hh:mm A'),    highlight: false },
+            ],
+            'Your USD funding request was not approved. Please contact our support team if you need assistance.',
             logoImage
           );
           await sendEmail({
