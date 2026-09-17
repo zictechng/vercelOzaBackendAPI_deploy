@@ -2297,8 +2297,6 @@ router.post("/adminApprove_document", isAuth, async (req, res) => {
         if(!user){
             return res.json({status: 404, message: ' User not found'})
          }
-         
-
         else if(user){
           const filterUser = { _id: user._id };
           let documentName = userDoc.document_name
@@ -2338,7 +2336,9 @@ router.post("/adminApprove_document", isAuth, async (req, res) => {
                   alert_browser: '',
                   alert_date:  Date.now(),
                   alert_user_id: user._id,
-                  alert_nature: `Document Approved: this is to notify you that your ${documentName} document has been approved after been carefully reviewed the documents`,
+                  alert_nature: actionStatus === 'Approved'
+                    ? `Document Approved: Your ${documentName} document has been approved after careful review. Congratulations!`
+                    : `Document Rejected: Your ${documentName} document was not approved. Please contact support for more details.`,
                   alert_status: 1,
                   alert_read_date: ''
                 });
@@ -2409,7 +2409,7 @@ router.post("/adminRejected_documentUpload", isAuth, async (req, res) => {
             const updateDocUser = {
                 $set: {
                   document_status: 'Rejected',
-                  document_action: req.body.action_status,
+                  document_action: 'Rejected',
                   reject_document_reason: req.body.reject_reason,
                   action_date: Date.now()
                 },
@@ -2501,7 +2501,7 @@ router.post("/adminRejected_documentUpload", isAuth, async (req, res) => {
                 alert_browser: '',
                 alert_date:  Date.now(),
                 alert_user_id: user._id,
-                alert_nature: `Document Rejected: Your ${documentName} document was rejected. \nReason: \n${documentReason || 'Please contact support for details.'}`,
+                alert_nature: `Document Rejected: Your ${documentName} document was rejected. Reason: \n${documentReason || 'Please contact support for details.'}`,
                 alert_status: 1,
                 alert_read_date: ''
                 })

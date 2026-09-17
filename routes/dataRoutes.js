@@ -1623,16 +1623,6 @@ router.get("/user_notification/:id", isAuth, async (req, res) => {
     
       try {
         // check unread notifications and update
-        const notifyDetailsRead = await Notification.find({alert_user_id: userId, alert_status: 1 })
-          if(notifyDetailsRead){
-            const updateDoc = {
-              $set: {
-                alert_status: 0,
-                },
-            }
-            const updateRead = await Notification.updateMany(filter, updateDoc);
-          }
-
         const notify = await Notification.find({ alert_user_id: userId }) // Use the user ID in the query
           .sort({ alert_date: -1 })
           .skip(skip)
@@ -1642,10 +1632,13 @@ router.get("/user_notification/:id", isAuth, async (req, res) => {
           return res.json({ status: 404, message: 'No more records' });
         }
     
+        const totalUnread = await Notification.countDocuments({ alert_user_id: userId, alert_status: 1 });
         res.json({
-          data: notify,
+          data:       notify,
           totalPages: pageTotal,
           currentPage: page,
+          totalCount:  countAll,
+          totalUnread,
         });
       } catch (err) {
         res.status(500).json({ error: err.message });
