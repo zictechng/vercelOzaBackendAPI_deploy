@@ -19,7 +19,7 @@ const UserWithdrawal = require('../models/withdrawalRequest');
 const { isAuth } = require('../middleware/auth');
 const moment = require('moment');
 const { transactEmailText } = require('../emailTemplate/emailRegister');
-const { loginEmail, loginText } = require('../emailTemplate/emailLogin');
+const { loginEmail, loginText, transactionEmail } = require('../emailTemplate/emailLogin');
 const { fetchApp } = require('../middleware/appDetails');
 
 // this function verify if the token user sent is valid
@@ -357,7 +357,20 @@ const processPaymentDetails = async(data, paymentId) =>{
                   ? `This is to notify you that your USD wallet funding request of $${data.amount} via ${data.serviceName} has been logged and is pending admin approval.\n\nTransaction ID: ${TransID}\nOrder ID: ${paymentId}\n\nThank you.`
                   : `This is to notify you that your fund exchange request has been logged and we will treat it as soon as your payment is received.\n\nTransaction ID: ${TransID}\nOrder ID: ${paymentId}\n\nThank you.`;
 
-                const mailBody = loginEmail(appName, userSubject, userFund.display_name, userMessage, appLogo);
+                  const mailBody = transactionEmail(
+                  appName, userSubject, userFund.display_name,
+                  [
+                    { label: 'Transaction ID', value: TransID,                                                highlight: false },
+                    { label: 'Amount',         value: isUsdFunding ? `$${data.amount}` : `₦${new Intl.NumberFormat().format(data.total_money)}`, highlight: true },
+                    { label: 'Asset / Method', value: data.serviceName || 'Exchange',                        highlight: false },
+                    { label: 'Type',           value: isUsdFunding ? 'USD Wallet Funding' : 'Fund Exchange', highlight: false },
+                    { label: 'Order ID',       value: paymentId || '—',                                      highlight: false },
+                    { label: 'Status',         value: '⏳ Pending Admin Approval',                           highlight: false },
+                    { label: 'Date',           value: moment().format('DD MMM YYYY, hh:mm A'),               highlight: false },
+                  ],
+                  'Your request has been received and is pending admin approval. You will be notified once processed.',
+                  appLogo
+                );
                 const mailText = loginText(userFund.display_name, userMessage);
 
                 sendEmail({
@@ -799,11 +812,19 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
         const appName = result.app_name;
         const appLogo = result.app_logo;
         const logoImage = appLogo;
-        const mailBody = loginEmail(
+        const mailBody = transactionEmail(
           appName,
           'Account Funding Successful',
           userFund.display_name,
-          `Your account has been credited with ₦${new Intl.NumberFormat().format(verifiedAmount)} via PayStack. Transaction ID: ${Trans_ID}`,
+          [
+            { label: 'Transaction ID', value: Trans_ID,                                                        highlight: false },
+            { label: 'Amount Credited',value: `₦${new Intl.NumberFormat().format(verifiedAmount)}`,            highlight: true  },
+            { label: 'Payment Method', value: 'Paystack',                                                      highlight: false },
+            { label: 'Type',           value: 'Account Funding',                                               highlight: false },
+            { label: 'Status',         value: '✅ Successful',                                                 highlight: false },
+            { label: 'Date',           value: moment().format('DD MMM YYYY, hh:mm A'),                         highlight: false },
+          ],
+          'Your wallet has been credited successfully. Thank you for using our platform.',
           logoImage
         );
         const fundMailOptions = {
@@ -931,8 +952,19 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                       appName = result.app_name
                       appLogo = result.app_logo
                       const logoImage = appLogo;
-                      const mailBody = loginEmail(appName, 'Account Funding Notification', userFund.display_name, `this is to notify you that your account funding request has been logged and we will treat as soon as we confirm your payment status. \n Account funding Transaction ID is ${Trans_ID}, \n 
-                      Transaction Reference ID ${req.body.payId ? req.body.payId: 'None. ' } \n Thank you`, logoImage)
+                      const mailBody = transactionEmail(
+                        appName, 'Account Funding Notification', userFund.display_name,
+                        [
+                          { label: 'Transaction ID',  value: Trans_ID,                                               highlight: false },
+                          { label: 'Amount',          value: `₦${new Intl.NumberFormat().format(req.body.amt)}`,     highlight: true  },
+                          { label: 'Reference ID',    value: req.body.payId || 'Manual Transfer',                    highlight: false },
+                          { label: 'Type',            value: 'Account Funding',                                      highlight: false },
+                          { label: 'Status',          value: '⏳ Pending Confirmation',                              highlight: false },
+                          { label: 'Date',            value: moment().format('DD MMM YYYY, hh:mm A'),                highlight: false },
+                        ],
+                        'Your funding request has been received. Funds will be credited once your payment is confirmed by our team.',
+                        logoImage
+                      )
                       const TextBody = loginText(userFund.display_name, `this is to notify you that your account funding request has been logged and we will treat as soon as your payment received. \n Transaction ID is ${Trans_ID} \n
                       Transaction Reference ID ${req.body.payId? req.body.payId: 'None.'}`);
                       let fundAcctMailOptions = {
@@ -1097,8 +1129,20 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                     appName = result.app_name
                     appLogo = result.app_logo
                     const logoImage = appLogo;
-                    const mailBody = loginEmail(appName, 'Withdrawal Notification', userFund.display_name, `this is to notify you that your funds withdrawal request has been logged and we will treat as soon as possible. \n Transaction ID is ${Trans_ID}, \n 
-                    ${req.body.payId ? 'Transaction Reference ID '+ req.body.payId: 'None. ' } \n Thank you`, logoImage)
+                    const mailBody = transactionEmail(
+                      appName, 'Withdrawal Notification', userFund.display_name,
+                      [
+                        { label: 'Transaction ID',  value: Trans_ID,                                                    highlight: false },
+                        { label: 'Amount',          value: `₦${new Intl.NumberFormat().format(req.body.amt)}`,          highlight: true  },
+                        { label: 'Bank Name',       value: req.body.bank_name || '—',                                   highlight: false },
+                        { label: 'Account Number',  value: req.body.acct_number || '—',                                 highlight: false },
+                        { label: 'Account Name',    value: req.body.acct_name || '—',                                   highlight: false },
+                        { label: 'Status',          value: '⏳ Processing',                                             highlight: false },
+                        { label: 'Date',            value: moment().format('DD MMM YYYY, hh:mm A'),                     highlight: false },
+                      ],
+                      'Your withdrawal request has been received and is being processed. You will be notified once completed.',
+                      logoImage
+                    )
                     const TextBody = loginText(userFund.display_name, `this is to notify you that your withdrawal request has been logged and we will treat as soon as possible. \n Transaction ID is ${Trans_ID} \n
                     ${req.body.payId? 'Transaction Reference ID ' +req.body.payId: 'None.'}`);
                     let fundAcctMailOptions = {
@@ -1228,8 +1272,21 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                     appName = result.app_name
                     appLogo = result.app_logo
                     const logoImage = appLogo;
-                    const mailBody = loginEmail(appName, 'Withdrawal Notification', userWithdrawal.display_name, `this is to notify you that your withdrawal request has been logged and we will treat as soon as possible. \n Transaction ID is ${Trans_ID}, \n 
-                    Transaction Reference ID ${req.body.payId ? req.body.payId: 'None. ' } \n`, logoImage)
+                    const mailBody = transactionEmail(
+                      appName, 'Withdrawal Notification', userWithdrawal.display_name,
+                      [
+                        { label: 'Transaction ID',  value: Trans_ID,                                                           highlight: false },
+                        { label: 'Amount',          value: `₦${new Intl.NumberFormat().format(req.body.amt)}`,                 highlight: true  },
+                        { label: 'Bank Name',       value: req.body.bank_name || '—',                                          highlight: false },
+                        { label: 'Account Number',  value: req.body.acct_number || '—',                                        highlight: false },
+                        { label: 'Account Name',    value: req.body.acct_name || '—',                                          highlight: false },
+                        { label: 'Reference ID',    value: req.body.payId || 'N/A',                                            highlight: false },
+                        { label: 'Status',          value: '⏳ Processing',                                                    highlight: false },
+                        { label: 'Date',            value: moment().format('DD MMM YYYY, hh:mm A'),                            highlight: false },
+                      ],
+                      'Your withdrawal request has been received. You will receive a confirmation once it is processed.',
+                      logoImage
+                    )
                     const TextBody = loginText(userWithdrawal.display_name, `this is to notify you that your withdrawal request has been logged and we will treat as soon as possible. \n Transaction ID is ${Trans_ID} \n
                     Transaction Reference ID ${req.body.payId? req.body.payId: 'None.'}`);
                     let acct_withdrawal = {
@@ -1391,7 +1448,20 @@ router.post("/verify_paystack_payment", isAuth, async (req, res) => {
                       appName = result.app_name
                       appLogo = result.app_logo
                       const logoImage = appLogo;
-                      const mailBody = loginEmail(appName, 'Account Funding Notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment received. \n Request reference / Transaction ID is ${TransID}, \nThank you`, logoImage)
+                      const mailBody = transactionEmail(
+                        appName, 'Account Funding Notification', userFund.display_name,
+                        [
+                          { label: 'Transaction ID',  value: TransID,                                                          highlight: false },
+                          { label: 'Asset',           value: req.body.serviceName || 'Exchange',                               highlight: false },
+                          { label: 'Amount (NGN)',     value: `₦${new Intl.NumberFormat().format(req.body.total_money)}`,       highlight: true  },
+                          { label: 'Amount (USD)',     value: `$${new Intl.NumberFormat().format(req.body.buy_amt)}`,           highlight: false },
+                          { label: 'Method',          value: req.body.method || 'Manual',                                      highlight: false },
+                          { label: 'Status',          value: '⏳ Pending Payment Confirmation',                                highlight: false },
+                          { label: 'Date',            value: moment().format('DD MMM YYYY, hh:mm A'),                          highlight: false },
+                        ],
+                        'Your exchange request has been logged. Please complete your payment to proceed. Upload your payment proof if paying manually.',
+                        logoImage
+                      )
                       const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID}`);
                       let fundAcctMailOptionUser = {
                       from: { name: `${appName + ' Sales'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
@@ -1627,9 +1697,21 @@ router.post("/fundBuy_funding", isAuth, async (req, res) => {
                     appName = result.app_name
                     appLogo = result.app_logo
                     const logoImage = appLogo;
-                    const mailBody = loginEmail(appName, 'Transaction Notification', userFund.display_name, `this is to notify you that your fund exchange request has been logged and we will treat as soon as your payment is received. \n Request reference / Transaction ID is ${TransID}, \n
-                    \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId: ''}
-                    \n Thank you`, logoImage)
+                    const mailBody = transactionEmail(
+                      appName, 'Transaction Notification', userFund.display_name,
+                      [
+                        { label: 'Transaction ID',  value: TransID,                                                              highlight: false },
+                        { label: 'Asset',           value: dataReceive.serviceName || 'Exchange',                                highlight: false },
+                        { label: 'Amount (NGN)',     value: `₦${new Intl.NumberFormat().format(dataReceive.total_money)}`,        highlight: true  },
+                        { label: 'Amount (USD)',     value: `$${new Intl.NumberFormat().format(dataReceive.buy_amt)}`,            highlight: false },
+                        { label: 'Payment Method',  value: dataReceive.method || 'Manual',                                       highlight: false },
+                        { label: 'Reference',       value: dataReceive.method === 'Paystack Checkout' ? dataReceive.payId : 'N/A', highlight: false },
+                        { label: 'Status',          value: '⏳ Pending Processing',                                              highlight: false },
+                        { label: 'Date',            value: moment().format('DD MMM YYYY, hh:mm A'),                              highlight: false },
+                      ],
+                      'Your buy request has been logged. We will process it as soon as your payment is confirmed.',
+                      logoImage
+                    )
                     const TextBody = loginText(userFund.display_name, `this is to notify you that your request has been logged and will treat as soon as your payment received. \n Transaction ID is ${TransID} \n ${ 'Transaction reference', dataReceive.method == 'Paystack Checkout'? dataReceive.payId:''}`);
                     let fundAcctMailUserBuy = {
                     from: { name: `${appName + ' Sales'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },

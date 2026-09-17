@@ -36,7 +36,7 @@ const BillsTransaction = require('../models/BillsTransaction');
 const moment = require('moment/moment');
 const { getBeginningOfTheWeek } = require('../middleware/getStartDate');
 const { fetchApp } = require('../middleware/appDetails');
-const { loginEmail, loginText } = require('../emailTemplate/emailLogin');
+const { loginEmail, loginText, transactionEmail } = require('../emailTemplate/emailLogin');
 const UserBankDetails = require('../models/UserBankDetails');
 const TermCondition = require('../models/companyTermsCondition');
 const { isNull } = require('lodash');
@@ -936,23 +936,31 @@ router.post("/approveAcctWithdrawal", isAuth, async (req, res) => {
         appName = result.app_name
         appLogo = result.app_logo
         const logoImage = appLogo;
-        const mailBody = loginEmail(appName, 'Withdrawal Approved', userDetail.display_name, `this is to notify you that your withdrawal request of <b>\$${new Intl.NumberFormat().format(userFund.amount)}</b> has been approved and your wallet has be credited with equivalent. 
+        const mailBody = transactionEmail(
+          appName, 'Withdrawal Approved ✅', userDetail.display_name,
+          [
+            { label: 'Transaction ID',  value: userFund.tid || '—',                                              highlight: false },
+            { label: 'Amount',          value: `₦${new Intl.NumberFormat().format(userFund.amount)}`,            highlight: true  },
+            { label: 'Bank Name',       value: userDetail.bank_name || '—',                                      highlight: false },
+            { label: 'Account Number',  value: userDetail.bank_acct_number || '—',                               highlight: false },
+            { label: 'Status',          value: '✅ Approved & Processed',                                        highlight: false },
+            { label: 'Date',            value: moment().format('DD MMM YYYY, hh:mm A'),                          highlight: false },
+          ],
+          'Your withdrawal has been processed successfully. Funds should reflect in your bank account within 24 hours. Contact support if you have any issues.',
+          appLogo)
+        const mailText = loginText(userDetail.display_name, `this is to notify you that your withdrawal request of <b>\$${new Intl.NumberFormat().format(userFund.amount)}</b> has been approved and your wallet has be credited with the sum of it's equivalent. \n\n
         <br>
         Transaction ID <b>${userFund.withdrawal_tid}</b><br>
-        thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`, logoImage)
-            const mailText = loginText(userDetail.display_name, `this is to notify you that your withdrawal request of <b>\$${new Intl.NumberFormat().format(userFund.amount)}</b> has been approved and your wallet has be credited with the sum of it's equivalent. \n\n
-            <br>
-            Transaction ID <b>${userFund.withdrawal_tid}</b><br>
-            thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
-            let account_issueEMail = {
-              //from: `${appName +' Sales'} <noreply@ozaapp.com>`,
-              from: { name: `${appName + ' Sales'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
-              //to: userDetail.email,
-              to: [{ email: userDetail.email }],
-              subject: 'Withdrawal Notification!',
-              text: mailText,
-              html: mailBody,
-            }
+        thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`)
+        let account_issueEMail = {
+          //from: `${appName +' Sales'} <noreply@ozaapp.com>`,
+          from: { name: `${appName + ' Sales'}`, email: `<${result.app_email || 'noreply@ota.com'}>` },
+          //to: userDetail.email,
+          to: [{ email: userDetail.email }],
+          subject: 'Withdrawal Notification!',
+          text: mailText,
+          html: mailBody,
+        }
 
             sendEmail(account_issueEMail).catch((err) => {
               console.error("❌ Email sending completely failed:", err.message);
@@ -1055,12 +1063,17 @@ router.post("/rejectAccountWithdrawal", isAuth, async (req, res) => {
         const logoImage = appLogo;
 
       const rejectReason = req.body.reject_reason || 'No specific reason provided. Please contact support for more details.'
-      const mailBody = loginEmail(appName, 'Withdrawal Issue', userDetail.display_name, `This is to notify you that your withdrawal request has been reviewed and rejected.<br><br>
-        <strong>Withdrawal Amount:</strong> ₦${new Intl.NumberFormat().format(userFund.amount)}<br>
-        <strong>Transaction ID:</strong> ${userFund.withdrawal_tid}<br>
-        <strong>Reason:</strong> ${rejectReason}<br><br>
-        If you have any questions, please contact our support team.<br><br>
-        Thank you for choosing ${appName}.`, logoImage)
+      const mailBody = transactionEmail(
+        appName, 'Withdrawal Request — Action Required', userDetail.display_name,
+        [
+          { label: 'Transaction ID',  value: userFund.tid || '—',                                              highlight: false },
+          { label: 'Amount',          value: `₦${new Intl.NumberFormat().format(userFund.amount)}`,            highlight: true  },
+          { label: 'Status',          value: '❌ Rejected',                                                    highlight: false },
+          { label: 'Reason',          value: req.body.reject_reason || 'Please contact support',               highlight: false },
+          { label: 'Date',            value: moment().format('DD MMM YYYY, hh:mm A'),                          highlight: false },
+        ],
+        'Your withdrawal request was not approved at this time. Please review the reason above and contact our support team if you need assistance.',
+        appLogo)
         const mailText = loginText(userDetail.display_name, `this is to notify you that your withdrawal request has been rejected or cancelled after been reviewed.
         <br> Withdrawal Amount : <b>\u20A6${new Intl.NumberFormat().format(userFund.amount)}</b> <br>
         With transaction ID <b>${userFund.withdrawal_tid}</b><br> 

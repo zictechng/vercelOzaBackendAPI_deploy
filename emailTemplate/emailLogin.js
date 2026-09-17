@@ -202,4 +202,176 @@ const loginText = (sendReceiverName, textMessage) =>
 const newsLetterEmail = (clientName) =>
   `<p>Hi ${clientName}, here you have today's news.</p>`;
 
-module.exports = { newsLetterEmail, loginEmail, loginText };
+
+// ─── TRANSACTION TABLE EMAIL
+// rows = [{ label, value, highlight }]
+// note = optional text below table
+const transactionEmail = (sendCompanyName, sendTitle, sendReceiverName, rows = [], note = '', logo) => {
+  const { icon, color, light, label } = getEmailStyle(sendTitle);
+  const year = new Date().getFullYear();
+
+  const logoHtml = !logo
+    ? `<div style="width:40px;height:40px;background:${color};border-radius:8px;display:inline-block;text-align:center;line-height:40px;color:white;font-weight:800;font-size:18px;">${sendCompanyName?.charAt(0) || 'A'}</div>`
+    : logo.startsWith('<img')
+    ? logo
+    : `<img src="${logo}" alt="${sendCompanyName}" style="height:40px;width:40px;border-radius:8px;object-fit:cover;" />`;
+
+  // Build table rows
+  const tableRows = rows.map((row, i) => `
+    <tr style="background:${i % 2 === 0 ? '#FFFFFF' : '#F9FAFB'};">
+      <td style="padding:14px 20px;font-size:13px;color:#6B7280;font-weight:600;white-space:nowrap;border-bottom:1px solid #F3F4F6;width:40%;">
+        ${row.label}
+      </td>
+      <td style="padding:14px 20px;font-size:14px;color:${row.highlight ? color : '#111827'};font-weight:${row.highlight ? '700' : '500'};border-bottom:1px solid #F3F4F6;">
+        ${row.value}
+      </td>
+    </tr>
+  `).join('');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+  <title>${sendTitle} — ${sendCompanyName}</title>
+  <style type="text/css">${baseStyles}</style>
+</head>
+<body style="margin:0;padding:0;background-color:#F0F4F8;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F0F4F8;">
+    <tr>
+      <td align="center" style="padding:40px 20px;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,${color} 0%,${color}CC 100%);padding:32px 40px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td>
+                    <table cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="vertical-align:middle;padding-right:12px;">${logoHtml}</td>
+                        <td style="vertical-align:middle;">
+                          <span style="color:#ffffff;font-size:20px;font-weight:800;letter-spacing:-0.5px;">${sendCompanyName}</span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td align="right">
+                    <span style="color:rgba(255,255,255,0.7);font-size:12px;">${moment().format('DD MMM YYYY, hh:mm A')}</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Icon Badge -->
+          <tr>
+            <td align="center" style="padding:40px 40px 0;">
+              <div style="width:72px;height:72px;background:${light};border-radius:50%;display:inline-block;text-align:center;line-height:72px;font-size:32px;margin-bottom:16px;">
+                ${icon}
+              </div>
+              <p style="margin:0;color:${color};font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;">${label}</p>
+            </td>
+          </tr>
+
+          <!-- Title -->
+          <tr>
+            <td align="center" style="padding:16px 40px 0;">
+              <h1 style="margin:0;color:#1a1a2e;font-size:26px;font-weight:800;line-height:1.3;">${sendTitle}</h1>
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td align="center" style="padding:20px 40px 0;">
+              <div style="width:48px;height:4px;background:${color};border-radius:4px;"></div>
+            </td>
+          </tr>
+
+          <!-- Greeting -->
+          <tr>
+            <td style="padding:24px 40px 16px;">
+              <p style="margin:0;color:#374151;font-size:16px;line-height:1.6;">
+                Hello <strong>${sendReceiverName}</strong>,<br/>
+                <span style="color:#6B7280;font-size:14px;">Here is a summary of your transaction details below.</span>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Transaction Table -->
+          <tr>
+            <td style="padding:0 40px 24px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                style="border-radius:12px;overflow:hidden;border:1px solid #E5E7EB;">
+                <!-- Table Header -->
+                <tr>
+                  <td colspan="2" style="background:${color};padding:12px 20px;">
+                    <span style="color:#ffffff;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">
+                      Transaction Details
+                    </span>
+                  </td>
+                </tr>
+                ${tableRows}
+              </table>
+            </td>
+          </tr>
+
+          ${note ? `
+          <!-- Note -->
+          <tr>
+            <td style="padding:0 40px 32px;">
+              <div style="background:${light};border-left:4px solid ${color};border-radius:0 12px 12px 0;padding:16px 20px;">
+                <p style="margin:0;color:#374151;font-size:14px;line-height:1.7;">${note}</p>
+              </div>
+            </td>
+          </tr>
+          ` : ''}
+
+          <!-- CTA -->
+          <tr>
+            <td align="center" style="padding:0 40px 40px;">
+              <a href="#" style="display:inline-block;background:linear-gradient(135deg,${color} 0%,${color}CC 100%);color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;padding:14px 40px;border-radius:12px;letter-spacing:0.3px;">
+                View in ${sendCompanyName} &rarr;
+              </a>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#F9FAFB;border-top:1px solid #E5E7EB;padding:32px 40px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center">
+                    <p style="margin:0 0 8px;color:#1a1a2e;font-size:16px;font-weight:800;">${sendCompanyName}</p>
+                    <p style="margin:0 0 16px;color:#9CA3AF;font-size:12px;">The secure and profitable way to manage your virtual funds</p>
+                    <div style="margin-bottom:16px;">
+                      <a href="#" style="color:${color};font-size:12px;text-decoration:none;margin:0 8px;">Support</a>
+                      <span style="color:#D1D5DB;">|</span>
+                      <a href="#" style="color:${color};font-size:12px;text-decoration:none;margin:0 8px;">Privacy Policy</a>
+                      <span style="color:#D1D5DB;">|</span>
+                      <a href="#" style="color:${color};font-size:12px;text-decoration:none;margin:0 8px;">Terms</a>
+                    </div>
+                    <p style="margin:0;color:#9CA3AF;font-size:11px;line-height:1.6;">
+                      &copy; ${year} ${sendCompanyName}. All rights reserved.<br/>
+                      If you did not initiate this transaction, please contact support immediately.<br/>
+                      This email is confidential and intended for the addressee only.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+};
+
+
+module.exports = { loginEmail, loginText, transactionEmail, newsLetterEmail };
+
