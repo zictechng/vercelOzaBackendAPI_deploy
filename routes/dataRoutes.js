@@ -1581,6 +1581,7 @@ return res.json({status: 500, message: 'Server error: ' })
   const itemsPerPage = 10; 
   const page = parseInt(req.query.page) || 1; 
   const skip = (page - 1) * itemsPerPage;
+  
 
   try {
     const countAll = await Notification.countDocuments({ alert_user_id: myId });
@@ -1597,6 +1598,7 @@ return res.json({status: 500, message: 'Server error: ' })
     if (!notifyDetails || notifyDetails.length === 0) {
       return res.json({ status: 404, message: 'No more records' });
     }
+    //console.log('Mobile message', notifyDetails)
 
     res.send(notifyDetails);
 
