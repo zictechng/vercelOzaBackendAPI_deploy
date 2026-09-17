@@ -2387,7 +2387,7 @@ router.post("/adminRejected_documentUpload", isAuth, async (req, res) => {
   
   const filterDocument = { _id: req.body.doc_id };
   const documentType = req.body.doc_type
-  const documentReason = req.body.reasons
+  const documentReason = req.body.reject_reason
   let uid  = req.body.user_id
   
       try {
@@ -2410,7 +2410,7 @@ router.post("/adminRejected_documentUpload", isAuth, async (req, res) => {
                 $set: {
                   document_status: 'Rejected',
                   document_action: req.body.action_status,
-                  reject_document_reason: req.body.reasons,
+                  reject_document_reason: req.body.reject_reason,
                   action_date: Date.now()
                 },
               };
@@ -2501,7 +2501,7 @@ router.post("/adminRejected_documentUpload", isAuth, async (req, res) => {
                 alert_browser: '',
                 alert_date:  Date.now(),
                 alert_user_id: user._id,
-                alert_nature: documentName +' Issues \n Reason: ' + documentReason ? documentReason:' Not given',
+                alert_nature: `Document Rejected: Your ${documentName} document was rejected. \nReason: \n${documentReason || 'Please contact support for details.'}`,
                 alert_status: 1,
                 alert_read_date: ''
                 })
