@@ -1578,45 +1578,33 @@ return res.json({status: 500, message: 'Server error: ' })
  // get user notification from Mobile here here..
  router.get("/user_notificationMobile/:id", isAuth, async (req, res) => {
   let myId = req.params.id;
-  //console.log('My ID ', req.params.id)
-  const itemsPerPage = 10; // Number of transactions per page
-  const page = parseInt(req.query.page) || 1; // Get page number from query or default to 1
+  const itemsPerPage = 10; 
+  const page = parseInt(req.query.page) || 1; 
   const skip = (page - 1) * itemsPerPage;
 
-  const countAll = await Notification.find({alert_user_id: myId }).count();
-  const filter = {alert_user_id: myId}
+  try {
+    const countAll = await Notification.countDocuments({ alert_user_id: myId });
     
-    const pageTotal = (Math.ceil(countAll / itemsPerPage));
-        if (countAll == 0 || countAll < 1){
-          
-          return res.json({status: 401, message: 'No record found'})
-        }
-  
-  //console.log("today Month", month);
-        try {
-          //const notifyDetailsRead = await Notification.find({alert_user_id: myId, alert_status: 1 })
-          const notifyDetailsRead = await Notification.find({alert_user_id: myId, alert_status: 1 })
-          
-          const notifyDetails = await Notification.find({alert_user_id: myId })
-          .sort({alert_date: -1 })
-          .skip(skip)
-          .limit(itemsPerPage);
-          
-          //console.log(" Total Records is: ", countAll);
-          if(!notifyDetails || notifyDetails < 1){
-            return res.json({status: 404, message: 'No more records'})
-          }
-          if(notifyDetails){
-            //console.log("Notification Details ", notifyDetails)
-          //res.status(200).send(notifyDetails);
-            res.send(notifyDetails)
-          }
-          
-        } catch (err) {
-          res.status(500).json(err);
-          console.log(err.message);
-        }
-    });
+    if (countAll === 0) {
+      return res.json({ status: 401, message: 'No record found' });
+    }
+
+    const notifyDetails = await Notification.find({ alert_user_id: myId })
+      .sort({ alert_date: -1 })
+      .skip(skip)
+      .limit(itemsPerPage);
+
+    if (!notifyDetails || notifyDetails.length === 0) {
+      return res.json({ status: 404, message: 'No more records' });
+    }
+
+    res.send(notifyDetails);
+
+  } catch (err) {
+    res.status(500).json(err);
+    console.log(err.message);
+  }
+});
 
 // get users notifications from the web portal
 router.get("/user_notification/:id", isAuth, async (req, res) => {
@@ -1733,6 +1721,24 @@ router.get("/user_notification/:id", async (req, res) => {
     console.log(err.message);
   }
 });
+
+
+// Mark single notification as read by notification _id
+router.get("/notification_read_single/:notifId", isAuth, async (req, res) => {
+  const { notifId } = req.params;
+  try {
+    await Notification.updateOne(
+      { _id: notifId },
+      { $set: { alert_status: 0 } }
+    );
+    return res.json({ msg: '200' });
+  } catch (err) {
+    console.log('Mark read error:', err.message);
+    return res.status(500).json({ msg: '500' });
+  }
+});
+
+
 // mark user notification read here..
  router.get("/user_notification_read/:id", async (req, res) => {
   let myId = req.params.id;
