@@ -174,6 +174,14 @@ const systemSettingSchema = new mongoose.Schema({
         type: Number,
         default: 0,
     },
+
+    app_download_android_link: String,
+    app_download_ios_link: String,
+    
+    support_whatsapp:    String,
+    support_telegram:    String,
+    support_email:       String,
+    support_phone:       String,
     // Which service types qualify to unlock referral bonus
     // Admin selects from: paypal, payoneer, bitcoin,
     // airtime, data, electricity, tv_subscription, exam_cards

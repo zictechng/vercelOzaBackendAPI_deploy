@@ -1614,6 +1614,10 @@ router.post("/update_appStatus", isAuth, async (req, res, next) => {
         app_referral_percent: req.body.referral_percent_status,
         app_purchase_reward: req.body.purchase_reward_status,
         app_description: req.body.app_description,
+        support_whatsapp: req.body.support_whatsapp,
+        support_telegram: req.body.support_telegram,
+        support_email:    req.body.support_email,
+        support_phone:    req.body.support_phone,
         
         //user_policy
         });
@@ -1647,6 +1651,10 @@ router.post("/update_appStatus", isAuth, async (req, res, next) => {
           app_referral_percent: req.body.referral_percent_status,
           app_purchase_reward: req.body.purchase_reward_status,
           app_description: req.body.app_description,
+          support_whatsapp: req.body.support_whatsapp,
+          support_telegram: req.body.support_telegram,
+          support_email:    req.body.support_email,
+          support_phone:    req.body.support_phone,
           app_payStack_btn: req.body.payStack_btn,
           app_paypal_bnt: req.body.paypal_btn,
           app_referral_bonus: req.body.referral_bonus_status,
