@@ -4843,16 +4843,16 @@ router.get('/all_newsletter_subscribers', isAuth, async (req, res) => {
 
 
 // ── One-time fix: set createdOn for tickets missing it ──
-router.get('/fix_ticket_dates', async (req, res) => {
-  try {
-    const result = await Ticket.updateMany(
-      { createdOn: { $in: [null, undefined] } },
-      { $set: { createdOn: new Date('2024-01-01') } }
-    );
-    return res.json({ msg: '200', updated: result.modifiedCount });
-  } catch (err) {
-    return res.json({ msg: '500', message: err.message });
-  }
-});
+// router.get('/fix_ticket_dates', async (req, res) => {
+//   try {
+//     const result = await Ticket.updateMany(
+//       { createdOn: { $in: [null, undefined] } },
+//       { $set: { createdOn: new Date('2024-01-01') } }
+//     );
+//     return res.json({ msg: '200', updated: result.modifiedCount });
+//   } catch (err) {
+//     return res.json({ msg: '500', message: err.message });
+//   }
+// });
 
 module.exports = router;
