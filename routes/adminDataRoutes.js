@@ -2644,10 +2644,18 @@ router.post("/approveAcctFunding", isAuth, async (req, res) => {
         appName = result.app_name
         appLogo = result.app_logo
         const logoImage = appLogo;
-        const mailBody = loginEmail(appName, 'Account Fund Approved', userDetail.display_name, `this is to notify you that your account funding has been approved and your wallet has be credited with the sum of 
-        <b>\u20A6${new Intl.NumberFormat().format(userFund.amount)}</b> <br>
-        with transaction ID <b>${userFund.fund_number}</b><br>
-        thank you for choosing ${appName}, we hope you continue enjoy our awesome services.`, logoImage)
+        const mailBody = transactionEmail(
+          appName, 'Account Fund Approved ✅', userDetail.display_name,
+          [
+            { label: 'Transaction ID',  value: userFund.fund_number || '—',                              highlight: false },
+            { label: 'Amount Credited', value: `₦${new Intl.NumberFormat().format(userFund.amount)}`,    highlight: true  },
+            { label: 'Type',            value: 'Account Funding',                                        highlight: false },
+            { label: 'Status',          value: '✅ Approved & Credited',                                 highlight: false },
+            { label: 'Date',            value: moment().format('DD MMM YYYY, hh:mm A'),                  highlight: false },
+          ],
+          `Your account funding has been approved and your wallet has been credited. Thank you for choosing ${appName}.`,
+          logoImage
+        )
             const mailText = loginText(userDetail.display_name, `this is to notify you that your account funding has been approved and your wallet has be credited with the sum of \n\n
             <b>\u20A6${new Intl.NumberFormat().format(userFund.amount)}</b><br>
              
@@ -2760,32 +2768,17 @@ router.post("/rejectApproveAcctFunding", isAuth, async (req, res) => {
         const appLogo = appSettings.app_logo || ''
         const logoImage = `<img src="${appLogo}" width="100" height="100" alt="${appName}"/>`
         const rejectReason = req.body.reject_note || 'We were unable to verify that the transaction was valid and successful.'
-
-        const mailBody = loginEmail(appName, 'Account Funding Rejected', userDetail.display_name, `
-          <p>Your account funding request has been reviewed and unfortunately could not be approved.</p>
-          <br/>
-          <table style="width:100%;border-collapse:collapse;border-radius:8px;overflow:hidden;">
-            <tr style="background:#f9f9f9;">
-              <td style="padding:10px 14px;color:#666;font-weight:500;">Amount</td>
-              <td style="padding:10px 14px;font-weight:700;">&#8358;${new Intl.NumberFormat().format(userFund.amount)}</td>
-            </tr>
-            <tr>
-              <td style="padding:10px 14px;color:#666;font-weight:500;">Transaction ID</td>
-              <td style="padding:10px 14px;font-weight:700;">${userFund.fund_number}</td>
-            </tr>
-            <tr style="background:#f9f9f9;">
-              <td style="padding:10px 14px;color:#666;font-weight:500;">Status</td>
-              <td style="padding:10px 14px;font-weight:700;color:#e53935;">Rejected</td>
-            </tr>
-            <tr>
-              <td style="padding:10px 14px;color:#666;font-weight:500;">Reason</td>
-              <td style="padding:10px 14px;">${rejectReason}</td>
-            </tr>
-          </table>
-          <br/>
-          <p style="color:#555;">If you believe this is an error or need further clarification, please contact our support team via your account dashboard.</p>
-          <p>Thank you for choosing ${appName}.</p>
-        `, logoImage)
+        const mailBody = transactionEmail(
+          appName, 'Account Funding Rejected', userDetail.display_name,
+          [
+            { label: 'Transaction ID',  value: userFund.fund_number || '—',                              highlight: false },
+            { label: 'Amount',          value: `₦${new Intl.NumberFormat().format(userFund.amount)}`,    highlight: true  },
+            { label: 'Status',          value: '❌ Rejected',                                            highlight: false },
+            { label: 'Reason',          value: rejectReason,                                             highlight: false },
+            { label: 'Date',            value: moment().format('DD MMM YYYY, hh:mm A'),                  highlight: false },
+          ],
+          'Your funding request could not be approved at this time. Please contact our support team for assistance.',
+          logoImage)
 
         const mailText = loginText(userDetail.display_name, `Your account funding of ₦${new Intl.NumberFormat().format(userFund.amount)} with transaction ID ${userFund.fund_number} has been rejected. Reason: ${rejectReason}. Please contact support via your account dashboard for assistance. Thank you for choosing ${appName}.`)
 
@@ -3066,11 +3059,19 @@ router.post("/approveFundSales", isAuth, async (req, res) => {
           appName = result.app_name
           appLogo = result.app_logo
           const logoImage = appLogo;
-          const mailBody = loginEmail(appName, 'Fund Sales Approved', userDetail.display_name, `This is to notify you that your ${allSales.transac_category} funds has been approved and your account has been credited with the sum of
-          <b>\u20A6${new Intl.NumberFormat().format(totalSales)}</b>.
-          <br/>Transaction ID: <b>${allSales.tid}</b><br/>
-          Thank you for choosing ${appName}, we hope you continue to enjoy our awesome services.`, logoImage)
-              const mailText = loginText(userDetail.display_name, `this is to notify you that your ${allSales.transac_category} funds sales has been approved and your bank account has be credited with the sum of \n\n
+          const mailBody = transactionEmail(
+            appName, 'Fund Sales Approved ✅', userDetail.display_name,
+            [
+              { label: 'Transaction ID',  value: allSales.tid || '—',                                    highlight: false },
+              { label: 'Amount Credited', value: `₦${new Intl.NumberFormat().format(totalSales)}`,        highlight: true  },
+              { label: 'Type',            value: allSales.transac_category || 'Fund Sales',               highlight: false },
+              { label: 'Status',          value: '✅ Approved & Credited',                               highlight: false },
+              { label: 'Date',            value: moment().format('DD MMM YYYY, hh:mm A'),                 highlight: false },
+            ],
+            `Your ${allSales.transac_category} funds have been approved and credited to your account. Thank you for choosing ${appName}.`,
+            logoImage
+          )
+          const mailText = loginText(userDetail.display_name, `this is to notify you that your ${allSales.transac_category} funds sales has been approved and your bank account has be credited with the sum of \n\n
               <b>\u20A6${new Intl.NumberFormat().format(totalSales)}</b><br>
               with transaction ID <b>${allSales.tid}</b><br>
               thank you for choosing ${appName}, we hope you continue to enjoy our awesome services.`)
@@ -3175,36 +3176,19 @@ router.post("/rejectSaleFunding", isAuth, async (req, res) => {
         const appLogo = appSettings.app_logo || ''
         const logoImage = appLogo
         const rejectReason = req.body.reject_note || 'We were unable to verify that the transaction was valid and successful.'
-
-        const mailBody = loginEmail(appName, 'Funds Sale Rejected', userDetail.display_name, `
-          <p>Your recent <strong>${allTranSales.transac_category}</strong> funds sale/exchange request has been reviewed and could not be approved.</p>
-          <br/>
-          <table style="width:100%;border-collapse:collapse;">
-            <tr style="background:#f9f9f9;">
-              <td style="padding:10px 14px;color:#666;font-weight:500;">Amount</td>
-              <td style="padding:10px 14px;font-weight:700;">$${new Intl.NumberFormat().format(allTranSales.amount)}</td>
-            </tr>
-            <tr>
-              <td style="padding:10px 14px;color:#666;font-weight:500;">Transaction ID</td>
-              <td style="padding:10px 14px;font-weight:700;">${allTranSales.tid}</td>
-            </tr>
-            <tr style="background:#f9f9f9;">
-              <td style="padding:10px 14px;color:#666;font-weight:500;">Category</td>
-              <td style="padding:10px 14px;font-weight:700;">${allTranSales.transac_category}</td>
-            </tr>
-            <tr>
-              <td style="padding:10px 14px;color:#666;font-weight:500;">Status</td>
-              <td style="padding:10px 14px;font-weight:700;color:#e53935;">Rejected</td>
-            </tr>
-            <tr style="background:#f9f9f9;">
-              <td style="padding:10px 14px;color:#666;font-weight:500;">Reason</td>
-              <td style="padding:10px 14px;">${rejectReason}</td>
-            </tr>
-          </table>
-          <br/>
-          <p style="color:#555;">If you believe this is an error, please contact our support team via your account dashboard.</p>
-          <p>Thank you for choosing ${appName}.</p>
-        `, logoImage)
+        const mailBody = transactionEmail(
+          appName, 'Funds Sale Rejected', userDetail.display_name,
+          [
+            { label: 'Transaction ID', value: allTranSales.tid || '—',                                          highlight: false },
+            { label: 'Amount',         value: `$${new Intl.NumberFormat().format(allTranSales.amount)}`,         highlight: true  },
+            { label: 'Category',       value: allTranSales.transac_category || '—',                             highlight: false },
+            { label: 'Status',         value: '❌ Rejected',                                                    highlight: false },
+            { label: 'Reason',         value: rejectReason,                                                     highlight: false },
+            { label: 'Date',           value: moment().format('DD MMM YYYY, hh:mm A'),                          highlight: false },
+          ],
+          'Your funds sale request could not be approved. Please contact our support team if you need assistance.',
+          logoImage
+        )
 
         const mailText = loginText(userDetail.display_name, `Your ${allTranSales.transac_category} sale of $${new Intl.NumberFormat().format(allTranSales.amount)} with transaction ID ${allTranSales.tid} has been rejected. Reason: ${rejectReason}. Contact support via your account dashboard. Thank you for choosing ${appName}.`)
 
