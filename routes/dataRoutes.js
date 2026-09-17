@@ -1596,14 +1596,7 @@ return res.json({status: 500, message: 'Server error: ' })
         try {
           //const notifyDetailsRead = await Notification.find({alert_user_id: myId, alert_status: 1 })
           const notifyDetailsRead = await Notification.find({alert_user_id: myId, alert_status: 1 })
-          if(notifyDetailsRead){
-            const updateDoc = {
-              $set: {
-                alert_status: 0,
-                },
-            }
-            const updateRead = await Notification.updateMany(filter, updateDoc);
-          }
+          
           const notifyDetails = await Notification.find({alert_user_id: myId })
           .sort({alert_date: -1 })
           .skip(skip)
