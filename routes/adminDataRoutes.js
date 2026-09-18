@@ -1631,6 +1631,8 @@ router.post("/update_appStatus", isAuth, async (req, res, next) => {
         support_telegram: req.body.support_telegram,
         support_email:    req.body.support_email,
         support_phone:    req.body.support_phone,
+        app_download_android_link: req.body.app_download_android_link,
+        app_download_ios_link:     req.body.app_download_ios_link,
         
         //user_policy
         });
@@ -1668,6 +1670,8 @@ router.post("/update_appStatus", isAuth, async (req, res, next) => {
           support_telegram: req.body.support_telegram,
           support_email:    req.body.support_email,
           support_phone:    req.body.support_phone,
+          app_download_android_link: req.body.app_download_android_link,
+          app_download_ios_link:     req.body.app_download_ios_link,
           app_payStack_btn: req.body.payStack_btn,
           app_paypal_bnt: req.body.paypal_btn,
           app_referral_bonus: req.body.referral_bonus_status,
