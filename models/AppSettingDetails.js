@@ -126,12 +126,6 @@ const systemSettingSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
-    
-    // Business promoter commission toggle
-    app_promoter_bonus:{
-        type: Boolean,
-        default: false,
-    },
 
     // ── Signup Bonus Configuration ──────────────
     // Amount in USD admin wants to give as signup bonus
