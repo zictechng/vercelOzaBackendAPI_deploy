@@ -1,11 +1,12 @@
+
 const nodemailer = require("nodemailer");
 const transporterMailer = nodemailer.createTransport({
-    host: 'premium75.web-hosting.com',
+    host: 'business79.web-hosting.com',
     port: 465,
     secure: true,
     auth: {
-      user: 'noreply@ozaapp.com',
-      pass: 'KK&Z1FLg$Aqg'
+      user: 'noreply@sendmoor.com',
+      pass: 'e_k1uoq^y[ddOZ=f'
     }
 });
 

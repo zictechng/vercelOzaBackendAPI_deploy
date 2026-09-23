@@ -5,8 +5,8 @@ const gMailerTransport = nodemailer.createTransport({
     port: 587,
     secure: false,
     auth: {
-      user: 'ozaappng@gmail.com',
-      pass: 'bbnxfsqirjrbtvxr'
+      user: 'benfiverruk@gmail.com',
+      pass: 'bwyvxmgfuhhfsdcr'
     }
 });
 
