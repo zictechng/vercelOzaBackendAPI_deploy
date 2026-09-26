@@ -276,6 +276,7 @@ router.get("/company_name", async (req, res) => {
       res.status(404).send({msg: "404"})
     }
     else if(comp){
+      console.log('setting detail ', comp)
       res.status(200).send(comp);
     }
      

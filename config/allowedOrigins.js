@@ -27,11 +27,11 @@ const allowedOrigins = [
     'http://192.168.0.239:3500',
 
     // Production
-    'https://ozaapp.com',
-    'https://www.ozaapp.com',
-    'https://admin.ozaapp.com',
-    'https://adminoffice.ozaapp.com',
-    'https://ozabackendapi.ozaapp.com',
+    'https://sendmoor.com',
+    'https://www.sendmoor.com',
+    'https://admin.sendmoor.com',
+    'https://adminoffice.sendmoor.com',
+    'https://ozabackendapi.sendmoor.com',
     'https://ozawebservice.onrender.com',
     'http://www.zictech-ng.com',
     'https://www.zictech-ng.com',
