@@ -202,7 +202,7 @@ router.post("/register", async (req, res, next) => {
                     signup_account: pendingNairaDisplay,
                   }
                 })
-                console.log(`Signup bonus pending: $${bonusUsd} (₦${pendingNairaDisplay}) for ${user.email}`)
+                //console.log(`Signup bonus pending: $${bonusUsd} (₦${pendingNairaDisplay}) for ${user.email}`)
               }
             }
 
